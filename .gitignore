@@ -1,10 +1,11 @@
 # 환경 변수 (API 키 등)
 .env
+.env.
 .env.local
 .env.*.local
 
-# DB (선택: 버전 관리 제외 시)
-# terminal.db
+# DB (버전 관리 제외)
+terminal.db
 
 # Python
 __pycache__/
