@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Terms of Use | BKIG{% endblock %}
+{% block head %}
+  <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
+{% block content %}
+<main class="legal-page">
+  <!-- Hero: privacy.png 배경 + 네이비 오버레이 (다른 페이지와 동일) -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="{{ url_for('static', filename='images/privacy.png') }}"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Terms of Use
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Last Updated: February 2026
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Content: Crisp Corporate White (Privacy Policy와 동일) -->
+  <div id="legal-content" class="bg-white">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 py-20 px-6 sm:px-8">
+      <!-- Left: Sticky Table of Contents -->
+      <aside class="md:w-[25%] shrink-0" aria-label="Table of contents">
+        <nav class="md:sticky md:top-32 border-l border-slate-200 pl-6 space-y-1">
+          <a href="#agreement-to-terms" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="agreement-to-terms">1. Agreement to Terms</a>
+          <a href="#no-financial-advice" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="no-financial-advice">2. No Financial Advice</a>
+          <a href="#intellectual-property" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="intellectual-property">3. Intellectual Property</a>
+          <a href="#terminal-access" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="terminal-access">4. Terminal Access</a>
+        </nav>
+      </aside>
+
+      <!-- Right: Legal Document Body -->
+      <div class="flex-1 min-w-0 max-w-3xl">
+        <article>
+          <section id="agreement-to-terms" class="scroll-mt-32 mt-16 first:mt-0">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">1. Agreement to Terms</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              By accessing or using the Boston Korea Investment Group (“BKIG”) website and any associated services, you agree to be bound by these Terms of Use. If you do not agree to these terms, please do not use this website or any materials provided herein.
+            </p>
+          </section>
+
+          <section id="no-financial-advice" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">2. No Financial Advice</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              All content, research reports, and materials provided by Boston Korea Investment Group (BKIG) are for educational and informational purposes only. They do not constitute professional financial, investment, or legal advice. BKIG assumes no liability for any investment decisions made based on this information.
+            </p>
+          </section>
+
+          <section id="intellectual-property" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">3. Intellectual Property</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              All equity research, pitch decks, and analytical models published on this website are the exclusive property of BKIG and its respective authors. Unauthorized reproduction, distribution, or commercial use of any materials is prohibited without prior written consent from BKIG.
+            </p>
+          </section>
+
+          <section id="terminal-access" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">4. Terminal Access</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              Access to the BKIG Terminal is restricted to authorized analysts. The underlying infrastructure is powered by FACCTing Technology. Account sharing is strictly prohibited. Unauthorized access or misuse may result in immediate revocation of access and appropriate legal action.
+            </p>
+          </section>
+        </article>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+(function() {
+  var tocLinks = document.querySelectorAll('.legal-toc-link');
+
+  function setActiveFromHash() {
+    var hash = (window.location.hash || '').replace('#', '');
+    tocLinks.forEach(function(link) {
+      var section = link.getAttribute('data-section');
+      if (section === hash) {
+        link.classList.add('text-slate-900', 'font-semibold', 'border-blue-600');
+        link.classList.remove('text-slate-500', 'border-transparent');
+      } else {
+        link.classList.remove('text-slate-900', 'font-semibold', 'border-blue-600');
+        link.classList.add('text-slate-500', 'border-transparent');
+      }
+    });
+  }
+
+  window.addEventListener('hashchange', setActiveFromHash);
+  setActiveFromHash();
+})();
+</script>
+{% endblock %}

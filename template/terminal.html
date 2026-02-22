@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BKIG Terminal | Boston Korea Investment Group</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='terminal.css') }}">
+  <script>
+    window.TERMINAL_CURRENT_USER = {{ current_user | tojson }};
+  </script>
+</head>
+<body class="bkig-terminal bg-[#0a0e17] text-slate-200 min-h-screen flex">
+  <!-- LNB: 사이드바 -->
+  <aside class="bkig-lnb w-56 shrink-0 border-r border-slate-700/60 flex flex-col bg-[#0d1220]">
+    <div class="p-4 border-b border-slate-700/60">
+      <h1 class="text-sm font-semibold text-slate-300 tracking-wide">BKIG Terminal</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Internal Intranet</p>
+    </div>
+    <nav class="flex-1 py-3 overflow-y-auto bkig-scroll" aria-label="메인 메뉴">
+      <ul class="space-y-0.5 px-2">
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-dashboard">
+            Dashboard
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-comms">
+            Comms
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-financial-tools">
+            Financial Tools
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-portfolio">
+            Portfolio
+          </button>
+        </li>
+        {% if current_user.role == 'super_admin' %}
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-amber-400/90 hover:bg-amber-500/10 hover:text-amber-300 transition-all duration-200" data-view="view-admin">
+            Admin Console
+          </button>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    <div class="p-3 border-t border-slate-700/60">
+      <div class="flex items-center gap-2 flex-wrap">
+        <p class="text-xs text-slate-500 truncate flex-1 min-w-0" title="{{ current_user.email }}">{{ current_user.name }}<span id="sidebar-faccting-nickname" class="text-slate-400"></span></p>
+        <button type="button" id="sidebar-profile-btn" class="text-xs text-slate-400 hover:text-cyan-400 transition-colors shrink-0" title="Profile">Profile</button>
+      </div>
+      <p class="text-xs text-slate-600">{{ current_user.role }}</p>
+      <a href="{{ url_for('terminal.api_logout') }}" class="mt-2 inline-block text-xs text-slate-500 hover:text-red-400 transition-colors">Logout</a>
+    </div>
+  </aside>
+
+  <!-- Main Content: 뷰 컨테이너 -->
+  <main class="flex-1 min-w-0 flex flex-col overflow-hidden relative">
+    <!-- BKIG Logo: 맨 오른쪽 위 -->
+    <div class="absolute top-0 right-0 z-10 p-4 flex justify-end pointer-events-none">
+      <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="BKIG" class="h-8 w-auto object-contain opacity-90">
+    </div>
+    <!-- view-dashboard: Bloomberg/SaaS 스타일 그리드 (로고와 겹치지 않도록 우측 여백) -->
+    <section id="view-dashboard" class="flex-1 overflow-y-auto bkig-scroll p-6 pr-24 bg-slate-900 text-slate-200">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- ① Live Market Ticker -->
+        <div class="col-span-12 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true"></span>
+              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Live Market</span>
+            </div>
+            <button type="button" id="watchlist-edit-btn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors" title="자주 보는 티커 설정">티커 편집</button>
+          </div>
+          <div id="market-ticker" class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <span class="text-slate-500">Loading…</span>
+          </div>
+        </div>
+
+        <!-- ② My Tasks -->
+        <div class="col-span-12 md:col-span-8 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">My Tasks & Assignments</h3>
+            {% if current_user.role in ['super_admin', 'division_lead'] %}
+            <button type="button" id="dashboard-assign-task-btn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium transition-colors">+ Assign Task</button>
+            {% endif %}
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-slate-700">
+                <tr>
+                  <th class="pb-2 pr-4 text-slate-400 font-medium">업무명</th>
+                  <th class="pb-2 pr-4 text-slate-400 font-medium">할당자</th>
+                  <th class="pb-2 pr-4 text-slate-400 font-medium">마감일</th>
+                  <th class="pb-2 text-slate-400 font-medium">상태</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-tasks-tbody" class="divide-y divide-slate-700/50">
+                <tr><td colspan="4" class="py-4 text-slate-500 text-center">로딩 중…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ③ Upcoming Meetings -->
+        <div class="col-span-12 md:col-span-4 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Upcoming Meetings</h3>
+            {% if current_user.role in ['super_admin', 'division_lead'] %}
+            <button type="button" id="dashboard-schedule-btn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">+ Schedule</button>
+            {% endif %}
+          </div>
+          <ul id="dashboard-meetings-list" class="space-y-3">
+            <li class="text-slate-500 text-sm">로딩 중…</li>
+          </ul>
+        </div>
+
+        <!-- ④ Activity Feed -->
+        <div class="col-span-12 md:col-span-8 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <h3 class="text-lg font-semibold text-white mb-3">Activity Feed</h3>
+          <ul id="dashboard-activity-feed" class="space-y-2 text-sm text-slate-400">
+            <li>최근 팀 활동이 없습니다.</li>
+          </ul>
+        </div>
+
+        <!-- ⑤ My Division Members (우측: Upcoming Meetings 아래) -->
+        <div class="col-span-12 md:col-span-4 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <h3 class="text-lg font-semibold text-white mb-3">My Division</h3>
+          {% if team_members %}
+          <ul class="space-y-0 divide-y divide-slate-700/50">
+            {% for member in team_members %}
+            <li class="flex items-center justify-between py-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="shrink-0 w-8 h-8 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center text-sm font-bold">{{ member.initials }}</span>
+                <div class="min-w-0">
+                  <p class="text-slate-200 font-medium truncate">{{ member.name }}</p>
+                  <p class="text-xs text-slate-500">{{ member.role }}</p>
+                </div>
+              </div>
+              <a href="mailto:{{ member.email }}" class="shrink-0 p-1.5 text-slate-500 hover:text-blue-400 transition-colors" title="Send email" aria-label="Send email">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-slate-500 text-sm py-2">팀원이 없습니다.</p>
+          {% endif %}
+        </div>
+
+        <!-- ⑥ Executive Announcements (좌측: Activity Feed 아래) -->
+        <div class="col-span-12 md:col-span-8 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-semibold text-white">Announcements</h3>
+              {% if announcements %}
+              <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-500/90 text-white">New</span>
+              {% endif %}
+            </div>
+            {% if current_user.role == 'super_admin' %}
+            <button type="button" id="announcement-new-post-btn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer">+ New Post</button>
+            {% endif %}
+          </div>
+          {% if announcements %}
+          <div class="space-y-3">
+            {% for ann in announcements %}
+            <article class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4">
+              <p class="text-slate-200 text-sm leading-relaxed">{{ ann.body }}</p>
+              <p class="mt-2 text-xs text-slate-500">— {{ ann.author_name }}{% if ann.author_title %}, {{ ann.author_title }}{% endif %}</p>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-slate-500 text-sm py-2">공지사항이 없습니다.</p>
+          {% endif %}
+        </div>
+
+        <!-- ⑦ Quick Resources (우측 열 맨 아래) -->
+        <div class="col-span-12 md:col-span-4 bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <h3 class="text-lg font-semibold text-white mb-3">Quick Resources</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#" class="text-blue-400 hover:text-blue-300 transition-colors">BKIG DCF Template.xlsx</a></li>
+            <li><a href="#" class="text-blue-400 hover:text-blue-300 transition-colors">Pitch Book Guidelines.pdf</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- view-comms -->
+    <section id="view-comms" class="flex-1 overflow-y-auto bkig-scroll p-6 hidden">
+      <div class="max-w-4xl">
+        <h2 class="text-xl font-semibold text-slate-200 mb-1">Comms</h2>
+        <p class="text-slate-500 text-sm mb-6">Internal communications and announcements.</p>
+        <div class="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6 text-slate-400 text-sm">
+          No messages yet.
+        </div>
+      </div>
+    </section>
+
+    <!-- view-financial-tools: IB 터미널 스타일 -->
+    <section id="view-financial-tools" class="flex-1 overflow-y-auto bkig-scroll p-6 bg-slate-900 text-slate-200 hidden">
+      <div class="max-w-full">
+        <h2 class="text-xl font-semibold text-slate-200 mb-1">Financial Tools</h2>
+        <p class="text-slate-500 text-sm mb-4">Capital IQ / FactSet style terminal. Search by ticker and use the sidebar to load statements.</p>
+
+        <!-- Top Control Bar -->
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          <div class="relative flex-1 min-w-[200px] max-w-md">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" aria-hidden="true">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </span>
+            <input type="text" id="ticker-input" placeholder="Enter ticker (e.g. AAPL)" class="w-full pl-9 pr-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <button type="button" id="ticker-search-btn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium transition-colors shrink-0">Search</button>
+        </div>
+        <div id="company-summary" class="mb-2 min-h-[2.5rem] text-sm text-slate-400">
+          <!-- 회사명, 현재가, 일일 변동률 렌더 영역 -->
+        </div>
+
+        <!-- Workspace: Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-[700px] mt-6">
+          <!-- Left Sidebar -->
+          <nav class="col-span-12 md:col-span-2 flex flex-col gap-1 bg-slate-800/50 border border-slate-700 rounded-lg p-3 h-fit md:h-full">
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors data-active:bg-slate-700/80 data-active:text-white" data-tab="overview">Overview &amp; Chart</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="income">Income Statement</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="balance">Balance Sheet</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="cashflow">Cash Flow Statement</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="ratios">Key Ratios</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="trend">Trend</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="comps">COMPS</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="ownership">OWNERSHIP</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="estimates">ESTIMATES</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="news">NEWS</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="valuation-analysis">VALUATION ANALYSIS</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="accounting-analysis">ACCOUNTING ANALYSIS</button>
+          </nav>
+          <!-- Right Content Area: 꽉 차게, 스크롤 없음 -->
+          <div class="col-span-12 md:col-span-10 bg-slate-950 border border-slate-800 rounded-lg flex flex-col overflow-hidden relative min-h-0" style="height: 700px;">
+            <div id="tool-loader" class="hidden absolute inset-0 flex items-center justify-center bg-slate-950/80 z-10 rounded-lg">
+              <div class="flex flex-col items-center gap-3">
+                <svg class="w-10 h-10 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-slate-400 text-sm">Loading…</span>
+              </div>
+            </div>
+            <div id="tool-content" class="flex flex-col flex-1 min-h-0 overflow-y-auto bkig-scroll p-6">
+              <p class="text-slate-500 text-sm">Enter a ticker and click Search to load data.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- view-profile: 이름, FACCTing 토큰 확인/변경 -->
+    <section id="view-profile" class="flex-1 overflow-y-auto bkig-scroll p-6 bg-slate-900 text-slate-200 hidden">
+      <div id="profile-root" class="max-w-lg font-mono text-sm">
+        <!-- Profile content injected by terminal.js -->
+      </div>
+    </section>
+
+    <!-- view-portfolio: FACCTing 연동 포트폴리오 + Trading Panel + Journal -->
+    <section id="view-portfolio" class="flex-1 overflow-y-auto bkig-scroll p-6 bg-slate-900 text-slate-200 hidden">
+      <div id="portfolio-root" class="max-w-full font-mono text-sm">
+        <!-- Auth / Dashboard injected by terminal.js -->
+      </div>
+    </section>
+
+    <!-- view-admin: User Management (super_admin 전용) -->
+    {% if current_user.role == 'super_admin' %}
+    <section id="view-admin" class="flex-1 overflow-y-auto bkig-scroll p-6 hidden">
+      <div class="w-full max-w-6xl">
+        <!-- 상단 헤더 -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-bold text-white">User Management</h2>
+            <p class="mt-1 text-slate-400 text-sm">Manage analysts, assign divisions, and control access.</p>
+          </div>
+          <button type="button" id="admin-add-analyst-btn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium transition-colors shrink-0">
+            + Add New Analyst
+          </button>
+        </div>
+        <!-- 유저 데이터 테이블 -->
+        <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-800/80 border-b border-slate-700">
+              <tr>
+                <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
+                <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
+                <th class="px-4 py-3 text-slate-400 font-medium">Division</th>
+                <th class="px-4 py-3 text-slate-400 font-medium">Team</th>
+                <th class="px-4 py-3 text-slate-400 font-medium">Role</th>
+                <th class="px-4 py-3 text-slate-400 font-medium">Status</th>
+                <th class="px-4 py-3 text-slate-400 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="user-table-body" class="divide-y divide-slate-700/50">
+              <!-- JS에서 /api/users 로 동적 주입 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <!-- Admin: Add Analyst Modal (숨김) -->
+  {% if current_user.role == 'super_admin' %}
+  <div id="admin-add-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" id="admin-modal-backdrop">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">Add New Analyst</h3>
+        <p class="text-slate-400 text-sm mb-6">Create a new user account.</p>
+        <form id="admin-add-form" class="space-y-4">
+          <div>
+            <label for="add-name" class="block text-xs font-medium text-slate-400 mb-1">Name</label>
+            <input type="text" id="add-name" name="name" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Full name">
+          </div>
+          <div>
+            <label for="add-email" class="block text-xs font-medium text-slate-400 mb-1">Email</label>
+            <input type="email" id="add-email" name="email" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="analyst@bkig.com">
+          </div>
+          <div>
+            <label for="add-password" class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+            <input type="password" id="add-password" name="password" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="••••••••">
+          </div>
+          <div>
+            <label for="add-division" class="block text-xs font-medium text-slate-400 mb-1">Division</label>
+            <select id="add-division" name="division" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+              <option value="">Select division</option>
+              <option value="Research">Research</option>
+              <option value="Investment">Investment</option>
+              <option value="Case Study">Case Study</option>
+              <option value="PD/PR">PD/PR</option>
+            </select>
+          </div>
+          <div>
+            <label for="add-team" class="block text-xs font-medium text-slate-400 mb-1">Team</label>
+            <input type="number" id="add-team" name="team" min="0" step="1" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="팀 번호 (숫자)">
+          </div>
+          <div>
+            <label for="add-role" class="block text-xs font-medium text-slate-400 mb-1">Role</label>
+            <select id="add-role" name="role" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+              <option value="analyst">Analyst</option>
+              <option value="division_lead">Division Lead</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+        </form>
+        <div class="mt-6 flex justify-end gap-2">
+          <button type="button" id="admin-modal-cancel" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors">Cancel</button>
+          <button type="submit" form="admin-add-form" class="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Dashboard: Assign Task Modal (빈 뼈대, 숨김) -->
+  <div id="dashboard-assign-task-modal" class="fixed inset-0 z-40 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-4" id="assign-task-modal-backdrop">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">Assign Task</h3>
+        <p class="text-slate-400 text-sm mb-4">Assign a new task to a team member.</p>
+        <form id="dashboard-assign-task-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+            <input type="text" name="title" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200" placeholder="Task title">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Assign to</label>
+            <select name="assigned_to_id" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200">
+              <option value="">Select user</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Due date</label>
+            <input type="date" name="due_date" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200">
+          </div>
+        </form>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" id="assign-task-modal-cancel" class="px-4 py-2 rounded-md text-sm text-slate-400 hover:bg-slate-700/50">Cancel</button>
+          <button type="submit" form="dashboard-assign-task-form" class="px-4 py-2 rounded-md text-sm bg-blue-600 hover:bg-blue-700 text-white">Assign</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard: Schedule Meeting Modal (빈 뼈대, 숨김) -->
+  <div id="dashboard-schedule-modal" class="fixed inset-0 z-40 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-4" id="schedule-modal-backdrop">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">Schedule Meeting</h3>
+        <p class="text-slate-400 text-sm mb-4">Add an upcoming meeting.</p>
+        <form id="dashboard-schedule-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+            <input type="text" name="title" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200" placeholder="Meeting title">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Date</label>
+            <input type="date" name="date" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Time</label>
+            <input type="text" name="time" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200" placeholder="14:00">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Zoom link (optional)</label>
+            <input type="url" name="zoom_link" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200" placeholder="https://zoom.us/j/...">
+          </div>
+        </form>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" id="schedule-modal-cancel" class="px-4 py-2 rounded-md text-sm text-slate-400 hover:bg-slate-700/50">Cancel</button>
+          <button type="submit" form="dashboard-schedule-form" class="px-4 py-2 rounded-md text-sm bg-blue-600 hover:bg-blue-700 text-white">Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard: 자주 보는 티커 설정 (Live Market, 최대 3개) -->
+  <div id="watchlist-modal" class="fixed inset-0 z-40 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-4" id="watchlist-modal-backdrop">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">자주 보는 티커</h3>
+        <p class="text-slate-400 text-sm mb-4">S&amp;P 500, NASDAQ, KOSPI는 항상 표시됩니다. 그 아래에 보일 추가 종목을 최대 3개 입력하세요.</p>
+        <form id="watchlist-form" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">티커 1</label>
+            <input type="text" id="watchlist-symbol-1" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: AAPL" maxlength="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">티커 2</label>
+            <input type="text" id="watchlist-symbol-2" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: TSLA" maxlength="10">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">티커 3</label>
+            <input type="text" id="watchlist-symbol-3" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: MSFT" maxlength="10">
+          </div>
+        </form>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" id="watchlist-modal-cancel" class="px-4 py-2 rounded-md text-sm text-slate-400 hover:bg-slate-700/50">Cancel</button>
+          <button type="button" id="watchlist-modal-save" class="px-4 py-2 rounded-md text-sm bg-blue-600 hover:bg-blue-700 text-white">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard: New Announcement (super_admin만 버튼 노출, 모달은 JS에서 사용) -->
+  <div id="announcement-new-modal" class="fixed inset-0 z-40 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-4" id="announcement-new-modal-backdrop">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg shadow-2xl" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">New Announcement</h3>
+        <p class="text-slate-400 text-sm mb-4">Post a new announcement to the dashboard.</p>
+        <form id="announcement-new-form" class="space-y-4">
+          <div>
+            <label for="announcement-body" class="block text-xs font-medium text-slate-400 mb-1">Content</label>
+            <textarea id="announcement-body" name="body" rows="4" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y" placeholder="[Notice] ..."></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="announcement-author-name" class="block text-xs font-medium text-slate-400 mb-1">Author name</label>
+              <input type="text" id="announcement-author-name" name="author_name" value="{{ current_user.name or '' }}" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200">
+            </div>
+            <div>
+              <label for="announcement-author-title" class="block text-xs font-medium text-slate-400 mb-1">Title (optional)</label>
+              <input type="text" id="announcement-author-title" name="author_title" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200" placeholder="e.g. President">
+            </div>
+          </div>
+        </form>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" id="announcement-new-modal-cancel" class="px-4 py-2 rounded-md text-sm text-slate-400 hover:bg-slate-700/50">Cancel</button>
+          <button type="button" id="announcement-new-modal-submit" class="px-4 py-2 rounded-md text-sm bg-blue-600 hover:bg-blue-700 text-white">Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@1.2.0/dist/chartjs-plugin-crosshair.min.js"></script>
+  <script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
+</body>
+</html>

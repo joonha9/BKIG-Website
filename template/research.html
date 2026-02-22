@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% block title %}Research | BKIG{% endblock %}
+{% block head %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='research.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="research-page">
+  <!-- Hero: Research.png 배경 + 네이비 오버레이 -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="{{ url_for('static', filename='images/Research.png') }}"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Research
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        In-depth analysis and equity research.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 1: Search, Filter & Language Toggle -->
+  <section id="research-content" class="bg-white border-b border-slate-200 py-5 sm:py-6" aria-label="검색 및 필터">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- 좌측: Search & Sector -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+          <div class="relative flex-1 max-w-xs sm:max-w-sm">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden="true">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </span>
+            <input type="search" id="research-search" placeholder="Search by Ticker" class="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 transition-colors" aria-label="Search by Ticker" data-placeholder-en="Search by Ticker" data-placeholder-ko="티커로 검색">
+          </div>
+          <div class="flex flex-wrap gap-1 sm:gap-2" role="tablist" aria-label="섹터 필터">
+            <button type="button" class="sector-tab px-3 py-2 text-sm font-medium rounded-full bg-slate-900 text-white transition-colors" data-sector="all" aria-pressed="true">All</button>
+            <button type="button" class="sector-tab px-3 py-2 text-sm font-medium rounded-full text-slate-600 hover:bg-slate-100 transition-colors" data-sector="tech">Tech</button>
+            <button type="button" class="sector-tab px-3 py-2 text-sm font-medium rounded-full text-slate-600 hover:bg-slate-100 transition-colors" data-sector="healthcare">Healthcare</button>
+            <button type="button" class="sector-tab px-3 py-2 text-sm font-medium rounded-full text-slate-600 hover:bg-slate-100 transition-colors" data-sector="consumer">Consumer</button>
+            <button type="button" class="sector-tab px-3 py-2 text-sm font-medium rounded-full text-slate-600 hover:bg-slate-100 transition-colors" data-sector="financials">Financials</button>
+          </div>
+        </div>
+        <!-- 우측: Language Toggle (Segmented Control) -->
+        <div class="flex-shrink-0 bg-slate-100 rounded-full p-1 inline-flex" role="group" aria-label="리서치 언어 선택">
+          <button type="button" class="lang-toggle is-active px-4 py-2 text-sm font-semibold rounded-full bg-white text-slate-900 shadow-sm transition-all duration-200" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" class="lang-toggle px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:text-slate-900 transition-all duration-200" data-lang="ko" aria-pressed="false">KR</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Featured Research (Zscaler) - EN -->
+  <section id="featured-en" class="featured-lang bg-slate-50 py-8 sm:py-10" aria-label="Featured Research" data-lang="en">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
+        <div class="md:w-56 lg:w-64 shrink-0 flex items-center justify-center bg-white border-b md:border-b-0 md:border-r border-slate-100 p-8 md:p-10">
+          <img src="{{ url_for('static', filename='images/zscaler.png') }}" alt="Zscaler" class="w-24 h-24 sm:w-28 sm:h-28 object-contain">
+        </div>
+        <div class="flex-1 p-6 sm:p-8 flex flex-col justify-center">
+          <p class="text-xs sm:text-sm text-slate-500 mb-2">Published: 2026 • Technology Sector</p>
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mb-3 font-[family-name:var(--font-serif,Georgia,serif)]">
+            Zscaler Inc (ZS): Zero Trust Security &amp; Cloud-Native SASE Outlook
+          </h2>
+          <span class="inline-flex items-center w-fit rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wide px-3 py-1 mb-4">Buy</span>
+          <div class="text-sm text-slate-600 space-y-1 mb-6">
+            <p><span class="font-semibold text-slate-700">Lead:</span> Joonha Kwon</p>
+            <p><span class="font-semibold text-slate-700">Analysts:</span> Sung Hyun An, Donghyun Kim</p>
+          </div>
+          <a href="{{ url_for('research_download', filename='zscaler_research_en.pdf') }}" class="featured-download inline-flex items-center justify-center gap-2 w-fit px-5 py-3 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-white hover:text-slate-900 border-2 border-slate-900 transition-all duration-200" aria-label="Download PDF">
+            <span>Download PDF</span>
+            <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Section 2: Featured Research (Zscaler) - KR -->
+  <section id="featured-ko" class="featured-lang bg-slate-50 py-8 sm:py-10" aria-label="주요 리서치" data-lang="ko" style="display: none;">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
+        <div class="md:w-56 lg:w-64 shrink-0 flex items-center justify-center bg-white border-b md:border-b-0 md:border-r border-slate-100 p-8 md:p-10">
+          <img src="{{ url_for('static', filename='images/zscaler.png') }}" alt="Zscaler" class="w-24 h-24 sm:w-28 sm:h-28 object-contain">
+        </div>
+        <div class="flex-1 p-6 sm:p-8 flex flex-col justify-center">
+          <p class="text-xs sm:text-sm text-slate-500 mb-2">발행: 2026 • 기술</p>
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mb-3 font-[family-name:var(--font-serif,Georgia,serif)]">
+            Zscaler: 제로 트러스트 보안과 클라우드 네이티브 SASE 전망
+          </h2>
+          <span class="inline-flex items-center w-fit rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wide px-3 py-1 mb-4">매수</span>
+          <div class="text-sm text-slate-600 space-y-1 mb-6">
+            <p><span class="font-semibold text-slate-700">리드:</span> 권준하</p>
+            <p><span class="font-semibold text-slate-700">애널리스트:</span> 안성현, 김동현</p>
+          </div>
+          <a href="{{ url_for('research_download', filename='zscaler_research_ko.pdf') }}" class="featured-download inline-flex items-center justify-center gap-2 w-fit px-5 py-3 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-white hover:text-slate-900 border-2 border-slate-900 transition-all duration-200" aria-label="PDF 다운로드">
+            <span>PDF 다운로드</span>
+            <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Research Archive -->
+  <section class="bg-white py-10 sm:py-14" aria-label="Research Archive">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 id="archive-title" class="text-lg font-semibold text-slate-800 mb-6">Research Archive</h2>
+      <div id="research-archive-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <!-- Card 1 - Zscaler EN, BUY -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="en" data-sector="tech">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/zscaler.png') }}" alt="" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">Buy</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">ZS</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2025 • EN</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">Zscaler Inc: Zero Trust Security &amp; Cloud-Native SASE Outlook</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">Lead:</span> Joonha Kwon</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">Analysts:</span> Sung Hyun An, Donghyun Kim</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='zscaler_research_en.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="Download report">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <!-- Card 2 - Zscaler KR, BUY -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="ko" data-sector="tech">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/zscaler.png') }}" alt="" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">Buy</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">ZS</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2025 • KR</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">Zscaler: 제로 트러스트 보안과 클라우드 네이티브 SASE 전망</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">리드:</span> 권준하</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">애널리스트:</span> 안성현, 김동현</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='zscaler_research_ko.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="리포트 다운로드">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <!-- Card 3 - Chevron EN, BUY -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="en" data-sector="financials">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/chevron.png') }}" alt="Chevron" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">Buy</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">CVX</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2025 • EN</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">Chevron Corp: Energy Transition &amp; Upstream Outlook</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">Lead:</span> Joonha Kwon</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">Analysts:</span> Sung Hyun An, Donghyun Kim</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='chevron_research_en.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="Download report">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <!-- Card - Dave & Buster's EN (RBC M&A Case) -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="en" data-sector="consumer">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/Dave-Busters-Logo.png') }}" alt="Dave &amp; Buster's" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-slate-600 font-bold text-xs" style="display: none;">PLAY</div>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">Buy</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">PLAY</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2024 • EN</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">RBC M&amp;A Case: Dave &amp; Buster&apos;s Sell Side Pitch</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">Lead:</span> Joonha Kwon</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">Analysts:</span> Sung Hyun An, Donghyun Kim</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='dave_busters_research_en.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="Download report">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <!-- Card 4 - Chevron KR, BUY -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="ko" data-sector="financials">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/chevron.png') }}" alt="Chevron" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">매수</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">CVX</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2025 • KR</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">Chevron: 에너지 전환과 업스트림 전망</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">리드:</span> 권준하</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">애널리스트:</span> 안성현, 김동현</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='chevron_research_ko.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="리포트 다운로드">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <!-- Card 5 - 현대자동차 KR, BUY (Stock Pitch) -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="ko" data-sector="consumer">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/hyundai.svg') }}" alt="현대자동차" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-slate-600 font-bold text-xs" style="display: none;">005380</div>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">매수</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">005380</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2025 • KR</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">현대자동차: 기업 분석 및 Stock Pitch</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">리드:</span> 권준하</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">애널리스트:</span> Sung Hyun An, Donghyun Kim</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='hyundai_research_ko.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="리포트 다운로드">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <!-- Card - Lemonade (LMND) KR -->
+        <article class="research-card bg-white border border-slate-200 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200" data-lang="ko" data-sector="financials">
+          <div class="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+            <img src="{{ url_for('static', filename='images/lmnd.png') }}" alt="Lemonade" class="w-12 h-12 rounded-lg object-contain bg-slate-50 shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-slate-600 font-bold text-xs" style="display: none;">LMND</div>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase px-2.5 py-1 shrink-0">매수</span>
+              <span class="text-sm font-semibold text-slate-700 truncate">LMND</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-medium text-blue-700 mb-2">2025 • KR</p>
+            <h3 class="font-bold text-slate-900 line-clamp-2 text-sm leading-snug">Lemonade Inc (LMND): 리서치 리포트</h3>
+          </div>
+          <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-600 space-y-0.5 min-w-0">
+              <p class="truncate"><span class="font-semibold text-slate-700">리드:</span> 권준하</p>
+              <p class="truncate"><span class="font-semibold text-slate-700">애널리스트:</span> —</p>
+            </div>
+            <a href="{{ url_for('research_download', filename='lemonade_research_ko.pdf') }}" class="research-card-link shrink-0 flex items-center justify-center w-10 h-10 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white transition-colors" aria-label="리포트 다운로드">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='js/research.js') }}"></script>
+{% endblock %}

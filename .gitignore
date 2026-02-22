@@ -1,0 +1,27 @@
+# 환경 변수 (API 키 등)
+.env
+.env.local
+.env.*.local
+
+# DB (선택: 버전 관리 제외 시)
+# terminal.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

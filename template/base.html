@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BKIG | Boston Korea Investment Group{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" type="image/jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <!-- Mobile nav full-screen overlay (fintech style) -->
+  <div id="mobile-nav-overlay" class="mobile-nav-overlay fixed inset-0 z-[150] opacity-0 invisible transition-[opacity,visibility] duration-300 ease-out" aria-hidden="true">
+    <div class="mobile-nav-inner flex flex-col h-full pb-44">
+      <!-- Header: logo + close -->
+      <header class="flex items-center justify-between px-5 py-4 shrink-0">
+        <a href="{{ url_for('index') }}" class="logo-link flex items-center" aria-label="BKIG 홈">
+          <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="" class="h-10 w-auto object-contain">
+        </a>
+        <button type="button" id="mobile-nav-close" class="mobile-nav-close flex items-center justify-center w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] rounded-full text-white hover:bg-white/15 transition-colors touch-manipulation" aria-label="메뉴 닫기">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <!-- Center: menu list (scrollable on small screens, centered on large) -->
+      <nav class="mobile-nav-list flex-1 min-h-0 overflow-y-auto flex flex-col" aria-label="메인 메뉴">
+        <div class="min-h-full flex flex-col justify-center px-6 py-6">
+        <ul class="space-y-1 text-center">
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('index') }}#home" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">Home</a></li>
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('about') }}" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">About us</a></li>
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('people') }}" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">Our People</a></li>
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('research') }}" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">Research</a></li>
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('activity') }}" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">Activity</a></li>
+          <li class="mobile-nav-item opacity-0 translate-y-4">
+            <div class="mobile-nav-accordion">
+              <button type="button" id="mobile-join-trigger" class="mobile-nav-accordion-trigger w-full py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all text-center" aria-expanded="false" aria-controls="mobile-join-panel">
+                Join us
+              </button>
+              <div id="mobile-join-panel" class="mobile-nav-accordion-panel overflow-hidden" role="region" aria-labelledby="mobile-join-trigger">
+                <div class="bg-white/5 rounded-lg mt-1 ml-4 mr-4 pl-4 py-2 space-y-0.5">
+                  <a href="{{ url_for('join_us') }}" class="block py-2.5 text-lg text-slate-400 hover:text-white transition-colors">Analyst Application</a>
+                  <a href="{{ url_for('partnership') }}" class="block py-2.5 text-lg text-slate-400 hover:text-white transition-colors">Partnerships</a>
+                  <a href="{{ url_for('donation') }}" class="block py-2.5 text-lg text-slate-400 hover:text-white transition-colors">Donation</a>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('contact') }}" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">Contact us</a></li>
+          <li class="mobile-nav-item opacity-0 translate-y-4"><a href="{{ url_for('terminal.terminal_page') }}" class="block py-3 text-2xl font-light text-white/95 hover:text-white hover:font-medium transition-all">Terminal</a></li>
+        </ul>
+        </div>
+      </nav>
+      <!-- Footer: social + Contact Us (fixed to bottom) -->
+      <div class="mobile-nav-footer absolute bottom-10 left-0 right-0 flex flex-col items-center gap-5 px-6">
+        <div class="flex items-center gap-6" role="navigation" aria-label="소셜 미디어">
+          <a href="https://www.linkedin.com/company/boston-korea-ig/posts/?feedView=all" target="_blank" rel="noopener noreferrer" class="text-white hover:text-white/90 transition-colors p-3 rounded-full hover:bg-white/10" aria-label="LinkedIn">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+          <a href="https://www.instagram.com/bostonkoreaig/" target="_blank" rel="noopener noreferrer" class="text-white hover:text-white/90 transition-colors p-3 rounded-full hover:bg-white/10" aria-label="Instagram">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+        </div>
+        <a href="{{ url_for('contact') }}" id="mobile-nav-contact-btn" class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-slate-900 font-medium text-base hover:bg-white/95 transition-colors">
+          Contact Us
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Search Modal (Cmd+K style) -->
+  <div id="search-modal" class="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-0 hidden" role="dialog" aria-modal="true" aria-label="검색" aria-hidden="true">
+    <div id="search-modal-overlay" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="relative max-w-2xl w-full mt-24 bg-white rounded-xl shadow-2xl overflow-hidden z-10">
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+        <span class="text-slate-400 shrink-0" aria-hidden="true">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input type="search" id="search-input" class="flex-1 min-w-0 py-2.5 text-lg text-slate-900 placeholder-slate-400 bg-transparent border-none focus:outline-none focus:ring-0" placeholder="Search pages, research, or people... (영문/한글 검색)" autocomplete="off" aria-label="Search">
+        <span class="text-slate-400 text-xs shrink-0 hidden sm:inline">ESC to close</span>
+      </div>
+      <div id="search-results-container" class="max-h-[min(60vh,400px)] overflow-y-auto hidden">
+        <ul id="search-results" class="py-2"></ul>
+      </div>
+      <div id="search-no-results" class="hidden py-8 px-5 text-center text-slate-500 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- Terminal Login Modal (Modern Financial Terminal) -->
+  <div id="terminal-modal" class="terminal-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0e17]/90 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="terminal-modal-title" aria-hidden="true">
+    <div class="terminal-modal-grid-pattern" aria-hidden="true"></div>
+    <div class="terminal-modal-box relative max-w-md w-full bg-slate-900/95 border border-blue-500/30 rounded-lg shadow-lg shadow-blue-500/10">
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 px-6 pt-6 pb-4 border-b border-slate-700/50">
+        <div>
+          <h2 id="terminal-modal-title" class="text-base font-semibold tracking-wide text-white uppercase">BKIG TERMINAL ACCESS</h2>
+          <p class="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
+            SYSTEM ONLINE
+          </p>
+        </div>
+        <button type="button" class="terminal-modal-close flex items-center justify-center w-9 h-9 rounded text-slate-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50" aria-label="닫기">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Form (기본 표시) -->
+      <div id="terminal-form-state">
+        <form class="px-6 py-6" action="#" method="post" id="terminal-login-form">
+          <div class="space-y-5">
+            <div>
+              <label for="terminal-analyst-id" class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Analyst ID</label>
+              <input type="text" id="terminal-analyst-id" name="analyst_id" placeholder="Enter ID" autocomplete="username" class="terminal-input w-full px-4 py-3 rounded-md bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500/50 transition-colors" />
+            </div>
+            <div>
+              <label for="terminal-password" class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Password</label>
+              <input type="password" id="terminal-password" name="password" placeholder="••••••••" autocomplete="current-password" class="terminal-input w-full px-4 py-3 rounded-md bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500/50 transition-colors" />
+              <p id="terminal-login-error" class="text-red-400 text-sm mt-2 hidden" role="alert"></p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-4">
+            <button type="submit" class="terminal-connect-btn w-full py-3.5 rounded-md font-semibold text-sm uppercase tracking-wider text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-200">
+              Connect
+            </button>
+            <p class="text-center text-xs text-slate-500">Forgot credentials? Contact admin.</p>
+            <div class="flex justify-center items-center gap-1.5 mt-6" aria-label="Technology partner">
+              <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span class="text-xs text-slate-500 font-medium tracking-wide">Powered by <span class="text-blue-400/80">FACCTing Technology</span></span>
+            </div>
+          </div>
+        </form>
+      </div>
+      <!-- Connecting 상태: 3초 스피너 + 문구 (금융 터미널 스타일) -->
+      <div id="terminal-connecting-state" class="hidden px-6 py-10 text-center" aria-live="polite" aria-busy="true">
+        <div class="terminal-connecting-spinner mx-auto mb-5" aria-hidden="true"></div>
+        <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">Connecting to the Terminal</p>
+        <p class="mt-1 text-[11px] text-slate-500 tracking-widest">Authenticating session</p>
+        <div class="flex justify-center items-center gap-1.5 mt-8" aria-label="Technology partner">
+          <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          <span class="text-xs text-slate-500 font-medium tracking-wide">Powered by <span class="text-blue-400/80">FACCTing Technology</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <header class="header">
+    <a href="{{ url_for('index') }}" class="logo-link">
+      <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="Boston Korea Investment Group" class="logo-img">
+    </a>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}#home" class="nav-link">Home</a>
+      <a href="{{ url_for('about') }}" class="nav-link">About us</a>
+      <a href="{{ url_for('people') }}" class="nav-link">Our People</a>
+      <a href="{{ url_for('research') }}" class="nav-link">Research</a>
+      <a href="{{ url_for('activity') }}" class="nav-link">Activity</a>
+      <div class="nav-dropdown">
+        <button type="button" class="nav-link nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="nav-join-menu" id="nav-join-trigger">Join us</button>
+        <div class="nav-dropdown-menu" id="nav-join-menu" role="menu" aria-labelledby="nav-join-trigger">
+          <a href="{{ url_for('join_us') }}" class="nav-dropdown-item" role="menuitem">Analyst Application</a>
+          <a href="{{ url_for('partnership') }}" class="nav-dropdown-item" role="menuitem">Partnerships</a>
+          <a href="{{ url_for('donation') }}" class="nav-dropdown-item" role="menuitem">Donation</a>
+        </div>
+      </div>
+      <a href="{{ url_for('contact') }}" class="nav-link">Contact us</a>
+      <a href="{{ url_for('terminal.terminal_page') }}" class="nav-link">Terminal</a>
+      <button type="button" class="nav-search" aria-label="검색">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+      </button>
+    </nav>
+    <button type="button" class="menu-toggle" aria-label="메뉴 열기">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <a href="{{ url_for('index') }}" class="footer-logo-link" aria-label="BKIG 홈으로 이동">
+            <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="" class="footer-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="footer-logo-text" aria-hidden="true">BKIG</span>
+          </a>
+          <p class="footer-slogan">Connecting Seoul & Boston</p>
+          <div class="footer-social" role="navigation" aria-label="소셜 미디어">
+            <a href="https://www.linkedin.com/company/boston-korea-ig/posts/?feedView=all" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="LinkedIn 열기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="https://www.instagram.com/bostonkoreaig/" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Instagram 열기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-title footer-title--bold" id="footer-about">About</h4>
+          <ul class="footer-links" aria-labelledby="footer-about">
+            <li><a href="{{ url_for('about') }}" class="footer-link">Our Story</a></li>
+            <li><a href="{{ url_for('people') }}" class="footer-link">People</a></li>
+            <li><a href="{{ url_for('join_us') }}" class="footer-link">Careers (Join us)</a></li>
+            <li><a href="{{ url_for('contact') }}" class="footer-link">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-title footer-title--bold" id="footer-divisions">Divisions</h4>
+          <ul class="footer-links" aria-labelledby="footer-divisions">
+            <li><a href="{{ url_for('people') }}" class="footer-link">Equity Research</a></li>
+            <li><a href="{{ url_for('people') }}" class="footer-link">Investment</a></li>
+            <li><a href="{{ url_for('people') }}" class="footer-link">Case Competition</a></li>
+            <li><a href="{{ url_for('people') }}" class="footer-link">PD/PR</a></li>
+          </ul>
+        </div>
+        <div class="footer-col footer-subscribe">
+          <h4 class="footer-title" id="footer-subscribe">Subscribe</h4>
+          <form class="footer-form" action="#" method="post" aria-labelledby="footer-subscribe" aria-label="뉴스레터 이메일 구독">
+            <label for="footer-email" class="visually-hidden">이메일</label>
+            <input type="email" id="footer-email" name="email" placeholder="Your email" class="footer-input" required aria-label="구독할 이메일 주소">
+            <button type="submit" class="footer-submit" aria-label="구독하기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-inner">
+        <span class="footer-copy">© 2026 BKIG. All rights reserved.</span>
+        <div class="footer-legal">
+          <a href="{{ url_for('privacy_policy') }}" class="footer-legal-link" aria-label="Privacy Policy">Privacy Policy</a>
+          <span class="footer-legal-sep" aria-hidden="true">|</span>
+          <a href="{{ url_for('terms_of_use') }}" class="footer-legal-link" aria-label="Terms of Use">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+  <script>
+  (function() {
+    'use strict';
+    var searchModal = document.getElementById('search-modal');
+    var searchOverlay = document.getElementById('search-modal-overlay');
+    var searchInput = document.getElementById('search-input');
+    var resultsContainer = document.getElementById('search-results-container');
+    var resultsList = document.getElementById('search-results');
+    var noResultsEl = document.getElementById('search-no-results');
+    var navSearchBtn = document.querySelector('.nav-search');
+
+    var searchIndex = [
+      { title: 'Home', titleKo: '홈', url: '/', description: 'Boston Korea Investment Group — connecting Seoul & Boston.', descriptionKo: '보스턴 코리아 투자 그룹 — 서울과 보스턴을 연결합니다.', keywords: ['home', '홈', '메인', 'main', 'bkig', '보스턴', 'boston', 'korea', '한국'] },
+      { title: 'About Us', titleKo: '소개', url: '/about', description: 'Our mission, story, and key metrics.', descriptionKo: '미션, 스토리, 핵심 지표.', keywords: ['about', '어바웃', '소개', '미션', 'mission', 'story', '스토리', '회사', '기업', 'heritage', '설립'] },
+      { title: 'Our People', titleKo: '구성원', url: '/people', description: 'Meet the minds behind BKIG. Organizational chart and team.', descriptionKo: 'BKIG를 이끄는 멤버들. 조직도 및 팀 소개.', keywords: ['people', 'team', '팀', '조직도', '멤버', '팀원', 'our people', '인물', 'founder', '회장', '리드', 'lead', 'analyst', '애널리스트'] },
+      { title: 'Research & Insights', titleKo: '리서치', url: '/research', description: 'In-depth equity research and industry analysis.', descriptionKo: '주식·산업 분석 및 리서치 보고서.', keywords: ['research', '리서치', '보고서', '분석', 'insight', '주식', 'equity', '산업', 'industry', 'report', 'pdf', 'zscaler', 'chevron', '현대'] },
+      { title: 'Activity', titleKo: '액티비티', url: '/activity', description: 'Investment activities, case competitions, and events.', descriptionKo: '투자 활동, 케이스 경쟁, 이벤트.', keywords: ['activity', '액티비티', '활동', '투자', 'investment', 'case', '케이스', '경쟁', 'competition', '이벤트', 'event'] },
+      { title: 'Join Us — Analyst Application', titleKo: '지원하기 — 애널리스트 신청', url: '/join_us', description: 'Apply to become a BKIG analyst. Recruitment and eligibility.', descriptionKo: 'BKIG 애널리스트로 지원하기. 모집 및 자격 요건.', keywords: ['join', 'join us', '지원', '신청', 'apply', '애널리스트', 'analyst', 'recruit', '채용', '모집', 'application', 'eligibility'] },
+      { title: 'Partnerships', titleKo: '파트너십', url: '/partnership', description: 'Partner with BKIG. Strategic alliances and collaboration.', descriptionKo: 'BKIG와 제휴하기. 전략적 협력 및 파트너십.', keywords: ['partnership', '파트너십', '제휴', 'partner', '협력', 'collaboration', 'faccting', 'facct'] },
+      { title: 'Donation', titleKo: '기부', url: '/donation', description: 'Support BKIG through donation.', descriptionKo: '기부로 BKIG를 후원하기.', keywords: ['donation', '기부', '후원', 'donate', 'support', '기부금'] },
+      { title: 'Contact Us', titleKo: '문의하기', url: '/contact', description: 'Get in touch with the BKIG team.', descriptionKo: 'BKIG 팀에 연락하기.', keywords: ['contact', '연락', '문의', 'contact us', '이메일', 'email', '문의하기'] },
+      { title: 'Terminal', titleKo: '터미널', url: '/terminal', description: 'BKIG Terminal access for authorized analysts.', descriptionKo: '승인된 애널리스트용 BKIG 터미널 접속.', keywords: ['terminal', '터미널', '로그인', 'login', 'analyst access', 'faccting'] },
+      { title: 'Terms of Use', titleKo: '이용약관', url: '/terms-of-use', description: 'Terms of use and legal information.', descriptionKo: '이용약관 및 법적 안내.', keywords: ['terms', 'terms of use', '이용약관', '약관', 'legal', '법적'] },
+      { title: 'Privacy Policy', titleKo: '개인정보처리방침', url: '/privacy-policy', description: 'Privacy policy and data practices.', descriptionKo: '개인정보 처리 방침 및 데이터 이용.', keywords: ['privacy', 'policy', '개인정보', '프라이버시', 'privacy policy', '데이터'] }
+    ];
+
+    function hasKorean(str) {
+      return /[\uAC00-\uD7A3]/.test(str || '');
+    }
+
+    function openSearchModal() {
+      if (!searchModal) return;
+      searchModal.classList.remove('hidden');
+      searchModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
+      renderResults([]);
+    }
+
+    function closeSearchModal() {
+      if (!searchModal) return;
+      searchModal.classList.add('hidden');
+      searchModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function matches(query, item) {
+      var q = query.toLowerCase().trim();
+      if (!q) return false;
+      var t = (item.title || '').toLowerCase();
+      var d = (item.description || '').toLowerCase();
+      if (t.includes(q) || d.includes(q)) return true;
+      var kw = item.keywords || [];
+      for (var i = 0; i < kw.length; i++) {
+        if (String(kw[i]).toLowerCase().includes(q) || q.includes(String(kw[i]).toLowerCase())) return true;
+      }
+      return false;
+    }
+
+    function renderResults(items) {
+      if (!resultsList || !resultsContainer || !noResultsEl) return;
+      var query = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
+      var useKo = hasKorean(query);
+      resultsList.innerHTML = '';
+      if (items.length === 0) {
+        resultsContainer.classList.add('hidden');
+        noResultsEl.textContent = query ? (useKo ? "'" + query + "'에 대한 검색 결과가 없습니다." : "No results found for '" + query + "'.") : '';
+        noResultsEl.classList.toggle('hidden', !query);
+        return;
+      }
+      noResultsEl.classList.add('hidden');
+      resultsContainer.classList.remove('hidden');
+      items.forEach(function(item) {
+        var displayTitle = useKo && item.titleKo ? item.titleKo : item.title;
+        var displayDesc = useKo && item.descriptionKo ? item.descriptionKo : item.description;
+        var li = document.createElement('li');
+        var a = document.createElement('a');
+        a.href = item.url;
+        a.className = 'flex flex-col gap-0.5 px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer';
+        a.innerHTML = '<span class="font-semibold text-slate-900">' + escapeHtml(displayTitle) + '</span><span class="text-sm text-slate-500">' + escapeHtml(displayDesc) + '</span>';
+        a.addEventListener('click', function(e) {
+          closeSearchModal();
+        });
+        li.appendChild(a);
+        resultsList.appendChild(li);
+      });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function runSearch() {
+      var query = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
+      if (!query) {
+        renderResults([]);
+        return;
+      }
+      var filtered = searchIndex.filter(function(item) { return matches(query, item); });
+      renderResults(filtered);
+    }
+
+    if (navSearchBtn) {
+      navSearchBtn.addEventListener('click', function() {
+        openSearchModal();
+      });
+    }
+    if (searchOverlay) {
+      searchOverlay.addEventListener('click', closeSearchModal);
+    }
+    if (searchInput) {
+      searchInput.addEventListener('keyup', runSearch);
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeSearchModal();
+        }
+      });
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && searchModal && !searchModal.classList.contains('hidden')) {
+        closeSearchModal();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (searchModal && searchModal.classList.contains('hidden')) {
+          openSearchModal();
+        }
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

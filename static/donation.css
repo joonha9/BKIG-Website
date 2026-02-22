@@ -1,0 +1,10 @@
+/* Donation page */
+
+.donation-page {
+  min-height: 100vh;
+}
+
+.donation-page .donation-metric,
+.donation-page .font-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+}

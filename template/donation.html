@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Donation | BKIG{% endblock %}
+{% block head %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='donation.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="donation-page">
+  <!-- Hero -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="{{ url_for('static', filename='images/donation.png') }}"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Support Our Mission
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Empower the next generation of financial leaders.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 1: Impact Metrics -->
+  <section id="donation-content" class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="impact-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-12 sm:gap-8">
+        <div class="text-center">
+          <p class="donation-metric font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight">$150,000+</p>
+          <p class="mt-2 text-slate-600 text-sm font-medium uppercase tracking-widest">Total Raised</p>
+          <span class="block mt-3 mx-auto w-16 border-b border-yellow-500/30"></span>
+        </div>
+        <div class="text-center">
+          <p class="donation-metric font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight">120+</p>
+          <p class="mt-2 text-slate-600 text-sm font-medium uppercase tracking-widest">Total Donors</p>
+          <span class="block mt-3 mx-auto w-16 border-b border-yellow-500/30"></span>
+        </div>
+        <div class="text-center">
+          <p class="donation-metric font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight">45+</p>
+          <p class="mt-2 text-slate-600 text-sm font-medium uppercase tracking-widest">Scholarships Given</p>
+          <span class="block mt-3 mx-auto w-16 border-b border-yellow-500/30"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Hall of Fame -->
+  <section class="bg-slate-50 py-16 sm:py-20 md:py-24" aria-labelledby="hall-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <h2 id="hall-title" class="text-2xl sm:text-3xl md:text-4xl font-serif font-semibold text-slate-900 text-center mb-14 md:mb-20">
+        The Wall of Honor
+      </h2>
+
+      <div class="space-y-14 md:space-y-20">
+        <div>
+          <h3 class="text-sm font-medium text-yellow-600 uppercase tracking-widest text-center mb-8">Tier 1 — Diamond Club ($5,000+)</h3>
+          <div class="flex flex-wrap justify-center gap-x-12 gap-y-4">
+            <span class="font-serif text-xl sm:text-2xl text-slate-900">Patron A</span>
+            <span class="font-serif text-xl sm:text-2xl text-slate-900">Patron B</span>
+            <span class="font-serif text-xl sm:text-2xl text-slate-900">Patron C</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-yellow-600 uppercase tracking-widest text-center mb-8">Tier 2 — Platinum Contributors ($1,000+)</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <span class="font-serif text-lg text-slate-800">Contributor One</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Two</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Three</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Four</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Five</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Six</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-yellow-600 uppercase tracking-widest text-center mb-8">Tier 3 — Gold Supporters</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-4 text-center">
+            <span class="font-serif text-slate-700">Supporter 1</span>
+            <span class="font-serif text-slate-700">Supporter 2</span>
+            <span class="font-serif text-slate-700">Supporter 3</span>
+            <span class="font-serif text-slate-700">Supporter 4</span>
+            <span class="font-serif text-slate-700">Supporter 5</span>
+            <span class="font-serif text-slate-700">Supporter 6</span>
+            <span class="font-serif text-slate-700">Supporter 7</span>
+            <span class="font-serif text-slate-700">Supporter 8</span>
+            <span class="font-serif text-slate-700">Supporter 9</span>
+            <span class="font-serif text-slate-700">Supporter 10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Action Area -->
+  <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="action-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div>
+          <h2 id="action-title" class="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900 mb-6">
+            Leave Your Legacy.
+          </h2>
+          <p class="text-slate-600 text-lg leading-relaxed">
+            Your contribution directly empowers the next generation of analysts to compete on the global stage.
+          </p>
+        </div>
+        <div class="bg-slate-900 rounded-xl p-8 sm:p-10 shadow-xl">
+          <div class="text-center">
+            <p class="text-white/90 text-sm uppercase tracking-widest mb-6">Support BKIG</p>
+            <a href="#donate-form" class="inline-block w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-slate-900 bg-white border-2 border-yellow-500 hover:bg-yellow-50 transition-colors text-center">
+              Become a Patron (기부하기)
+            </a>
+            <p class="mt-6">
+              <a href="#corporate" class="text-yellow-500/90 text-sm hover:text-yellow-400 underline underline-offset-2 transition-colors">
+                Corporate Sponsorship Inquiry
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='js/donation.js') }}"></script>
+{% endblock %}

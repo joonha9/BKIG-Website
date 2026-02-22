@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% block title %}Join Us | BKIG{% endblock %}
+{% block head %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='join.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="join-us-page">
+  <!-- A. Hero: 사진 배경 + 네이비 오버레이 -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="{{ url_for('static', filename='images/join_us.png') }}"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Bridging Markets, Defining Futures
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Join the premier investment group in Boston.
+      </p>
+    </div>
+  </section>
+
+  <!-- B. Main Content: 밝은 배경 -->
+  <div class="bg-white text-slate-800">
+    <div class="max-w-5xl mx-auto px-4 py-12 sm:py-16 md:py-24">
+      <!-- B-1. Who We Look For: 흰색 카드 + 호버 -->
+      <section id="who-we-look-for" class="scroll-mt-24 mb-16 md:mb-24">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-8 md:mb-12 flex items-center gap-2">
+          <span class="w-1 h-8 bg-blue-600 rounded-full"></span>
+          Who We Look For
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div class="join-card bg-white rounded-xl p-6 md:p-8 shadow-md border border-slate-100 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-500/50">
+            <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-blue-600" aria-hidden="true">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">Passion</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Deep interest in financial markets and valuation.</p>
+          </div>
+          <div class="join-card bg-white rounded-xl p-6 md:p-8 shadow-md border border-slate-100 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-500/50">
+            <div class="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4 text-amber-600" aria-hidden="true">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">Logic</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Analytical thinking based on data and fundamentals.</p>
+          </div>
+          <div class="join-card bg-white rounded-xl p-6 md:p-8 shadow-md border border-slate-100 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-500/50">
+            <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-blue-600" aria-hidden="true">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">Commitment</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Dedication to grow with the team for 2+ semesters.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- B-2. Eligibility: 2-column (Required | Not Required) -->
+      <section id="eligibility" class="scroll-mt-24 mb-16 md:mb-24">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-8 flex items-center gap-2">
+          <span class="w-1 h-8 bg-amber-500 rounded-full"></span>
+          Eligibility & Requirements
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12">
+          <!-- Left: Required (Eligibility & Requirements) -->
+          <div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-4">Required</h3>
+            <p class="text-slate-600 text-sm mb-5">We welcome students in the <strong class="text-slate-900">Greater Boston area</strong>.</p>
+            <ul class="space-y-4">
+              <li class="flex gap-3 items-start">
+                <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </span>
+                <div>
+                  <span class="text-slate-700 text-sm font-medium block">Undergraduate/Graduate students in the Greater Boston area.</span>
+                  <span class="text-slate-500 text-sm mt-1 block">We operate primarily offline to foster close networking and teamwork.</span>
+                </div>
+              </li>
+              <li class="flex gap-3 items-start">
+                <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </span>
+                <div>
+                  <span class="text-slate-700 text-sm font-medium block">Available for weekly offline sessions (Saturdays).</span>
+                  <span class="text-slate-500 text-sm mt-1 block">Sessions focus on pitch presentations, debates, and education.</span>
+                </div>
+              </li>
+              <li class="flex gap-3 items-start">
+                <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </span>
+                <div>
+                  <span class="text-slate-700 text-sm font-medium block">Commitment for at least 2 consecutive semesters.</span>
+                  <span class="text-slate-500 text-sm mt-1 block">Consistency is key to mastering our rigorous investment curriculum.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <!-- Right: Not Required (No need – reassuring tone) -->
+          <div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-4">Not Required</h3>
+            <p class="text-slate-500 text-sm mb-5">No prior experience needed — we focus on potential.</p>
+            <ul class="space-y-4">
+              <li class="flex gap-3 items-start">
+                <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-500" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </span>
+                <div>
+                  <span class="text-slate-700 text-sm font-medium block">Specific Major (Business/Finance)</span>
+                  <span class="text-slate-500 text-sm mt-1 block">We welcome diverse backgrounds (Engineering, Arts, etc.).</span>
+                </div>
+              </li>
+              <li class="flex gap-3 items-start">
+                <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-500" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </span>
+                <div>
+                  <span class="text-slate-700 text-sm font-medium block">Advanced Accounting/Finance Knowledge</span>
+                  <span class="text-slate-500 text-sm mt-1 block">Our curriculum covers everything from the basics.</span>
+                </div>
+              </li>
+              <li class="flex gap-3 items-start">
+                <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-500" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </span>
+                <div>
+                  <span class="text-slate-700 text-sm font-medium block">Previous Internship Experience</span>
+                  <span class="text-slate-500 text-sm mt-1 block">We value potential and passion over a perfect resume.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- B-3. Recruitment Process: The Active Pipeline -->
+      <section id="process" class="scroll-mt-24 mb-16 md:mb-24">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-12 md:mb-16 flex items-center justify-center gap-2">
+          <span class="w-1 h-8 bg-blue-600 rounded-full"></span>
+          Recruitment Process
+        </h2>
+        <div class="relative max-w-4xl mx-auto">
+          <!-- Background track + progress bar (선은 뒤쪽) -->
+          <div class="hidden md:block absolute top-[2.25rem] left-0 right-0 h-1 bg-slate-200 rounded-full overflow-hidden z-0" aria-hidden="true">
+            <div id="timeline-fill" class="h-full bg-blue-900 rounded-full timeline-fill origin-left" style="width: 0%"></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative z-10">
+            <div class="process-step flex flex-col md:items-center text-center group">
+              <div class="process-node relative z-10 w-16 h-16 rounded-full border-2 border-blue-800 bg-white flex items-center justify-center mx-auto mb-5 md:mb-6 shadow-sm transition-all duration-300 group-hover:bg-blue-700 group-hover:border-blue-700">
+                <svg class="process-node-icon w-7 h-7 text-blue-800 transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <div class="transition-all duration-300 group-hover:-translate-y-1">
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-slate-800">Application Review</h3>
+                <p class="text-slate-500 text-sm max-w-xs mx-auto">We review your application and background.</p>
+              </div>
+            </div>
+            <div class="process-step flex flex-col md:items-center text-center group">
+              <div class="process-node relative z-10 w-16 h-16 rounded-full border-2 border-blue-800 bg-white flex items-center justify-center mx-auto mb-5 md:mb-6 shadow-sm transition-all duration-300 group-hover:bg-blue-700 group-hover:border-blue-700">
+                <svg class="process-node-icon w-7 h-7 text-blue-800 transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              </div>
+              <div class="transition-all duration-300 group-hover:-translate-y-1">
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-slate-800">Fit Interview</h3>
+                <p class="text-slate-500 text-sm max-w-xs mx-auto">Discuss fit and expectations with the team.</p>
+              </div>
+            </div>
+            <div class="process-step flex flex-col md:items-center text-center group">
+              <div class="process-node relative z-10 w-16 h-16 rounded-full border-2 border-blue-800 bg-white flex items-center justify-center mx-auto mb-5 md:mb-6 shadow-sm transition-all duration-300 group-hover:bg-blue-700 group-hover:border-blue-700">
+                <svg class="process-node-icon w-7 h-7 text-blue-800 transition-colors duration-300 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="transition-all duration-300 group-hover:-translate-y-1">
+                <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-slate-800">Final Decision</h3>
+                <p class="text-slate-500 text-sm max-w-xs mx-auto">Welcome to BKIG.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- C. CTA: The Execution Point -->
+  <section id="apply" class="scroll-mt-24 relative bg-slate-950 overflow-hidden py-20 md:py-28">
+    <!-- Spotlight: radial gradient -->
+    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(80vw,480px)] h-64 bg-blue-500/10 rounded-full blur-[80px]"></div>
+      <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-amber-500/5 rounded-full blur-[60px]"></div>
+    </div>
+    <!-- Financial decors: grid + crosshairs -->
+    <div class="absolute inset-0 pointer-events-none opacity-[0.06]" aria-hidden="true">
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.4)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.4)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+      <span class="absolute left-1/2 top-1/3 -translate-x-1/2 w-8 h-px bg-blue-400/30"></span>
+      <span class="absolute left-1/2 bottom-1/3 -translate-x-1/2 w-8 h-px bg-blue-400/30"></span>
+      <span class="absolute left-1/3 top-1/2 -translate-y-1/2 w-px h-8 bg-blue-400/30"></span>
+      <span class="absolute right-1/3 top-1/2 -translate-y-1/2 w-px h-8 bg-blue-400/30"></span>
+    </div>
+    <div class="relative z-10 max-w-2xl mx-auto px-4 text-center">
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">Ready to Make Your Mark?</h2>
+      <p class="text-slate-400 text-base sm:text-lg mb-12 md:mb-14 max-w-lg mx-auto leading-relaxed">The market moves fast. Start your journey with BKIG today.</p>
+      <a
+        href="#apply-modal"
+        id="apply-now-btn"
+        class="cta-execute-btn inline-flex items-center justify-center gap-2 w-full md:w-auto px-12 py-4 rounded-lg border border-blue-500/50 backdrop-blur-sm bg-white/5 text-white font-semibold text-base md:text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-950"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+      >
+        <span>Apply Now</span>
+        <span class="cta-execute-arrow inline-block transition-transform duration-300">→</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Apply Modal -->
+  <div id="apply-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" aria-labelledby="apply-modal-title" role="dialog">
+    <!-- Overlay (click to close) -->
+    <div id="apply-modal-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+
+    <!-- Container (click does not close) -->
+    <div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" id="apply-modal-box">
+      <!-- Header -->
+      <div class="sticky top-0 bg-white border-b border-slate-200 px-5 py-3 rounded-t-2xl flex items-start justify-between gap-4">
+        <div>
+          <h2 id="apply-modal-title" class="text-lg sm:text-xl font-bold text-slate-900">Apply to BKIG</h2>
+          <p class="text-slate-500 text-xs mt-0.5">Join our network of future financial leaders.</p>
+        </div>
+        <button type="button" id="apply-modal-close" class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" aria-label="Close modal">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form class="px-5 pb-5 pt-4 space-y-3" action="#" method="post">
+        <!-- 2-Column inputs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label for="apply-name" class="block text-xs font-medium text-slate-700 mb-0.5">Name</label>
+            <input type="text" id="apply-name" name="name" required placeholder="Your name" class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+          </div>
+          <div>
+            <label for="apply-email" class="block text-xs font-medium text-slate-700 mb-0.5">Email</label>
+            <input type="email" id="apply-email" name="email" required placeholder="you@example.com" class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+          </div>
+          <div>
+            <label for="apply-school" class="block text-xs font-medium text-slate-700 mb-0.5">School</label>
+            <input type="text" id="apply-school" name="school" required placeholder="University name" class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+          </div>
+          <div>
+            <label for="apply-major" class="block text-xs font-medium text-slate-700 mb-0.5">Major</label>
+            <input type="text" id="apply-major" name="major" placeholder="Your major" class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+          </div>
+          <div class="sm:col-span-2">
+            <label for="apply-grade" class="block text-xs font-medium text-slate-700 mb-0.5">Grade</label>
+            <select id="apply-grade" name="grade" required class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white">
+              <option value="">Select grade</option>
+              <option value="freshman">Freshman</option>
+              <option value="sophomore">Sophomore</option>
+              <option value="junior">Junior</option>
+              <option value="senior">Senior</option>
+              <option value="graduate">Graduate</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Preferred Division: radio cards -->
+        <div>
+          <p class="text-xs font-medium text-slate-700 mb-1.5">Preferred Division</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <label class="apply-division-card apply-division-tooltip cursor-pointer rounded-lg border-2 border-slate-200 p-2.5 text-center transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 hover:border-slate-300" data-tooltip="Company analysis, industry research, and written reports.">
+              <input type="radio" name="division" value="equity_research" class="sr-only peer" id="apply-division-er">
+              <span class="block text-xs font-medium text-slate-800">Equity Research</span>
+            </label>
+            <label class="apply-division-card apply-division-tooltip cursor-pointer rounded-lg border-2 border-slate-200 p-2.5 text-center transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 hover:border-slate-300" data-tooltip="Portfolio management, deal flow, and investment execution.">
+              <input type="radio" name="division" value="investment" class="sr-only peer" id="apply-division-inv">
+              <span class="block text-xs font-medium text-slate-800">Investment</span>
+            </label>
+            <label class="apply-division-card apply-division-tooltip cursor-pointer rounded-lg border-2 border-slate-200 p-2.5 text-center transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 hover:border-slate-300" data-tooltip="Case studies, competitions, and team-based analysis.">
+              <input type="radio" name="division" value="case_competition" class="sr-only peer" id="apply-division-cc">
+              <span class="block text-xs font-medium text-slate-800">Case Competition</span>
+            </label>
+            <label class="apply-division-card apply-division-tooltip cursor-pointer rounded-lg border-2 border-slate-200 p-2.5 text-center transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 hover:border-slate-300" data-tooltip="Website and Instagram management, marketing, and communications.">
+              <input type="radio" name="division" value="pd_pr" class="sr-only peer" id="apply-division-pdpr">
+              <span class="block text-xs font-medium text-slate-800">PD/PR</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Resume upload: drop zone -->
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-0.5">Resume</label>
+          <div class="relative group">
+            <input type="file" id="apply-resume" name="resume" accept=".pdf,application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div class="apply-dropzone border-2 border-dashed border-slate-200 rounded-lg p-3 text-center group-hover:bg-slate-50 transition-colors">
+              <svg class="w-6 h-6 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <p class="text-slate-600 text-xs font-medium">Click to upload or drag and drop (PDF)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="space-y-2 pt-0">
+          <button type="submit" class="w-full py-2.5 text-sm rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700 focus:ring-offset-2">
+            Submit Application
+          </button>
+          <p class="text-center">
+            <button type="button" id="apply-modal-cancel" class="text-slate-500 text-sm hover:text-slate-700 transition-colors">Cancel</button>
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+(function() {
+  var page = document.querySelector('.join-us-page');
+  if (!page) return;
+
+  // Timeline: 각 스텝 호버 시에만 해당까지 선이 차오름, 호버 해제 시 0%
+  var fill = document.getElementById('timeline-fill');
+  var steps = page.querySelectorAll('#process .process-step');
+  if (!fill || !steps.length) return;
+
+  steps.forEach(function(step, index) {
+    var widthPercent = ((index + 1) / 3) * 100;
+    step.addEventListener('mouseenter', function() {
+      fill.style.width = widthPercent + '%';
+    });
+  });
+
+  var processBlock = document.getElementById('process');
+  if (processBlock) {
+    processBlock.addEventListener('mouseleave', function() {
+      fill.style.width = '0%';
+    });
+  }
+
+  // Apply modal: open / close
+  var applyModal = document.getElementById('apply-modal');
+  var applyBtn = document.getElementById('apply-now-btn');
+  var applyClose = document.getElementById('apply-modal-close');
+  var applyCancel = document.getElementById('apply-modal-cancel');
+  var applyOverlay = document.getElementById('apply-modal-overlay');
+  var applyBox = document.getElementById('apply-modal-box');
+
+  function openApplyModal() {
+    if (applyModal) {
+      applyModal.classList.remove('hidden');
+      if (applyBtn) applyBtn.setAttribute('aria-expanded', 'true');
+    }
+  }
+  function closeApplyModal() {
+    if (applyModal) {
+      applyModal.classList.add('hidden');
+      if (applyBtn) applyBtn.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      openApplyModal();
+    });
+  }
+  if (applyClose) applyClose.addEventListener('click', closeApplyModal);
+  if (applyCancel) applyCancel.addEventListener('click', closeApplyModal);
+  if (applyOverlay) applyOverlay.addEventListener('click', closeApplyModal);
+  if (applyBox) {
+    applyBox.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+  }
+})();
+</script>
+{% endblock %}

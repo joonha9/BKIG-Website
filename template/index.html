@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <main class="hero" id="home">
+    <div class="hero-background" role="img" aria-label="배경"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-chart" aria-hidden="true">
+      <svg class="living-graph-svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="chart-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
+            <stop offset="40%" stop-color="rgba(210,225,255,0.9)"/>
+            <stop offset="70%" stop-color="rgba(255,245,220,0.9)"/>
+            <stop offset="100%" stop-color="rgba(255,250,235,0.85)"/>
+          </linearGradient>
+          <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Glow layer -->
+        <path class="chart-line chart-line-glow" fill="none" stroke="url(#chart-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#chart-glow)" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
+        <!-- Main line -->
+        <path class="chart-line chart-line-main" fill="none" stroke="url(#chart-line-gradient)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
+        <!-- Nodes at peaks -->
+        <circle class="chart-node" cx="150" cy="260" r="1.25"/>
+        <circle class="chart-node" cx="400" cy="220" r="1.25"/>
+        <circle class="chart-node" cx="620" cy="200" r="1.25"/>
+        <circle class="chart-node" cx="750" cy="120" r="1.25"/>
+        <circle class="chart-node" cx="1000" cy="40" r="1.25"/>
+      </svg>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title">BKIG Discovers Value</h1>
+      <p class="hero-subtitle">서울과 보스턴을 잇는 금융의 가교, BKIG가 새로운 가치를 발견합니다.</p>
+      <a href="{{ url_for('about') }}" class="hero-cta">About us</a>
+    </div>
+  </main>
+
+  <section class="core-divisions" id="divisions" aria-labelledby="core-divisions-title">
+    <div class="core-divisions-inner">
+      <h2 id="core-divisions-title" class="core-divisions-title">Core Divisions <span class="core-divisions-sub">핵심 활동</span></h2>
+      <div class="core-divisions-grid">
+        <article class="core-divisions-card">
+          <div class="core-divisions-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+              <path d="M8 11h6M11 8v6"></path>
+            </svg>
+          </div>
+          <h3 class="core-divisions-card-title">Equity Research Team</h3>
+          <p class="core-divisions-card-desc">Conducting in-depth fundamental analysis and publishing industry reports.</p>
+          <a href="{{ url_for('people') }}" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
+        </article>
+        <article class="core-divisions-card">
+          <div class="core-divisions-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"></path>
+              <path d="m7 14 4-4 4 4 5-5"></path>
+              <path d="M11 10v4"></path>
+            </svg>
+          </div>
+          <h3 class="core-divisions-card-title">Investment Team</h3>
+          <p class="core-divisions-card-desc">Managing active portfolios with disciplined investment strategies.</p>
+          <a href="{{ url_for('people') }}" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
+        </article>
+        <article class="core-divisions-card">
+          <div class="core-divisions-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 14c-1.5 0-2.5-.5-3-1.5S2.5 9 4 8"></path>
+              <path d="M18 14c1.5 0 2.5-.5 3-1.5s.5-3.5-1-4.5"></path>
+              <path d="M4 12h16"></path>
+              <path d="M10 12c0 2.2 1.8 4 4 4s4-1.8 4-4"></path>
+            </svg>
+          </div>
+          <h3 class="core-divisions-card-title">Case Competition Team</h3>
+          <p class="core-divisions-card-desc">Analyzing complex M&A scenarios and valuation modeling.</p>
+          <a href="{{ url_for('people') }}" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="participating-universities" id="universities" aria-labelledby="universities-title">
+    <h2 id="universities-title" class="participating-universities-title">Participating Universities</h2>
+    <p class="alumni-placement-sub">Bringing together top talent from Boston's premier institutions.</p>
+    <div class="participating-universities-mask">
+      <div class="participating-universities-track" aria-hidden="true">
+        <div class="participating-universities-set">
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/bc.png') }}" alt="Boston College" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/bu.png') }}" alt="Boston University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/neu.png') }}" alt="Northeastern University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/tufts.png') }}" alt="Tufts University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/cmu.png') }}" alt="Carnegie Mellon University" width="140" height="72"></div>
+        </div>
+        <div class="participating-universities-set" aria-hidden="true">
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/bc.png') }}" alt="Boston College" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/bu.png') }}" alt="Boston University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/neu.png') }}" alt="Northeastern University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/tufts.png') }}" alt="Tufts University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/cmu.png') }}" alt="Carnegie Mellon University" width="140" height="72"></div>
+        </div>
+        <div class="participating-universities-set" aria-hidden="true">
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/bc.png') }}" alt="Boston College" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/bu.png') }}" alt="Boston University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/neu.png') }}" alt="Northeastern University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/tufts.png') }}" alt="Tufts University" width="140" height="72"></div>
+          <div class="participating-universities-logo"><img src="{{ url_for('static', filename='images/cmu.png') }}" alt="Carnegie Mellon University" width="140" height="72"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alumni-placement" id="alumni" aria-labelledby="alumni-placement-title">
+    <div class="alumni-placement-inner">
+      <h2 id="alumni-placement-title" class="alumni-placement-title">Global Career Impact</h2>
+      <p class="alumni-placement-sub">BKIG alumni are shaping the future of finance at world-leading firms.</p>
+      <div class="alumni-placement-grid">
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/mckinsey.png') }}" alt="McKinsey & Company" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/bcg.png') }}" alt="BCG" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/bain.png') }}" alt="Bain & Company" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/samsung.png') }}" alt="Samsung Securities" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/korea.png') }}" alt="한국투자증권" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/kiwoom.png') }}" alt="키움증권" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/nh.png') }}" alt="NH투자증권" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/pwc.png') }}" alt="PWC" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/kpmg.png') }}" alt="KPMG" width="120" height="40"></div>
+        <div class="alumni-placement-item"><img src="{{ url_for('static', filename='images/ey.png') }}" alt="EY" width="120" height="40"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="join-contact" id="join" aria-labelledby="join-contact-title">
+    <h2 id="join-contact-title" class="join-contact-title">Ready to Shape the Future?</h2>
+    <div class="join-contact-grid">
+      <a href="{{ url_for('join_us') }}" class="join-contact-card" aria-labelledby="join-card-student-title">
+        <div class="join-contact-card-inner">
+          <span class="join-contact-card-label">For Students</span>
+          <h3 id="join-card-student-title" class="join-contact-card-title">Become an Analyst</h3>
+          <p class="join-contact-card-desc">Join our rigorous training program and investment teams. We recruit every semester.</p>
+          <span class="join-contact-card-cta">View Recruitment Info <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+      <a href="{{ url_for('partnership') }}" class="join-contact-card" aria-labelledby="join-card-partner-title">
+        <div class="join-contact-card-inner">
+          <span class="join-contact-card-label">For Partners</span>
+          <h3 id="join-card-partner-title" class="join-contact-card-title">Partner with Us</h3>
+          <p class="join-contact-card-desc">Connect with top talent in Boston and Seoul. We welcome corporate collaborations.</p>
+          <span class="join-contact-card-cta">Contact Executive Team <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+      <a href="{{ url_for('donation') }}" class="join-contact-card" aria-labelledby="join-card-donor-title">
+        <div class="join-contact-card-inner">
+          <span class="join-contact-card-label">For Donors</span>
+          <h3 id="join-card-donor-title" class="join-contact-card-title">Support Our Mission</h3>
+          <p class="join-contact-card-desc">Empower the next generation of financial leaders through your generous support.</p>
+          <span class="join-contact-card-cta">Make a Donation <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>
+  </section>
+{% endblock %}

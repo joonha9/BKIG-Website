@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Partnership | BKIG{% endblock %}
+{% block head %}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='partnership.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="partnership-page">
+  <!-- Hero: partnership.png 배경 + 네이비 오버레이 -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="{{ url_for('static', filename='images/partnership.png') }}"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Partner with Us
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Connect with top talent in Boston and Seoul.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 1: Why Partner with BKIG? -->
+  <section id="partnership-content" class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="why-partner-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <h2 id="why-partner-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-12 md:mb-16">Why Partner with BKIG?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.242-4.243 9.094 9.094 0 00-.479 3.741M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">Access to Top Talent</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Boston–Seoul bilingual talent pool with strong financial acumen.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">In-Depth Research</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Custom industry and company analysis reports tailored to your needs.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0h.5a2.5 2.5 0 002.5-2.5V3.935M12 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">Global Network</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Strong alumni network connecting practitioners and students.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Strategic Tech Partner - FACCTing -->
+  <section class="bg-gradient-to-b from-slate-50 to-white py-16 sm:py-20 md:py-24" aria-labelledby="faccting-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div>
+          <p class="text-blue-600 text-sm font-semibold uppercase tracking-wider mb-3">Powered by Technology</p>
+          <h2 id="faccting-title" class="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-6">Strategic Alliance with <span class="text-blue-600">FACCTing</span></h2>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            BKIG utilizes FACCTing's advanced financial modeling and valuation tools to produce professional-grade equity research. We bridge academic theory with practical data analytics.
+          </p>
+          <div class="inline-flex items-center gap-2 px-4 py-2 mt-4 rounded-lg bg-blue-50 border border-blue-100/50 mb-8" role="status" aria-label="Technology partner">
+            <svg class="w-4 h-4 shrink-0 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+            <span class="text-blue-800 text-sm font-semibold tracking-wide">Website &amp; Terminal Powered by FACCTing</span>
+          </div>
+          <a href="https://faccting.com" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">
+            Learn about FACCTing
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+        <div class="flex justify-center">
+          <div class="w-full max-w-md rounded-xl bg-slate-200 border border-slate-300 shadow-2xl overflow-hidden p-4 sm:p-5">
+            <img
+              src="{{ url_for('static', filename='images/faccting.png') }}"
+              alt="FACCTing platform"
+              class="w-full aspect-video object-cover rounded-lg border-2 border-slate-400"
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Collaboration Models -->
+  <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="collab-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <h2 id="collab-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-12 md:mb-16">How We Collaborate</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div class="border border-slate-200 rounded-xl p-6 md:p-8 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+          <h3 class="text-lg font-semibold text-slate-900 mb-3">Talent Pipeline</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Internship and full-time recruitment programs tailored to your firm.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 md:p-8 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+          <h3 class="text-lg font-semibold text-slate-900 mb-3">Sponsored Research</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Sector or stock-specific research projects commissioned by your company.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 md:p-8 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+          <h3 class="text-lg font-semibold text-slate-900 mb-3">Event Partnership</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Networking nights, case competition sponsorship, and judging opportunities.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Let's Connect -->
+  <section class="bg-slate-900 py-16 sm:py-20 md:py-24" aria-labelledby="connect-title">
+    <div class="max-w-2xl mx-auto px-6 sm:px-8 text-center">
+      <h2 id="connect-title" class="text-2xl sm:text-3xl font-bold text-white mb-6">Ready to collaborate?</h2>
+      <a href="#contact" class="inline-block px-8 py-4 rounded-lg bg-white text-slate-900 font-semibold hover:bg-slate-100 transition-colors">
+        Contact Executive Team
+      </a>
+      <p class="mt-8 text-slate-400 text-sm">
+        <a href="mailto:partners@bkig.org" class="text-slate-300 hover:text-white underline underline-offset-2">partners@bkig.org</a>
+      </p>
+    </div>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='js/partnership.js') }}"></script>
+{% endblock %}

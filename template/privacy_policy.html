@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy | BKIG{% endblock %}
+{% block head %}
+  <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
+{% block content %}
+<main class="legal-page">
+  <!-- Hero: privacy.png 배경 + 네이비 오버레이 (다른 페이지와 동일) -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="{{ url_for('static', filename='images/privacy.png') }}"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Privacy Policy
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Last Updated: February 2026
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Content: Crisp Corporate White (배경 밝게, 2열 레이아웃) -->
+  <div id="legal-content" class="bg-white">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 py-20 px-6 sm:px-8">
+      <!-- Left: Sticky Table of Contents -->
+      <aside class="md:w-[25%] shrink-0" aria-label="Table of contents">
+        <nav class="md:sticky md:top-32 border-l border-slate-200 pl-6 space-y-1">
+          <a href="#scope" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="scope">1. Scope</a>
+          <a href="#information-we-collect" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="information-we-collect">2. Information We Collect</a>
+          <a href="#how-we-use-information" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="how-we-use-information">3. How We Use Information</a>
+          <a href="#data-security" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="data-security">4. Data Security</a>
+          <a href="#contact" class="legal-toc-link block py-2.5 text-sm text-slate-500 hover:text-slate-700 border-l-2 border-transparent -ml-[1px] pl-4 transition-colors" data-section="contact">5. Contact</a>
+        </nav>
+      </aside>
+
+      <!-- Right: Legal Document Body -->
+      <div class="flex-1 min-w-0 max-w-3xl">
+        <article>
+          <section id="scope" class="scroll-mt-32 mt-16 first:mt-0">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">1. Scope</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              This Privacy Policy describes how Boston Korea Investment Group (“BKIG”) collects, uses, and protects information when you visit our website or use our services. By using this website, you consent to the practices described in this policy.
+            </p>
+          </section>
+
+          <section id="information-we-collect" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">2. Information We Collect</h2>
+            <p class="text-slate-600 text-base leading-loose mb-4">
+              We may collect information you provide directly, such as name, email address, and school affiliation when you apply to join BKIG or contact us. We may also automatically collect certain technical information when you visit our website, including IP address, browser type, and usage data.
+            </p>
+            <p class="text-slate-600 text-base leading-loose">
+              Access to the BKIG Terminal and certain member areas may require authentication. Account credentials and usage within those areas are processed in accordance with this policy and our Terms of Use.
+            </p>
+          </section>
+
+          <section id="how-we-use-information" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">3. How We Use Information</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              We use the information we collect to operate our organization, communicate with members and applicants, improve our website and services, and comply with legal obligations. We do not sell your personal information to third parties. We may share information with service providers who assist us in operating our website and activities, subject to confidentiality obligations.
+            </p>
+          </section>
+
+          <section id="data-security" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">4. Data Security</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. No method of transmission over the Internet or electronic storage is completely secure; we encourage you to use strong credentials and to contact us if you have concerns about your data.
+            </p>
+          </section>
+
+          <section id="contact" class="scroll-mt-32 mt-16">
+            <h2 class="text-slate-900 text-2xl font-bold mb-6">5. Contact</h2>
+            <p class="text-slate-600 text-base leading-loose">
+              For questions about this Privacy Policy or our data practices, please contact us at <a href="mailto:contact@bkig.org" class="text-slate-900 font-medium underline underline-offset-2 hover:no-underline">contact@bkig.org</a> or through the contact form on our website.
+            </p>
+          </section>
+        </article>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+(function() {
+  var tocLinks = document.querySelectorAll('.legal-toc-link');
+
+  function setActiveFromHash() {
+    var hash = (window.location.hash || '').replace('#', '');
+    tocLinks.forEach(function(link) {
+      var section = link.getAttribute('data-section');
+      if (section === hash) {
+        link.classList.add('text-slate-900', 'font-semibold', 'border-blue-600');
+        link.classList.remove('text-slate-500', 'border-transparent');
+      } else {
+        link.classList.remove('text-slate-900', 'font-semibold', 'border-blue-600');
+        link.classList.add('text-slate-500', 'border-transparent');
+      }
+    });
+  }
+
+  window.addEventListener('hashchange', setActiveFromHash);
+  setActiveFromHash();
+})();
+</script>
+{% endblock %}

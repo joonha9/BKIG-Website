@@ -1,0 +1,48 @@
+/* People page */
+
+.people-page {
+  min-height: 100vh;
+}
+
+/* Org chart card: metallic texture + fade-in */
+.org-card {
+  animation: people-fade-in 0.4s ease forwards;
+  /* Brushed metal gradient: light top-left, darker bottom-right */
+  background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 40%, #cbd5e1 100%);
+  border-left: 1px solid rgba(148, 163, 184, 0.7);
+  border-right: 1px solid rgba(148, 163, 184, 0.7);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.7);
+  /* Top edge uses Tailwind school color; metallic bevel + drop shadow */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 4px 14px rgba(15, 23, 42, 0.12);
+}
+
+.org-card:hover {
+  background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 35%, #cbd5e1 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+@keyframes people-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Division description panel: visible state for slide-down / fade-in */
+.division-description-panel.visible {
+  max-height: 320px;
+  opacity: 1;
+}
+
+.division-description-panel:not(.visible) {
+  max-height: 0;
+  opacity: 0;
+}

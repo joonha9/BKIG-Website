@@ -1,0 +1,554 @@
+/* BKIG — Modern, clean, finance aesthetic */
+:root {
+  --color-bg-overlay: rgba(8, 12, 24, 0.75);
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.88);
+  --color-border: rgba(255, 255, 255, 0.35);
+  --color-border-hover: rgba(255, 255, 255, 0.6);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --header-height: 72px;
+  --transition: 0.25s ease;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--color-text);
+  background: #0a0e1a;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--header-height) 1.5rem 2rem;
+}
+
+.hero-background {
+  position: absolute;
+  inset: 0;
+  background-image: url('images/bkig_background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-overlay);
+  z-index: 1;
+}
+
+/* Living Graph — Boston to Seoul chart */
+.hero-chart {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.living-graph-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.chart-line {
+  stroke-dasharray: 1300;
+  stroke-dashoffset: 1300;
+  animation: chart-draw 2.4s ease-out forwards;
+}
+
+.chart-line-glow {
+  stroke-dashoffset: 1300;
+  animation: chart-draw 2.4s ease-out 0.15s forwards;
+  opacity: 0.15;
+}
+
+.chart-line-main {
+  stroke-dashoffset: 1300;
+  animation: chart-draw 2.2s ease-out 0.08s forwards;
+  opacity: 0.25;
+}
+
+@keyframes chart-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.chart-node {
+  fill: rgba(255, 255, 255, 0.95);
+  opacity: 0;
+  transform-origin: center;
+  animation: node-appear 0.45s ease-out forwards, node-sparkle 2.2s ease-in-out 2.6s infinite;
+}
+
+.chart-node:nth-child(4) { animation-delay: 0.85s, 2.6s; }
+.chart-node:nth-child(5) { animation-delay: 1.3s, 2.6s; }
+.chart-node:nth-child(6) { animation-delay: 1.7s, 2.6s; }
+.chart-node:nth-child(7) { animation-delay: 2.05s, 2.6s; }
+.chart-node:nth-child(8) { animation-delay: 2.35s, 2.6s; }
+
+@keyframes node-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes node-sparkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  max-width: 720px;
+}
+
+.hero-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.hero-subtitle {
+  margin: 0 0 2rem;
+  font-size: clamp(0.9375rem, 2vw, 1.125rem);
+  font-weight: 400;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+.hero-cta {
+  display: inline-block;
+  padding: 0.875rem 2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+}
+
+.hero-cta:hover {
+  border-color: var(--color-border-hover);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Core Divisions — 핵심 활동 */
+.core-divisions {
+  background: #0f172a;
+  padding: 4.5rem 2rem 5rem;
+}
+
+.core-divisions-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.core-divisions-title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 0 0 0.35em;
+  text-align: center;
+}
+
+.core-divisions-sub {
+  display: block;
+  font-size: 0.65em;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+}
+
+.core-divisions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-top: 2.5rem;
+}
+
+.core-divisions-card {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 1.75rem 1.5rem;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.core-divisions-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.core-divisions-icon {
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 1rem;
+  line-height: 0;
+}
+
+.core-divisions-card-title {
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.core-divisions-card-desc {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 1.25rem;
+  flex-grow: 1;
+}
+
+.core-divisions-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: color var(--transition), gap var(--transition);
+}
+
+.core-divisions-link:hover {
+  color: var(--color-text);
+  gap: 0.5rem;
+}
+
+/* Participating Universities — 무한 마키 */
+.participating-universities {
+  background: #ffffff;
+  padding: 10rem 0 12rem;
+}
+
+.participating-universities-title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  text-align: center;
+  margin: 0 0 0.25rem;
+}
+
+.participating-universities .alumni-placement-sub {
+  margin-bottom: 2.25rem;
+}
+
+.participating-universities-mask {
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
+}
+
+.participating-universities-track {
+  display: flex;
+  width: max-content;
+  animation: universities-marquee 40s linear infinite;
+  will-change: transform;
+  gap: 0;
+}
+
+.participating-universities-set {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5rem;
+  flex-shrink: 0;
+  padding: 0 2rem;
+  min-width: fit-content;
+}
+
+.participating-universities-logo {
+  flex-shrink: 0;
+  width: 140px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.participating-universities-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+@keyframes universities-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+/* Alumni Placement — 졸업생 진출 기업 (Minimal bordered grid) */
+.alumni-placement {
+  background: #ffffff;
+  padding: 5rem 2rem 9rem;
+}
+
+.alumni-placement-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.alumni-placement-title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  text-align: center;
+  margin: 0 0 0.25rem;
+}
+
+.alumni-placement-sub {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0 0 2.25rem;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.alumni-placement-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2.5rem 3rem;
+}
+
+.alumni-placement-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alumni-placement-item img {
+  width: 100%;
+  max-width: 160px;
+  height: 88px;
+  object-fit: contain;
+  object-position: center;
+  transition: transform 0.25s ease;
+}
+
+.alumni-placement-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Join Us / Contact — Layered on slate-50 */
+.join-contact {
+  background: #f8fafc;
+  padding: 5rem 2rem 6rem;
+}
+
+.join-contact-title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #334155;
+  text-align: center;
+  margin: 0 0 2.5rem;
+}
+
+.join-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .join-contact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .join-contact-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.join-contact-card {
+  display: block;
+  text-decoration: none;
+  background: #ffffff;
+  border: none;
+  border-radius: 1rem;
+  padding: 2rem 1.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.join-contact-card:hover {
+  background: #0f172a;
+  color: #ffffff;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.join-contact-card:hover .join-contact-card-label,
+.join-contact-card:hover .join-contact-card-title,
+.join-contact-card:hover .join-contact-card-desc,
+.join-contact-card:hover .join-contact-card-cta {
+  color: #ffffff;
+}
+
+.join-contact-card:hover .join-contact-card-arrow {
+  transform: translateX(4px);
+}
+
+.join-contact-card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 200px;
+}
+
+.join-contact-card-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.join-contact-card-title {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.join-contact-card-desc {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #475569;
+  margin: 0 0 auto;
+  padding-bottom: 1rem;
+  transition: color 0.3s ease;
+}
+
+.join-contact-card-cta {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: color 0.3s ease;
+}
+
+.join-contact-card-arrow {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .core-divisions-grid {
+    grid-template-columns: 1fr;
+    margin-top: 2rem;
+  }
+
+  .core-divisions {
+    padding: 3.5rem 1.25rem 4rem;
+  }
+
+  .participating-universities {
+    padding: 7rem 0 9rem;
+  }
+
+  .participating-universities-title {
+    margin-bottom: 2.25rem;
+  }
+
+  .participating-universities-set {
+    gap: 2rem;
+    padding: 0 1.25rem;
+  }
+
+  .participating-universities-logo {
+    width: 110px;
+    height: 56px;
+  }
+
+  .alumni-placement {
+    padding: 3.5rem 1.25rem 6rem;
+  }
+
+  .alumni-placement-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem 1.5rem;
+  }
+
+  .alumni-placement-item img {
+    max-height: 56px;
+    max-width: 140px;
+  }
+
+  .join-contact {
+    padding: 3.5rem 1.25rem 4.5rem;
+  }
+
+  .join-contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
