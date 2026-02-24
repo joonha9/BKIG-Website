@@ -232,27 +232,27 @@ def api_logout():
 # Dashboard API (시장 데이터, 워치리스트, 업무, 미팅)
 # ---------------------------------------------------------------------------
 def _user_watchlist_symbols(user_id):
-    """유저의 저장된 티커 리스트 (최대 3개). 없으면 기본 지수."""
+    """유저의 저장된 티커 리스트 (최대 6개). 없으면 기본 지수."""
     if not user_id:
         return None
     user = User.query.get(user_id)
     if not user or not getattr(user, "watchlist", None):
         return None
-    parts = [s.strip().upper() for s in (user.watchlist or "").split(",") if s.strip()][:3]
+    parts = [s.strip().upper() for s in (user.watchlist or "").split(",") if s.strip()][:6]
     return parts if parts else None
 
 
 @terminal_bp.route("/api/watchlist", methods=["GET", "PATCH"])
 @login_required_api
 def api_watchlist():
-    """GET: 내가 저장한 티커 3개. PATCH: 저장 (body: {"symbols": ["AAPL", "TSLA", "MSFT"]})."""
+    """GET: 내가 저장한 티커 최대 6개. PATCH: 저장 (body: {"symbols": ["AAPL", "TSLA", ...]})."""
     user_obj = User.query.get(session.get(SESSION_USER_ID))
     if not user_obj:
         return jsonify({"error": "Unauthorized"}), 401
 
     if request.method == "GET":
         raw = getattr(user_obj, "watchlist", None) or ""
-        symbols = [s.strip().upper() for s in raw.split(",") if s.strip()][:3]
+        symbols = [s.strip().upper() for s in raw.split(",") if s.strip()][:6]
         return jsonify({"symbols": symbols})
 
     if request.method == "PATCH":
@@ -260,7 +260,7 @@ def api_watchlist():
         symbols = data.get("symbols")
         if not isinstance(symbols, list):
             return jsonify({"error": "Bad request", "message": "symbols array required"}), 400
-        symbols = [str(s).strip().upper() for s in symbols if str(s).strip()][:3]
+        symbols = [str(s).strip().upper() for s in symbols if str(s).strip()][:6]
         user_obj.watchlist = ",".join(symbols) if symbols else None
         db.session.commit()
         return jsonify({"symbols": symbols})

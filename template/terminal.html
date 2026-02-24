@@ -39,6 +39,11 @@
             Portfolio
           </button>
         </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-watchlist">
+            Watchlist
+          </button>
+        </li>
         {% if current_user.role == 'super_admin' %}
         <li>
           <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-amber-400/90 hover:bg-amber-500/10 hover:text-amber-300 transition-all duration-200" data-view="view-admin">
@@ -264,10 +269,57 @@
       </div>
     </section>
 
-    <!-- view-portfolio: FACCTing 연동 포트폴리오 + Trading Panel + Journal -->
-    <section id="view-portfolio" class="flex-1 overflow-y-auto bkig-scroll p-6 bg-slate-900 text-slate-200 hidden">
+    <!-- view-portfolio: FACCTing 연동 포트폴리오 + Trading Panel + Journal (로고와 겹치지 않도록 상·우 여백) -->
+    <section id="view-portfolio" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-6 px-6 pr-24 bg-slate-900 text-slate-200 hidden">
       <div id="portfolio-root" class="max-w-full font-mono text-sm">
         <!-- Auth / Dashboard injected by terminal.js -->
+      </div>
+    </section>
+
+    <!-- view-watchlist: 데이터 밀도 높은 테이블 (Bloomberg/Capital IQ 스타일), 로고와 겹치지 않도록 상·우 여백 -->
+    <section id="view-watchlist" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-4 px-4 pr-24 bg-slate-900 text-slate-200 hidden">
+      <div id="watchlist-widget" class="max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+        <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-700/80">
+          <h2 class="text-base font-semibold text-slate-200">Watchlist (관심 종목)</h2>
+          <button type="button" id="watchlist-widget-edit-btn" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors" title="관심 종목 편집">편집</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse" style="font-size: 12px;">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-700/80">
+                <th class="text-left font-medium py-1.5 px-2 w-[1%] whitespace-nowrap">Ticker</th>
+                <th class="text-right font-medium py-1.5 px-2 tabular-nums whitespace-nowrap">Last</th>
+                <th class="text-right font-medium py-1.5 px-2 tabular-nums whitespace-nowrap">Chg</th>
+                <th class="text-right font-medium py-1.5 px-2 tabular-nums whitespace-nowrap">Chg %</th>
+                <th class="text-right font-medium py-1.5 px-2 tabular-nums whitespace-nowrap">Vol</th>
+                <th class="text-left font-medium py-1.5 px-2 whitespace-nowrap" style="min-width: 80px;">52W Range</th>
+              </tr>
+            </thead>
+            <tbody id="watchlist-tbody">
+              <tr class="border-b border-slate-700/50">
+                <td colspan="6" class="py-4 px-2 text-center text-slate-500 text-xs">로딩 중…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- S&P 500 Sector Heatmap (SPDR ETF 프록시, Finviz 스타일 트리맵) -->
+      <div id="sector-heatmap-widget" class="mt-4 max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+        <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-700/80">
+          <h2 class="text-base font-semibold text-slate-200">S&amp;P 500 Sector Heatmap</h2>
+          <span class="text-xs text-slate-500">시가총액 비중 기준 · SPDR Sector ETF</span>
+        </div>
+        <div id="sector-heatmap-container" class="p-1.5 min-h-[240px]" style="display: flex; flex-wrap: wrap; gap: 2px;"></div>
+        <div id="sector-heatmap-tooltip" class="fixed z-50 hidden px-2 py-1.5 rounded text-xs font-medium bg-slate-800 border border-slate-600 text-slate-100 shadow-xl pointer-events-none" style="font-size: 11px; max-width: 220px;"></div>
+      </div>
+      <!-- KOSPI Sector Heatmap (섹터 비중·등락률 Mock, 동일 트리맵) -->
+      <div id="kospi-heatmap-widget" class="mt-4 max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+        <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-700/80">
+          <h2 class="text-base font-semibold text-slate-200">KOSPI Sector Heatmap</h2>
+          <span class="text-xs text-slate-500">시가총액 비중 기준 · 섹터 프록시</span>
+        </div>
+        <div id="kospi-heatmap-container" class="p-1.5 min-h-[240px]" style="display: flex; flex-wrap: wrap; gap: 2px;"></div>
+        <div id="kospi-heatmap-tooltip" class="fixed z-50 hidden px-2 py-1.5 rounded text-xs font-medium bg-slate-800 border border-slate-600 text-slate-100 shadow-xl pointer-events-none" style="font-size: 11px; max-width: 220px;"></div>
       </div>
     </section>
 
@@ -423,25 +475,19 @@
     </div>
   </div>
 
-  <!-- Dashboard: 자주 보는 티커 설정 (Live Market, 최대 3개) -->
+  <!-- Watchlist 모달: 관심 종목 최대 6개 (Live Market + Portfolio Watchlist 공용) -->
   <div id="watchlist-modal" class="fixed inset-0 z-40 hidden" aria-hidden="true">
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-4" id="watchlist-modal-backdrop">
-      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
-        <h3 class="text-lg font-semibold text-white mb-1">자주 보는 티커</h3>
-        <p class="text-slate-400 text-sm mb-4">S&amp;P 500, NASDAQ, KOSPI는 항상 표시됩니다. 그 아래에 보일 추가 종목을 최대 3개 입력하세요.</p>
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">관심 종목 (Watchlist)</h3>
+        <p class="text-slate-400 text-sm mb-4">최대 6개 티커를 입력하세요. Dashboard Live Market과 Portfolio 관심 종목에 반영됩니다.</p>
         <form id="watchlist-form" class="space-y-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">티커 1</label>
-            <input type="text" id="watchlist-symbol-1" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: AAPL" maxlength="10">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">티커 2</label>
-            <input type="text" id="watchlist-symbol-2" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: TSLA" maxlength="10">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">티커 3</label>
-            <input type="text" id="watchlist-symbol-3" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: MSFT" maxlength="10">
-          </div>
+          <div><label class="block text-xs font-medium text-slate-400 mb-1">티커 1</label><input type="text" id="watchlist-symbol-1" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: AAPL" maxlength="10"></div>
+          <div><label class="block text-xs font-medium text-slate-400 mb-1">티커 2</label><input type="text" id="watchlist-symbol-2" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: TSLA" maxlength="10"></div>
+          <div><label class="block text-xs font-medium text-slate-400 mb-1">티커 3</label><input type="text" id="watchlist-symbol-3" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: MSFT" maxlength="10"></div>
+          <div><label class="block text-xs font-medium text-slate-400 mb-1">티커 4</label><input type="text" id="watchlist-symbol-4" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: PL" maxlength="10"></div>
+          <div><label class="block text-xs font-medium text-slate-400 mb-1">티커 5</label><input type="text" id="watchlist-symbol-5" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: NVDA" maxlength="10"></div>
+          <div><label class="block text-xs font-medium text-slate-400 mb-1">티커 6</label><input type="text" id="watchlist-symbol-6" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 uppercase" placeholder="예: GOOGL" maxlength="10"></div>
         </form>
         <div class="mt-4 flex justify-end gap-2">
           <button type="button" id="watchlist-modal-cancel" class="px-4 py-2 rounded-md text-sm text-slate-400 hover:bg-slate-700/50">Cancel</button>

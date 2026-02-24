@@ -16,9 +16,7 @@
       section.classList.add('hidden');
     });
     const target = document.getElementById(viewId);
-    if (target) {
-      target.classList.remove('hidden');
-    }
+    if (target) target.classList.remove('hidden');
 
     document.querySelectorAll('.bkig-nav-item').forEach(function (btn) {
       btn.classList.remove.apply(btn.classList, ACTIVE_NAV_CLASSES);
@@ -27,20 +25,19 @@
       }
     });
 
-    if (viewId === 'view-admin') {
-      loadAdminUsers();
-    }
+    if (viewId === 'view-admin') loadAdminUsers();
     if (viewId === 'view-dashboard') {
       loadMarketData();
       loadDashboardTasks();
       loadDashboardMeetings();
     }
-    if (viewId === 'view-portfolio') {
-      loadPortfolioView();
+    if (viewId === 'view-portfolio') loadPortfolioView();
+    if (viewId === 'view-watchlist') {
+      if (typeof renderWatchlistWidget === 'function') renderWatchlistWidget();
+      if (typeof renderSectorHeatmap === 'function') renderSectorHeatmap();
+      if (typeof renderKospiSectorHeatmap === 'function') renderKospiSectorHeatmap();
     }
-    if (viewId === 'view-profile') {
-      loadProfileView();
-    }
+    if (viewId === 'view-profile') loadProfileView();
   }
 
   function initTabRouting() {
@@ -96,19 +93,15 @@
   }
 
   async function loadWatchlist() {
-    var s1 = document.getElementById('watchlist-symbol-1');
-    var s2 = document.getElementById('watchlist-symbol-2');
-    var s3 = document.getElementById('watchlist-symbol-3');
-    if (!s1 || !s2 || !s3) return;
+    var inputs = [1, 2, 3, 4, 5, 6].map(function (i) { return document.getElementById('watchlist-symbol-' + i); });
+    if (inputs.some(function (el) { return !el; })) return;
     try {
       var res = await fetch('/api/watchlist');
       var data = await res.json().catch(function () { return { symbols: [] }; });
       var sym = (data && data.symbols) ? data.symbols : [];
-      s1.value = sym[0] || '';
-      s2.value = sym[1] || '';
-      s3.value = sym[2] || '';
+      inputs.forEach(function (el, i) { el.value = sym[i] || ''; });
     } catch (e) {
-      s1.value = s2.value = s3.value = '';
+      inputs.forEach(function (el) { el.value = ''; });
     }
   }
 
@@ -130,11 +123,9 @@
   }
 
   async function saveWatchlist() {
-    var s1 = document.getElementById('watchlist-symbol-1');
-    var s2 = document.getElementById('watchlist-symbol-2');
-    var s3 = document.getElementById('watchlist-symbol-3');
-    if (!s1 || !s2 || !s3) return;
-    var symbols = [s1.value.trim().toUpperCase(), s2.value.trim().toUpperCase(), s3.value.trim().toUpperCase()].filter(Boolean);
+    var inputs = [1, 2, 3, 4, 5, 6].map(function (i) { return document.getElementById('watchlist-symbol-' + i); });
+    if (inputs.some(function (el) { return !el; })) return;
+    var symbols = inputs.map(function (el) { return (el.value || '').trim().toUpperCase(); }).filter(Boolean);
     try {
       var res = await fetch('/api/watchlist', {
         method: 'PATCH',
@@ -145,12 +136,257 @@
       if (res.ok) {
         closeWatchlistModal();
         loadMarketData();
+        if (typeof renderWatchlistWidget === 'function') renderWatchlistWidget();
       } else {
         alert(data.message || data.error || '저장에 실패했습니다.');
       }
     } catch (e) {
       alert('네트워크 오류. 다시 시도해 주세요.');
     }
+  }
+
+  function _watchlistEsc(s) {
+    if (s == null || s === '') return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function _watchlistFormatVol(v) {
+    if (v == null || isNaN(v) || v === 0) return '—';
+    var n = Number(v);
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return String(Math.round(n));
+  }
+  function _watchlist52wPct(hist, currentPrice) {
+    if (!hist || !hist.length || currentPrice == null || isNaN(currentPrice)) return null;
+    var lows = hist.map(function (d) { return d.low != null ? Number(d.low) : null; }).filter(function (v) { return v != null; });
+    var highs = hist.map(function (d) { return d.high != null ? Number(d.high) : null; }).filter(function (v) { return v != null; });
+    if (!lows.length || !highs.length) return null;
+    var low52 = Math.min.apply(null, lows);
+    var high52 = Math.max.apply(null, highs);
+    if (high52 <= low52) return 50;
+    var pct = ((currentPrice - low52) / (high52 - low52)) * 100;
+    return Math.max(0, Math.min(100, pct));
+  }
+  async function renderWatchlistWidget() {
+    var tbody = document.getElementById('watchlist-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr class="border-b border-slate-700/50"><td colspan="6" class="py-2 px-2 text-center text-slate-500 text-xs">로딩 중…</td></tr>';
+    var symbols = [];
+    try {
+      var res = await fetch('/api/watchlist');
+      var data = await res.json().catch(function () { return { symbols: [] }; });
+      symbols = (data && data.symbols) ? data.symbols : [];
+    } catch (e) {}
+    if (!symbols.length) {
+      tbody.innerHTML = '<tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors"><td colspan="6" class="py-3 px-2 text-center text-slate-500 text-xs">관심 종목이 없습니다. <button type="button" class="text-cyan-400 hover:underline ml-1">편집</button>을 클릭해 종목을 추가하세요.</td></tr>';
+      var btn = tbody.querySelector('button');
+      if (btn) btn.addEventListener('click', openWatchlistModal);
+      return;
+    }
+    var rows = [];
+    var fetches = symbols.map(function (ticker) {
+      return fetch('/api/tools/profile/' + encodeURIComponent(ticker) + '?period=1Y').then(function (r) { return r.json(); }).then(function (json) {
+        var profile = (json && json.profile) ? json.profile : {};
+        var hist = (json && json.historical) ? json.historical : [];
+        var companyName = profile.companyName || profile.company_name || profile.name || '';
+        var last = profile.price != null ? Number(profile.price) : null;
+        if (last == null && hist.length > 0) {
+          var lastCandle = hist[hist.length - 1];
+          last = lastCandle.close != null ? Number(lastCandle.close) : lastCandle.price != null ? Number(lastCandle.price) : null;
+        }
+        var chgPct = profile.changesPercentage != null ? Number(profile.changesPercentage) : null;
+        if (chgPct == null && hist.length >= 2 && last != null) {
+          var prev = hist[hist.length - 2];
+          var prevClose = prev.close != null ? Number(prev.close) : prev.price != null ? Number(prev.price) : null;
+          if (prevClose != null && prevClose !== 0) chgPct = ((last - prevClose) / prevClose) * 100;
+        }
+        var chg = profile.change != null ? Number(profile.change) : null;
+        if (chg == null && last != null && chgPct != null) chg = (last * chgPct) / 100;
+        var vol = null;
+        if (hist.length > 0 && hist[hist.length - 1].volume != null) vol = hist[hist.length - 1].volume;
+        if (vol == null && profile.vol != null) vol = profile.vol;
+        if (vol == null && profile.volume != null) vol = profile.volume;
+        var pct52 = _watchlist52wPct(hist, last);
+        return { ticker: ticker, companyName: companyName, last: last, chg: chg, chgPct: chgPct, vol: vol, pct52: pct52 };
+      }).catch(function () {
+        return { ticker: ticker, companyName: '', last: null, chg: null, chgPct: null, vol: null, pct52: null };
+      });
+    });
+    try {
+      rows = await Promise.all(fetches);
+    } catch (e) {}
+    var html = '';
+    var isUp = function (v) { return v != null && Number(v) >= 0; };
+    var chgClass = function (v) { return v != null && Number(v) >= 0 ? 'text-[#00FF41]' : 'text-[#FF3333]'; };
+    var chgSym = function (v) { return v != null && Number(v) >= 0 ? '▲' : '▼'; };
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var tickerDisplay = _watchlistEsc((r.ticker || '').toUpperCase());
+      var nameDisplay = _watchlistEsc(r.companyName);
+      var lastStr = r.last != null && !isNaN(r.last) ? '$' + Number(r.last).toFixed(2) : '—';
+      var chgStr = r.chg != null && !isNaN(r.chg) ? (r.chg >= 0 ? '+' : '') + Number(r.chg).toFixed(2) : '—';
+      var chgPctStr = r.chgPct != null && !isNaN(r.chgPct) ? (r.chgPct >= 0 ? '+' : '') + Number(r.chgPct).toFixed(2) + '%' : '—';
+      var volStr = _watchlistFormatVol(r.vol);
+      var pct52 = r.pct52 != null ? Math.round(r.pct52) : null;
+      var barHtml = pct52 != null
+        ? '<div class="h-1 w-full min-w-[60px] bg-slate-700 rounded-full overflow-hidden"><div class="h-full rounded-full ' + (isUp(r.chgPct) ? 'bg-[#00FF41]' : 'bg-[#FF3333]') + '" style="width:' + pct52 + '%"></div></div>'
+        : '<span class="text-slate-500">—</span>';
+      html += '<tr class="watchlist-row border-b border-slate-700/50 hover:bg-slate-700/40 transition-colors cursor-pointer" data-ticker="' + tickerDisplay + '">' +
+        '<td class="py-1 px-2 align-top">' +
+          '<div class="font-bold text-slate-200 hover:text-cyan-400" style="font-size: 12px;">' + tickerDisplay + '</div>' +
+          (nameDisplay ? '<div class="text-slate-500 truncate max-w-[140px]" style="font-size: 11px; line-height: 1.2;">' + nameDisplay + '</div>' : '') +
+        '</td>' +
+        '<td class="py-1 px-2 text-right tabular-nums text-slate-200 font-mono" style="font-size: 12px;">' + lastStr + '</td>' +
+        '<td class="py-1 px-2 text-right tabular-nums font-mono ' + chgClass(r.chg) + '" style="font-size: 12px;">' + (r.chg != null ? chgSym(r.chg) + ' ' + chgStr : '—') + '</td>' +
+        '<td class="py-1 px-2 text-right tabular-nums font-mono ' + chgClass(r.chgPct) + '" style="font-size: 12px;">' + (r.chgPct != null ? chgSym(r.chgPct) + ' ' + chgPctStr : '—') + '</td>' +
+        '<td class="py-1 px-2 text-right tabular-nums text-slate-400 font-mono" style="font-size: 12px;">' + volStr + '</td>' +
+        '<td class="py-1 px-2 align-middle" style="min-width: 80px;">' + barHtml + '</td>' +
+      '</tr>';
+    }
+    tbody.innerHTML = html;
+    tbody.querySelectorAll('.watchlist-row').forEach(function (tr) {
+      var t = tr.getAttribute('data-ticker');
+      if (!t) return;
+      tr.addEventListener('click', function () {
+        if (typeof switchToFinancialTools === 'function') switchToFinancialTools(t);
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // S&P 500 Sector Heatmap (SPDR ETF 프록시, 트리맵 + 색상 코딩)
+  // -------------------------------------------------------------------------
+  var SECTOR_HEATMAP_MOCK_DATA = [
+    { ticker: 'XLK', name: 'Technology', short: 'Tech', weight: 27, changePct: 1.85 },
+    { ticker: 'XLF', name: 'Financials', short: 'Fin', weight: 15, changePct: -0.92 },
+    { ticker: 'XLV', name: 'Healthcare', short: 'Health', weight: 12, changePct: 0.44 },
+    { ticker: 'XLC', name: 'Communication Services', short: 'Comm', weight: 10, changePct: 2.12 },
+    { ticker: 'XLY', name: 'Consumer Discretionary', short: 'Disc', weight: 10, changePct: -1.33 },
+    { ticker: 'XLI', name: 'Industrials', short: 'Indust', weight: 8, changePct: 0.08 },
+    { ticker: 'XLP', name: 'Consumer Staples', short: 'Staples', weight: 6, changePct: -0.55 },
+    { ticker: 'XLE', name: 'Energy', short: 'Energy', weight: 4, changePct: -2.45 },
+    { ticker: 'XLU', name: 'Utilities', short: 'Util', weight: 3, changePct: 0.72 },
+    { ticker: 'XLRE', name: 'Real Estate', short: 'RE', weight: 3, changePct: -1.88 },
+    { ticker: 'XLB', name: 'Materials', short: 'Mater', weight: 2, changePct: 0.21 }
+  ];
+
+  function getSectorHeatmapColor(changePct) {
+    if (changePct == null || isNaN(changePct)) return '#334155';
+    if (changePct > 2) return '#00FF00';
+    if (changePct > 0) return '#0d6b0d';
+    if (changePct === 0) return '#1e293b';
+    if (changePct >= -2) return '#6b0d0d';
+    return '#FF0000';
+  }
+
+  function getSectorWatchlistPlaceholder() {
+    var fallback = '해당 섹터 내 BKIG Watchlist 종목: —';
+    try {
+      var tbody = document.getElementById('watchlist-tbody');
+      if (!tbody) return fallback;
+      var rows = tbody.querySelectorAll('tr.watchlist-row[data-ticker]');
+      var symbols = [].map.call(rows, function (tr) { return tr.getAttribute('data-ticker') || ''; }).filter(Boolean);
+      if (symbols.length > 0) return '해당 섹터 내 BKIG Watchlist 종목: ' + symbols.slice(0, 5).join(', ');
+    } catch (e) {}
+    return fallback;
+  }
+
+  function renderSectorHeatmap() {
+    var container = document.getElementById('sector-heatmap-container');
+    var tooltipEl = document.getElementById('sector-heatmap-tooltip');
+    if (!container) return;
+    var totalWeight = SECTOR_HEATMAP_MOCK_DATA.reduce(function (sum, d) { return sum + d.weight; }, 0) || 1;
+    container.innerHTML = '';
+    SECTOR_HEATMAP_MOCK_DATA.forEach(function (sector) {
+      var flexGrow = (sector.weight / totalWeight) * 100;
+      var bg = getSectorHeatmapColor(sector.changePct);
+      var chgStr = sector.changePct != null && !isNaN(sector.changePct)
+        ? (sector.changePct >= 0 ? '+' : '') + Number(sector.changePct).toFixed(2) + '%'
+        : '—';
+      var tile = document.createElement('div');
+      tile.className = 'sector-heatmap-tile flex flex-col items-center justify-center rounded-sm cursor-default select-none';
+      tile.setAttribute('data-ticker', sector.ticker);
+      tile.setAttribute('data-name', sector.name);
+      tile.setAttribute('data-chg', chgStr);
+      tile.style.cssText = 'flex: ' + flexGrow + ' 1 0; min-width: 70px; min-height: 52px; background: ' + bg + '; font-size: 12px; color: #f1f5f9;';
+      tile.innerHTML = '<span class="font-semibold truncate w-full text-center px-0.5">' + (sector.short || sector.name) + '</span><span class="tabular-nums text-[11px] opacity-95">' + chgStr + '</span>';
+      container.appendChild(tile);
+      tile.addEventListener('mouseenter', function (e) {
+        if (!tooltipEl) return;
+        var placeholder = getSectorWatchlistPlaceholder();
+        tooltipEl.innerHTML = '<div class="font-semibold text-cyan-300">' + sector.ticker + ' · ' + sector.name + '</div><div class="mt-0.5 text-slate-400">' + placeholder + '</div>';
+        tooltipEl.classList.remove('hidden');
+        tooltipEl.style.left = (e.clientX + 12) + 'px';
+        tooltipEl.style.top = (e.clientY + 8) + 'px';
+      });
+      tile.addEventListener('mousemove', function (e) {
+        if (tooltipEl && !tooltipEl.classList.contains('hidden')) {
+          tooltipEl.style.left = (e.clientX + 12) + 'px';
+          tooltipEl.style.top = (e.clientY + 8) + 'px';
+        }
+      });
+      tile.addEventListener('mouseleave', function () {
+        if (tooltipEl) tooltipEl.classList.add('hidden');
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // KOSPI Sector Heatmap (동일 방식: Mock 트리맵 + 색상 코딩)
+  // -------------------------------------------------------------------------
+  var KOSPI_SECTOR_HEATMAP_MOCK_DATA = [
+    { ticker: 'KR_ELEC', name: '전기·전자', short: '전기전자', weight: 28, changePct: 1.42 },
+    { ticker: 'KR_AUTO', name: '자동차', short: '자동차', weight: 12, changePct: -0.88 },
+    { ticker: 'KR_FIN', name: '금융', short: '금융', weight: 11, changePct: 0.35 },
+    { ticker: 'KR_CHEM', name: '화학', short: '화학', weight: 10, changePct: -1.55 },
+    { ticker: 'KR_STL', name: '철강·금속', short: '철강', weight: 8, changePct: 0.12 },
+    { ticker: 'KR_MACH', name: '기계', short: '기계', weight: 7, changePct: 2.01 },
+    { ticker: 'KR_DIST', name: '유통', short: '유통', weight: 6, changePct: -0.42 },
+    { ticker: 'KR_BUILD', name: '건설', short: '건설', weight: 5, changePct: 1.18 },
+    { ticker: 'KR_COMM', name: '통신서비스', short: '통신', weight: 5, changePct: -2.12 },
+    { ticker: 'KR_PHARM', name: '의약품', short: '의약', weight: 4, changePct: 0.67 },
+    { ticker: 'KR_ETC', name: '기타', short: '기타', weight: 4, changePct: -0.95 }
+  ];
+
+  function renderKospiSectorHeatmap() {
+    var container = document.getElementById('kospi-heatmap-container');
+    var tooltipEl = document.getElementById('kospi-heatmap-tooltip');
+    if (!container) return;
+    var totalWeight = KOSPI_SECTOR_HEATMAP_MOCK_DATA.reduce(function (sum, d) { return sum + d.weight; }, 0) || 1;
+    container.innerHTML = '';
+    KOSPI_SECTOR_HEATMAP_MOCK_DATA.forEach(function (sector) {
+      var flexGrow = (sector.weight / totalWeight) * 100;
+      var bg = getSectorHeatmapColor(sector.changePct);
+      var chgStr = sector.changePct != null && !isNaN(sector.changePct)
+        ? (sector.changePct >= 0 ? '+' : '') + Number(sector.changePct).toFixed(2) + '%'
+        : '—';
+      var tile = document.createElement('div');
+      tile.className = 'sector-heatmap-tile flex flex-col items-center justify-center rounded-sm cursor-default select-none';
+      tile.setAttribute('data-ticker', sector.ticker);
+      tile.setAttribute('data-name', sector.name);
+      tile.setAttribute('data-chg', chgStr);
+      tile.style.cssText = 'flex: ' + flexGrow + ' 1 0; min-width: 70px; min-height: 52px; background: ' + bg + '; font-size: 12px; color: #f1f5f9;';
+      tile.innerHTML = '<span class="font-semibold truncate w-full text-center px-0.5">' + (sector.short || sector.name) + '</span><span class="tabular-nums text-[11px] opacity-95">' + chgStr + '</span>';
+      container.appendChild(tile);
+      tile.addEventListener('mouseenter', function (e) {
+        if (!tooltipEl) return;
+        var placeholder = getSectorWatchlistPlaceholder();
+        tooltipEl.innerHTML = '<div class="font-semibold text-cyan-300">' + sector.ticker + ' · ' + sector.name + '</div><div class="mt-0.5 text-slate-400">' + placeholder + '</div>';
+        tooltipEl.classList.remove('hidden');
+        tooltipEl.style.left = (e.clientX + 12) + 'px';
+        tooltipEl.style.top = (e.clientY + 8) + 'px';
+      });
+      tile.addEventListener('mousemove', function (e) {
+        if (tooltipEl && !tooltipEl.classList.contains('hidden')) {
+          tooltipEl.style.left = (e.clientX + 12) + 'px';
+          tooltipEl.style.top = (e.clientY + 8) + 'px';
+        }
+      });
+      tile.addEventListener('mouseleave', function () {
+        if (tooltipEl) tooltipEl.classList.add('hidden');
+      });
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -232,6 +468,57 @@
     var data = await res.json().catch(function () { return null; });
     if (!res.ok) return { error: data && (data.message || data.error) ? (data.message || data.error) : 'Unauthorized', data: null };
     return { error: null, data: normalizePortfolioResponse(data) };
+  }
+
+  /** FIFO로 매도 건 실현 손익 계산. API에 profit_loss가 없을 때 프론트에서 표시용으로 사용. */
+  function enrichJournalWithPnl(entries) {
+    if (!entries || !entries.length) return entries;
+    var indices = entries.map(function (_, i) { return i; });
+    indices.sort(function (a, b) {
+      var da = new Date(entries[a].date || entries[a].timestamp || entries[a].created_at || 0);
+      var db = new Date(entries[b].date || entries[b].timestamp || entries[b].created_at || 0);
+      return da - db;
+    });
+    var lots = {};
+    var pnlByIndex = {};
+    for (var i = 0; i < indices.length; i++) {
+      var idx = indices[i];
+      var e = entries[idx];
+      var ticker = (e.ticker || e.symbol || '').toUpperCase();
+      var action = (e.action || e.side || 'BUY').toUpperCase();
+      var shares = e.shares != null ? Number(e.shares) : (e.quantity != null ? Number(e.quantity) : 0);
+      var price = e.price != null ? Number(e.price) : (e.execution_price != null ? Number(e.execution_price) : 0);
+      if (action === 'BUY' && ticker && shares > 0) {
+        if (!lots[ticker]) lots[ticker] = [];
+        lots[ticker].push({ shares: shares, price: price });
+      } else if (action === 'SELL' && ticker && lots[ticker] && lots[ticker].length > 0 && shares > 0) {
+        var remaining = shares;
+        var costTotal = 0;
+        var realizedTotal = 0;
+        while (remaining > 0 && lots[ticker].length > 0) {
+          var lot = lots[ticker][0];
+          var take = Math.min(remaining, lot.shares);
+          costTotal += take * lot.price;
+          realizedTotal += take * price;
+          lot.shares -= take;
+          remaining -= take;
+          if (lot.shares <= 0) lots[ticker].shift();
+        }
+        var profitLoss = realizedTotal - costTotal;
+        var profitLossPct = costTotal > 0 ? (profitLoss / costTotal) * 100 : 0;
+        pnlByIndex[idx] = { profit_loss: profitLoss, profit_loss_percent: profitLossPct };
+      }
+    }
+    return entries.map(function (e, i) {
+      if (pnlByIndex[i]) {
+        var o = {};
+        for (var k in e) if (e.hasOwnProperty(k)) o[k] = e[k];
+        o.profit_loss = pnlByIndex[i].profit_loss;
+        o.profit_loss_percent = pnlByIndex[i].profit_loss_percent;
+        return o;
+      }
+      return e;
+    });
   }
 
   /** Normalize FACCTing journal API response. Handles { status, data } or { data: { trades: [] } } etc. */
@@ -397,7 +684,8 @@
       '<button type="button" id="portfolio-execute-btn" class="portfolio-btn portfolio-execute-btn w-full">[ EXECUTE TRADE ]</button>' +
       '</div>';
 
-    var journalItems = (portfolioState.journalData || []).map(function (entry) {
+    var journalEntries = enrichJournalWithPnl(portfolioState.journalData || []);
+    var journalItems = journalEntries.map(function (entry) {
       var ts = entry.timestamp || entry.date || entry.created_at || entry.executed_at || entry.trade_date || '';
       if (typeof ts === 'string' && ts.length > 10) ts = ts.replace('T', ' ').substring(0, 16);
       var action = (entry.action || entry.side || 'BUY').toUpperCase();
@@ -406,6 +694,18 @@
       var qty = entry.shares != null ? entry.shares : entry.quantity != null ? entry.quantity : '—';
       var price = entry.price != null ? '$' + Number(entry.price).toFixed(2) : (entry.price_display || (entry.execution_price != null ? '$' + Number(entry.execution_price).toFixed(2) : '—'));
       var ratio = entry.rationale || entry.reason || entry.notes || entry.memo || '';
+      var pnlAmount = entry.profit_loss != null ? entry.profit_loss : (entry.pnl != null ? entry.pnl : (entry.realized_pnl != null ? entry.realized_pnl : (entry.profit_loss_amount != null ? entry.profit_loss_amount : null)));
+      var pnlPercent = entry.profit_loss_percent != null ? entry.profit_loss_percent : (entry.pnl_percent != null ? entry.pnl_percent : null);
+      var pnlStr = '';
+      if (pnlAmount != null || pnlPercent != null) {
+        var amt = pnlAmount != null ? Number(pnlAmount) : null;
+        var pct = pnlPercent != null ? Number(pnlPercent) : null;
+        var pnlColor = (amt != null && amt >= 0) || (pct != null && pct >= 0) ? '#00FF41' : '#FF3333';
+        var parts = [];
+        if (amt != null) parts.push((amt >= 0 ? '+' : '') + '$' + amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        if (pct != null) parts.push((pct >= 0 ? '+' : '') + pct.toFixed(2) + '%');
+        pnlStr = '<span class="portfolio-journal-pnl" style="color:' + pnlColor + '"> 손익: ' + parts.join(' ') + '</span>';
+      }
       return (
         '<div class="portfolio-journal-entry">' +
         '<div class="portfolio-journal-line">' +
@@ -416,6 +716,7 @@
         '<span class="portfolio-journal-sym">' + escapeHtml(sym) + '</span> ' +
         '<span class="portfolio-journal-sep">@</span> ' +
         '<span class="portfolio-journal-price">' + price + '</span>' +
+        (pnlStr ? ' ' + pnlStr : '') +
         '</div>' +
         (ratio ? '<div class="portfolio-journal-rationale">' + escapeHtml(ratio) + '</div>' : '') +
         '</div>'
@@ -754,10 +1055,12 @@
     if (scheduleCancel) scheduleCancel.addEventListener('click', closeScheduleModal);
 
     var watchlistEditBtn = document.getElementById('watchlist-edit-btn');
+    var watchlistWidgetEditBtn = document.getElementById('watchlist-widget-edit-btn');
     var watchlistBackdrop = document.getElementById('watchlist-modal-backdrop');
     var watchlistCancel = document.getElementById('watchlist-modal-cancel');
     var watchlistSave = document.getElementById('watchlist-modal-save');
     if (watchlistEditBtn) watchlistEditBtn.addEventListener('click', openWatchlistModal);
+    if (watchlistWidgetEditBtn) watchlistWidgetEditBtn.addEventListener('click', openWatchlistModal);
     if (watchlistBackdrop) watchlistBackdrop.addEventListener('click', closeWatchlistModal);
     if (watchlistCancel) watchlistCancel.addEventListener('click', closeWatchlistModal);
     if (watchlistSave) watchlistSave.addEventListener('click', saveWatchlist);
@@ -2523,6 +2826,15 @@
       else if (tab === 'ratios') renderRatiosTable(data);
       else if (!data) content.innerHTML = '<p class="text-slate-500 text-sm">Failed to load data.</p>';
     });
+  }
+
+  function switchToFinancialTools(ticker) {
+    var t = (ticker || '').trim().toUpperCase();
+    if (!t) return;
+    var input = document.getElementById('ticker-input');
+    if (input) input.value = t;
+    showView('view-financial-tools');
+    if (typeof onTickerSearch === 'function') onTickerSearch();
   }
 
   function onTickerSearch() {
