@@ -6,8 +6,9 @@
   <title>BKIG Terminal | Boston Korea Investment Group</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='terminal.css') }}">
+  <script type="application/json" id="terminal-user-json">{{ current_user | tojson }}</script>
   <script>
-    window.TERMINAL_CURRENT_USER = {{ current_user | tojson }};
+    window.TERMINAL_CURRENT_USER = JSON.parse(document.getElementById('terminal-user-json').textContent);
   </script>
 </head>
 <body class="bkig-terminal bg-[#0a0e17] text-slate-200 min-h-screen flex">
@@ -42,6 +43,16 @@
         <li>
           <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-watchlist">
             Watchlist
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-internal-research">
+            Internal Research &amp; Resources
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-meeting-intelligence">
+            Meeting Intelligence
           </button>
         </li>
         {% if current_user.role == 'super_admin' %}
@@ -254,6 +265,12 @@
                 <span class="text-slate-400 text-sm">Loading…</span>
               </div>
             </div>
+            <div id="tool-excel-bar" class="hidden shrink-0 flex justify-end items-center px-4 py-2 border-b border-slate-700/80 bg-slate-900/60">
+              <button type="button" id="tool-download-excel-btn" class="px-3 py-1.5 text-xs font-medium rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Download Excel
+              </button>
+            </div>
             <div id="tool-content" class="flex flex-col flex-1 min-h-0 overflow-y-auto bkig-scroll p-6">
               <p class="text-slate-500 text-sm">Enter a ticker and click Search to load data.</p>
             </div>
@@ -303,6 +320,7 @@
           </table>
         </div>
       </div>
+
       <!-- S&P 500 Sector Heatmap (SPDR ETF 프록시, Finviz 스타일 트리맵) -->
       <div id="sector-heatmap-widget" class="mt-4 max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
         <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-700/80">
@@ -320,6 +338,129 @@
         </div>
         <div id="kospi-heatmap-container" class="p-1.5 min-h-[240px]" style="display: flex; flex-wrap: wrap; gap: 2px;"></div>
         <div id="kospi-heatmap-tooltip" class="fixed z-50 hidden px-2 py-1.5 rounded text-xs font-medium bg-slate-800 border border-slate-600 text-slate-100 shadow-xl pointer-events-none" style="font-size: 11px; max-width: 220px;"></div>
+      </div>
+    </section>
+
+    <!-- view-meeting-intelligence: Call Report 스타일 미팅 노트 -->
+    <section id="view-meeting-intelligence" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-4 px-4 pr-24 bg-slate-900 text-slate-200 hidden">
+      <div id="meeting-intelligence-widget" class="max-w-4xl mx-auto space-y-4">
+        <!-- 상단: 제목 + New Note -->
+        <div class="bg-slate-800/40 border border-slate-700 rounded-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-slate-200">Meeting Intelligence</h2>
+          <button type="button" id="meeting-intel-new-note-btn" class="px-3 py-1.5 text-xs font-semibold rounded-none border border-slate-600 bg-slate-700/60 text-slate-200 hover:bg-slate-600/60 transition-colors">New Meeting Note</button>
+        </div>
+        <!-- 내 노트 목록 (날짜 + 제목 리스트) -->
+        <div class="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+          <div class="border-b border-slate-700/80 px-3 py-2">
+            <span class="text-xs font-medium text-slate-400">My Notes</span>
+          </div>
+          <ul id="meeting-intel-notes-list" class="divide-y divide-slate-700/50 max-h-[280px] overflow-y-auto bkig-scroll">
+            <li id="meeting-intel-notes-empty" class="py-6 px-3 text-center text-slate-500 text-xs">No notes yet. Click &quot;New Meeting Note&quot; to add one.</li>
+          </ul>
+        </div>
+        <!-- 노트 작성/편집 폼 (New Meeting Note 또는 목록 클릭 시에만 표시) -->
+        <div id="meeting-intel-form-card" class="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden hidden">
+        <div class="border-b border-slate-700/80 px-4 py-2">
+          <span id="meeting-intel-form-title" class="text-xs font-medium text-slate-400">New note</span>
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label for="mi-ticker" class="block text-xs font-medium text-slate-400 mb-1">Ticker</label>
+              <input type="text" id="mi-ticker" placeholder="e.g. $AAPL" class="mi-input w-full px-3 py-2 rounded-none bg-slate-900/90 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 text-sm" maxlength="20">
+            </div>
+            <div>
+              <label for="mi-meeting-type" class="block text-xs font-medium text-slate-400 mb-1">Meeting Type</label>
+              <select id="mi-meeting-type" class="mi-input w-full px-3 py-2 rounded-none bg-slate-900/90 border border-slate-600 text-slate-200 focus:outline-none focus:border-cyan-500/60 text-sm">
+                <option value="IC">IC</option>
+                <option value="Sector">Sector</option>
+                <option value="Research">Research</option>
+              </select>
+            </div>
+            <div>
+              <label for="mi-sentiment" class="block text-xs font-medium text-slate-400 mb-1">Sentiment</label>
+              <select id="mi-sentiment" class="mi-input w-full px-3 py-2 rounded-none bg-slate-900/90 border border-slate-600 text-slate-200 focus:outline-none focus:border-cyan-500/60 text-sm">
+                <option value="Bullish">Bullish</option>
+                <option value="Neutral">Neutral</option>
+                <option value="Bearish">Bearish</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="mi-attendees" class="block text-xs font-medium text-slate-400 mb-1">Attendees</label>
+            <input type="text" id="mi-attendees" placeholder="e.g. John Smith (IR), Jane Doe (Analyst)" class="mi-input w-full px-3 py-2 rounded-none bg-slate-900/90 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 text-sm">
+          </div>
+          <div>
+            <label for="mi-executive-summary" class="block text-xs font-medium text-slate-400 mb-1">Executive Summary</label>
+            <textarea id="mi-executive-summary" rows="3" placeholder="Key takeaways in 2–3 sentences." class="mi-input w-full px-3 py-2 rounded-none bg-slate-900/90 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 text-sm resize-y"></textarea>
+          </div>
+          <div>
+            <label for="mi-main-discussion" class="block text-xs font-medium text-slate-400 mb-1">Main Discussion</label>
+            <textarea id="mi-main-discussion" rows="6" placeholder="Detailed discussion points, management commentary, and data points." class="mi-input w-full px-3 py-2 rounded-none bg-slate-900/90 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 text-sm resize-y"></textarea>
+          </div>
+          <div class="border-t border-slate-700/80 pt-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <label class="block text-xs font-medium text-slate-400">Next Action</label>
+              <button type="button" id="mi-add-next-action" class="text-xs font-medium text-cyan-400 hover:text-cyan-300 border border-slate-600 hover:border-cyan-500/50 px-2 py-1 rounded-none transition-colors">+ Add Action</button>
+            </div>
+            <ul id="mi-next-actions-list" class="space-y-2">
+              <!-- 동적 행: 담당자, 마감일, 삭제 -->
+            </ul>
+          </div>
+        </div>
+        <footer class="border-t border-slate-700/80 px-4 py-3 flex flex-wrap items-center justify-end gap-2 bg-slate-800/30">
+          <button type="button" id="meeting-intel-save-note" class="px-3 py-1.5 text-xs font-semibold rounded-none border border-slate-600 bg-slate-700/60 text-slate-200 hover:bg-slate-600/60 transition-colors">Save</button>
+          <button type="button" id="meeting-intel-export-pdf" class="px-3 py-1.5 text-xs font-semibold rounded-none border border-slate-600 bg-slate-700/60 text-slate-200 hover:bg-slate-600/60 transition-colors">Export PDF</button>
+          <button type="button" id="meeting-intel-save-server" class="px-3 py-1.5 text-xs font-semibold rounded-none border border-cyan-600 bg-cyan-600/80 text-white hover:bg-cyan-500/80 transition-colors">Save to Server</button>
+        </footer>
+        </div>
+      </div>
+      <!-- PDF 생성용 숨김 영역 (IB 스타일 적용) -->
+      <div id="meeting-intel-pdf-source" class="hidden meeting-intel-pdf-source" aria-hidden="true"></div>
+    </section>
+
+    <!-- view-internal-research: 내부 리서치 자료실 (Bloomberg/Capital IQ 스타일) -->
+    <section id="view-internal-research" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-4 px-4 pr-24 bg-slate-900 text-slate-200 hidden">
+      <div id="internal-research-widget" class="max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+        <div class="border-b border-slate-700/80 px-3 py-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
+              <h2 class="text-base font-semibold text-slate-200 shrink-0">Internal Research &amp; Resources</h2>
+              <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                <input type="text" id="internal-research-search" placeholder="Search keywords, tickers..." class="internal-research-search w-full min-w-0 max-w-[220px] px-2.5 py-1.5 text-xs bg-slate-900/80 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 transition-colors" style="font-size: 12px;">
+                <div class="flex flex-wrap gap-1 shrink-0" role="group" aria-label="Category filter">
+                  <button type="button" class="internal-research-filter px-2 py-1 text-xs font-medium rounded border border-slate-600 bg-slate-700/60 text-slate-300 hover:bg-slate-600/60 transition-colors is-active" data-filter="all">All</button>
+                  <button type="button" class="internal-research-filter px-2 py-1 text-xs font-medium rounded border border-slate-600 text-slate-400 hover:bg-slate-600/40 hover:text-slate-300 transition-colors" data-filter="valuation">Valuation</button>
+                  <button type="button" class="internal-research-filter px-2 py-1 text-xs font-medium rounded border border-slate-600 text-slate-400 hover:bg-slate-600/40 hover:text-slate-300 transition-colors" data-filter="research">Research</button>
+                  <button type="button" class="internal-research-filter px-2 py-1 text-xs font-medium rounded border border-slate-600 text-slate-400 hover:bg-slate-600/40 hover:text-slate-300 transition-colors" data-filter="data">Data</button>
+                  <button type="button" class="internal-research-filter px-2 py-1 text-xs font-medium rounded border border-slate-600 text-slate-400 hover:bg-slate-600/40 hover:text-slate-300 transition-colors" data-filter="templates">Templates</button>
+                  <button type="button" class="internal-research-filter px-2 py-1 text-xs font-medium rounded border border-slate-600 text-slate-400 hover:bg-slate-600/40 hover:text-slate-300 transition-colors" data-filter="meeting_note">Meeting Note</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" id="internal-research-upload-btn" class="shrink-0 px-3 py-1.5 text-xs font-semibold rounded bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-500/50 transition-colors">Upload Document</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse internal-research-table" style="font-size: 12px;">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-700/80">
+                <th class="text-left font-medium py-1.5 px-2 w-[1%] whitespace-nowrap tabular-nums">Date</th>
+                <th class="text-left font-medium py-1.5 px-2 whitespace-nowrap">Category</th>
+                <th class="text-left font-medium py-1.5 px-2 whitespace-nowrap">Ticker</th>
+                <th class="text-left font-medium py-1.5 px-2 whitespace-nowrap" style="min-width: 180px;">Document Title</th>
+                <th class="text-left font-medium py-1.5 px-2 whitespace-nowrap">Author</th>
+                <th class="text-left font-medium py-1.5 px-2 whitespace-nowrap">Format</th>
+                <th class="text-left font-medium py-1.5 px-2 w-[1%] whitespace-nowrap">Action</th>
+              </tr>
+            </thead>
+            <tbody id="internal-research-tbody">
+              <tr id="internal-research-empty-row" class="border-b border-slate-700/50">
+                <td colspan="7" class="py-6 px-2 text-center text-slate-500 text-xs">No documents yet. Upload one to get started.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -497,6 +638,67 @@
     </div>
   </div>
 
+  <!-- Internal Research: Upload Document — 우측 슬라이드 오버 (Right Drawer) -->
+  <div id="upload-drawer" class="upload-drawer fixed inset-0 z-50 pointer-events-none" aria-hidden="true">
+    <div id="upload-drawer-backdrop" class="upload-drawer-backdrop fixed inset-0 bg-black/40 transition-opacity duration-300 opacity-0 pointer-events-auto"></div>
+    <div id="upload-drawer-panel" class="upload-drawer-panel fixed top-0 right-0 h-full w-full max-w-[460px] bg-[#0d1220] border-l border-slate-700/90 shadow-[-8px_0_24px_rgba(0,0,0,0.4)] flex flex-col transition-transform duration-300 ease-out translate-x-full pointer-events-auto">
+      <header class="flex items-center justify-between shrink-0 px-4 py-3 border-b border-slate-700/80">
+        <h3 class="text-base font-semibold text-slate-200">Upload New Document</h3>
+        <button type="button" id="upload-drawer-close" class="upload-drawer-close p-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-sm transition-colors" aria-label="Close">×</button>
+      </header>
+      <form id="upload-drawer-form" class="upload-drawer-form flex-1 flex flex-col min-h-0 overflow-y-auto">
+        <div class="p-4 space-y-4">
+          <div>
+            <label for="upload-doc-title" class="block text-xs font-medium text-slate-400 mb-1">Document Title</label>
+            <input type="text" id="upload-doc-title" name="document_title" class="upload-drawer-input w-full px-3 py-2 rounded-sm bg-slate-900/90 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm" placeholder="e.g. Apple Inc. DCF Model FY26">
+          </div>
+          <div>
+            <span class="block text-xs font-medium text-slate-400 mb-2">Category</span>
+            <div class="upload-drawer-category-group flex flex-wrap gap-1.5" role="group" aria-label="Category">
+              <button type="button" class="upload-drawer-category px-2.5 py-1.5 text-xs font-medium rounded-sm border border-slate-600 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 transition-colors" data-category="valuation">Valuation</button>
+              <button type="button" class="upload-drawer-category px-2.5 py-1.5 text-xs font-medium rounded-sm border border-slate-600 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 transition-colors" data-category="research">Research</button>
+              <button type="button" class="upload-drawer-category px-2.5 py-1.5 text-xs font-medium rounded-sm border border-slate-600 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 transition-colors" data-category="data">Data</button>
+              <button type="button" class="upload-drawer-category px-2.5 py-1.5 text-xs font-medium rounded-sm border border-slate-600 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 transition-colors" data-category="templates">Templates</button>
+            </div>
+            <input type="hidden" id="upload-doc-category" name="category" value="">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Related Ticker(s)</label>
+            <div id="upload-ticker-wrap" class="upload-drawer-input upload-ticker-wrap w-full min-h-[42px] px-2 py-1.5 rounded-sm bg-slate-900/90 border border-slate-600 focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500 transition-colors flex flex-wrap items-center gap-1.5">
+              <span id="upload-ticker-pills" class="flex flex-wrap gap-1.5"></span>
+              <input type="text" id="upload-ticker-input" class="upload-ticker-input flex-1 min-w-[80px] bg-transparent border-0 py-0.5 px-1 text-slate-200 text-sm placeholder-slate-500 focus:outline-none" placeholder="e.g. AAPL" maxlength="12" autocomplete="off">
+            </div>
+          </div>
+          <div>
+            <label for="upload-doc-author" class="block text-xs font-medium text-slate-400 mb-1">Author</label>
+            <input type="text" id="upload-doc-author" name="author" value="{{ current_user.name or 'Joonha Kwon' }}" class="upload-drawer-input w-full px-3 py-2 rounded-sm bg-slate-900/90 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm">
+          </div>
+          <div>
+            <span class="block text-xs font-medium text-slate-400 mb-2">File</span>
+            <div id="upload-drop-zone" class="upload-drop-zone relative flex flex-col items-center justify-center min-h-[140px] rounded-sm border-2 border-dashed border-slate-600 bg-slate-900/50 text-slate-500 hover:border-slate-500 hover:bg-slate-800/40 transition-colors cursor-pointer">
+              <input type="file" id="upload-file-input" name="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx,.xls,.pdf,.csv,.zip" multiple>
+              <div id="upload-drop-default" class="upload-drop-default flex flex-col items-center justify-center pointer-events-none">
+                <svg class="w-10 h-10 mb-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <span class="text-sm text-slate-400">Drag &amp; drop files here, or browse</span>
+                <p class="mt-2 text-[11px] text-slate-500">Supported formats: XLSX, PDF, CSV, ZIP</p>
+              </div>
+              <div id="upload-drop-selected" class="upload-drop-selected hidden flex flex-col items-center justify-center pointer-events-none text-center px-2">
+                <span class="text-sm font-medium text-cyan-400">Selected file(s)</span>
+                <p id="upload-file-names" class="mt-1 text-xs text-slate-300 break-all"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="shrink-0 flex justify-end gap-2 px-4 py-3 border-t border-slate-700/80 bg-[#0d1220]">
+          <button type="button" id="upload-drawer-cancel" class="upload-drawer-btn-cancel px-4 py-2 text-sm font-medium text-slate-400 border border-slate-600 rounded-sm hover:bg-slate-700/50 hover:text-slate-200 transition-colors">Cancel</button>
+          <button type="submit" id="upload-drawer-submit" class="upload-drawer-btn-submit px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-500 rounded-sm hover:bg-blue-500 transition-colors">Upload Document</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
   <!-- Dashboard: New Announcement (super_admin만 버튼 노출, 모달은 JS에서 사용) -->
   <div id="announcement-new-modal" class="fixed inset-0 z-40 hidden" aria-hidden="true">
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-4" id="announcement-new-modal-backdrop">
@@ -529,6 +731,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@1.2.0/dist/chartjs-plugin-crosshair.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
   <script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
 </body>
 </html>

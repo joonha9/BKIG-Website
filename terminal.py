@@ -11,13 +11,17 @@ DB 스키마는 Flask-Migrate(Alembic)로 관리합니다.
 
   (flask 명령 사용 시 FLASK_APP=app.py 또는 FLASK_APP=app 필요)
 """
+import json
 import os
+import uuid
 from functools import wraps
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 # ---------------------------------------------------------------------------
 # DB (app에서 init_terminal_db(app) 호출로 초기화; 스키마는 flask db upgrade 로 적용)
@@ -113,6 +117,41 @@ class Announcement(db.Model):
     author_name = db.Column(db.String(120), nullable=False)
     author_title = db.Column(db.String(120), nullable=True)  # e.g. President
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    created_by_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=True)
+
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
+
+
+class InternalResearchDocument(db.Model):
+    __tablename__ = "terminal_internal_research_documents"
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_title = db.Column(db.String(300), nullable=False)
+    category = db.Column(db.String(32), nullable=False)  # valuation, research, data, templates
+    tickers = db.Column(db.String(200), nullable=True)  # comma-separated e.g. AAPL,NVDA
+    author = db.Column(db.String(120), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)  # stored filename on server
+    file_format = db.Column(db.String(20), nullable=False)  # XLSX, PDF, CSV, ZIP
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=True)
+
+    uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])
+
+
+class MeetingNote(db.Model):
+    """Meeting Intelligence: Call Report 스타일 노트. 사용자별 목록·저장·편집."""
+    __tablename__ = "terminal_meeting_notes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(32), nullable=True)
+    meeting_type = db.Column(db.String(32), nullable=False, default="IC")
+    sentiment = db.Column(db.String(32), nullable=False, default="Neutral")
+    attendees = db.Column(db.String(500), nullable=True)
+    executive_summary = db.Column(db.Text, nullable=True)
+    main_discussion = db.Column(db.Text, nullable=True)
+    next_actions = db.Column(db.Text, nullable=True)  # JSON array of {assignee, deadline}
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.now(), onupdate=db.func.now())
     created_by_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=True)
 
     created_by = db.relationship("User", foreign_keys=[created_by_id])
@@ -818,6 +857,260 @@ def api_announcements():
         return jsonify({"id": ann.id, "body": ann.body, "author_name": ann.author_name, "author_title": ann.author_title}), 201
 
     return jsonify({"error": "Method not allowed"}), 405
+
+
+# ---------------------------------------------------------------------------
+# Internal Research & Resources: document list, upload, download
+# ---------------------------------------------------------------------------
+INTERNAL_RESEARCH_UPLOAD_FOLDER = "internal_research_uploads"
+ALLOWED_EXTENSIONS = {"xlsx", "xls", "pdf", "csv", "zip"}
+
+
+def _internal_research_upload_dir():
+    """Absolute path to upload folder (next to terminal.py)."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, INTERNAL_RESEARCH_UPLOAD_FOLDER)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _allowed_file(filename):
+    return filename and "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def _format_upper(ext):
+    return ext.upper() if ext.upper() in ("XLSX", "XLS", "PDF", "CSV", "ZIP") else ext.upper()
+
+
+@terminal_bp.route("/api/internal-research", methods=["GET"])
+@login_required_api
+def api_internal_research_list():
+    """GET: List documents. Query: category (optional), q (search title/ticker)."""
+    category = (request.args.get("category") or "").strip().lower()
+    q = (request.args.get("q") or "").strip().lower()
+    query = InternalResearchDocument.query
+    if category and category != "all":
+        query = query.filter(InternalResearchDocument.category == category)
+    if q:
+        q_pattern = "%" + q + "%"
+        query = query.filter(
+            or_(
+                InternalResearchDocument.document_title.ilike(q_pattern),
+                InternalResearchDocument.tickers.ilike(q_pattern),
+                InternalResearchDocument.author.ilike(q_pattern),
+            )
+        )
+    docs = query.order_by(InternalResearchDocument.created_at.desc()).all()
+    return jsonify({
+        "documents": [
+            {
+                "id": d.id,
+                "document_title": d.document_title,
+                "category": d.category,
+                "tickers": (d.tickers or "").strip(),
+                "author": d.author,
+                "file_format": d.file_format,
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+            }
+            for d in docs
+        ]
+    })
+
+
+@terminal_bp.route("/api/internal-research", methods=["POST"])
+@login_required_api
+def api_internal_research_upload():
+    """POST: Upload document. Form: document_title, category, author, tickers (optional), file."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    document_title = (request.form.get("document_title") or "").strip()
+    category = (request.form.get("category") or "").strip().lower()
+    author = (request.form.get("author") or "").strip()
+    tickers_raw = (request.form.get("tickers") or "").strip()
+
+    if not document_title:
+        return jsonify({"error": "Bad request", "message": "document_title is required"}), 400
+    if category not in ("valuation", "research", "data", "templates", "meeting_note"):
+        return jsonify({"error": "Bad request", "message": "category must be one of: valuation, research, data, templates, meeting_note"}), 400
+    if not author:
+        return jsonify({"error": "Bad request", "message": "author is required"}), 400
+
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"error": "Bad request", "message": "file is required"}), 400
+    if not _allowed_file(file.filename):
+        return jsonify({"error": "Bad request", "message": "Allowed formats: XLSX, PDF, CSV, ZIP"}), 400
+
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    file_format = _format_upper(ext)
+    safe_name = secure_filename(file.filename)
+    unique_name = str(uuid.uuid4()) + "_" + safe_name
+    upload_dir = _internal_research_upload_dir()
+    file_path = os.path.join(upload_dir, unique_name)
+    file.save(file_path)
+
+    try:
+        doc = InternalResearchDocument(
+            document_title=document_title,
+            category=category,
+            tickers=tickers_raw or None,
+            author=author,
+            file_path=unique_name,
+            file_format=file_format,
+            uploaded_by_id=user.get("id"),
+        )
+        db.session.add(doc)
+        db.session.commit()
+        return jsonify({
+            "id": doc.id,
+            "document_title": doc.document_title,
+            "category": doc.category,
+            "tickers": (doc.tickers or "").strip(),
+            "author": doc.author,
+            "file_format": doc.file_format,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        }), 201
+    except Exception:
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+        db.session.rollback()
+        return jsonify({"error": "Server error", "message": "Failed to save document"}), 500
+
+
+@terminal_bp.route("/api/internal-research/<int:doc_id>/download")
+@login_required_api
+def api_internal_research_download(doc_id):
+    """Download document file by id."""
+    doc = InternalResearchDocument.query.get(doc_id)
+    if not doc:
+        return jsonify({"error": "Not found"}), 404
+    upload_dir = _internal_research_upload_dir()
+    path = os.path.join(upload_dir, doc.file_path)
+    if not os.path.isfile(path):
+        return jsonify({"error": "Not found", "message": "File missing"}), 404
+    return send_from_directory(upload_dir, doc.file_path, as_attachment=True, download_name=doc.document_title + "." + doc.file_format.lower())
+
+
+# ---------------------------------------------------------------------------
+# Meeting Intelligence: 노트 목록·생성·조회·수정
+# ---------------------------------------------------------------------------
+@terminal_bp.route("/api/meeting-notes", methods=["GET"])
+@login_required_api
+def api_meeting_notes_list():
+    """GET: 내 노트 목록 (created_at 내림차순)."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    notes = MeetingNote.query.filter_by(created_by_id=user["id"]).order_by(MeetingNote.created_at.desc()).all()
+    return jsonify({
+        "notes": [
+            {
+                "id": n.id,
+                "ticker": n.ticker or "",
+                "meeting_type": n.meeting_type or "IC",
+                "sentiment": n.sentiment or "Neutral",
+                "created_at": n.created_at.isoformat() if n.created_at else None,
+                "updated_at": n.updated_at.isoformat() if n.updated_at else None,
+                "title": (n.ticker or "Note") + " — " + (n.created_at.strftime("%Y-%m-%d") if n.created_at else ""),
+            }
+            for n in notes
+        ]
+    })
+
+
+@terminal_bp.route("/api/meeting-notes", methods=["POST"])
+@login_required_api
+def api_meeting_notes_create():
+    """POST: 새 노트 생성. JSON: ticker, meeting_type, sentiment, attendees, executive_summary, main_discussion, next_actions."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json() or {}
+    next_actions_raw = data.get("next_actions")
+    next_actions_str = json.dumps(next_actions_raw) if isinstance(next_actions_raw, list) else (next_actions_raw or "[]")
+    note = MeetingNote(
+        ticker=(data.get("ticker") or "").strip() or None,
+        meeting_type=(data.get("meeting_type") or "IC").strip(),
+        sentiment=(data.get("sentiment") or "Neutral").strip(),
+        attendees=(data.get("attendees") or "").strip() or None,
+        executive_summary=(data.get("executive_summary") or "").strip() or None,
+        main_discussion=(data.get("main_discussion") or "").strip() or None,
+        next_actions=next_actions_str,
+        created_by_id=user["id"],
+    )
+    db.session.add(note)
+    db.session.commit()
+    return jsonify(_meeting_note_to_dict(note)), 201
+
+
+@terminal_bp.route("/api/meeting-notes/<int:note_id>", methods=["GET"])
+@login_required_api
+def api_meeting_notes_get(note_id):
+    """GET: 단일 노트 (본인 것만)."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    note = MeetingNote.query.filter_by(id=note_id, created_by_id=user["id"]).first()
+    if not note:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(_meeting_note_to_dict(note))
+
+
+@terminal_bp.route("/api/meeting-notes/<int:note_id>", methods=["PUT"])
+@login_required_api
+def api_meeting_notes_update(note_id):
+    """PUT: 노트 수정 (본인 것만)."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    note = MeetingNote.query.filter_by(id=note_id, created_by_id=user["id"]).first()
+    if not note:
+        return jsonify({"error": "Not found"}), 404
+    data = request.get_json() or {}
+    next_actions_raw = data.get("next_actions")
+    if next_actions_raw is not None:
+        note.next_actions = json.dumps(next_actions_raw) if isinstance(next_actions_raw, list) else (next_actions_raw or "[]")
+    if "ticker" in data:
+        note.ticker = (data.get("ticker") or "").strip() or None
+    if "meeting_type" in data:
+        note.meeting_type = (data.get("meeting_type") or "IC").strip()
+    if "sentiment" in data:
+        note.sentiment = (data.get("sentiment") or "Neutral").strip()
+    if "attendees" in data:
+        note.attendees = (data.get("attendees") or "").strip() or None
+    if "executive_summary" in data:
+        note.executive_summary = (data.get("executive_summary") or "").strip() or None
+    if "main_discussion" in data:
+        note.main_discussion = (data.get("main_discussion") or "").strip() or None
+    db.session.commit()
+    return jsonify(_meeting_note_to_dict(note))
+
+
+def _meeting_note_to_dict(note):
+    actions = []
+    if note.next_actions:
+        try:
+            actions = json.loads(note.next_actions) if isinstance(note.next_actions, str) else (note.next_actions or [])
+        except (TypeError, ValueError):
+            pass
+    return {
+        "id": note.id,
+        "ticker": note.ticker or "",
+        "meeting_type": note.meeting_type or "IC",
+        "sentiment": note.sentiment or "Neutral",
+        "attendees": note.attendees or "",
+        "executive_summary": note.executive_summary or "",
+        "main_discussion": note.main_discussion or "",
+        "next_actions": actions,
+        "created_at": note.created_at.isoformat() if note.created_at else None,
+        "updated_at": note.updated_at.isoformat() if note.updated_at else None,
+        "title": (note.ticker or "Note") + " — " + (note.created_at.strftime("%Y-%m-%d") if note.created_at else ""),
+    }
 
 
 @terminal_bp.route("/api/users/options")

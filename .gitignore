@@ -7,6 +7,9 @@
 # DB (버전 관리 제외)
 terminal.db
 
+# Internal Research uploads
+internal_research_uploads/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -22,6 +25,9 @@ env/
 .vscode/
 *.swp
 *.swo
+
+# Node (Tailwind build)
+node_modules/
 
 # OS
 .DS_Store

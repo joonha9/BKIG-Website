@@ -393,3 +393,198 @@
   color: #475569;
   padding: 0.5rem 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Internal Research & Resources — Bloomberg/Capital IQ style
+   Category badges, format badges, filter active, row hover
+--------------------------------------------------------------------------- */
+.bkig-terminal .internal-research-search {
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+.bkig-terminal .internal-research-filter.is-active {
+  background: rgba(34, 211, 238, 0.2);
+  border-color: rgba(34, 211, 238, 0.5);
+  color: #67e8f9;
+}
+.bkig-terminal .internal-research-table {
+  font-size: 12px;
+}
+.bkig-terminal .internal-research-table th,
+.bkig-terminal .internal-research-table td {
+  font-size: 12px;
+}
+.bkig-terminal .internal-research-row {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+}
+.bkig-terminal .internal-research-row:hover {
+  background: rgba(51, 65, 85, 0.35);
+}
+/* Category badges: 작고 각진 형태 */
+.bkig-terminal .internal-research-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bkig-terminal .internal-research-badge-valuation {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+.bkig-terminal .internal-research-badge-research {
+  background: rgba(168, 85, 247, 0.25);
+  color: #c4b5fd;
+}
+.bkig-terminal .internal-research-badge-data {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+}
+.bkig-terminal .internal-research-badge-templates {
+  background: rgba(100, 116, 139, 0.35);
+  color: #94a3b8;
+}
+.bkig-terminal .internal-research-badge-meeting_note {
+  background: rgba(34, 211, 238, 0.2);
+  color: #67e8f9;
+}
+/* Format badges: XLSX green, PDF red, CSV blue, ZIP gray */
+.bkig-terminal .internal-research-format {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.bkig-terminal .internal-research-format-xlsx {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.bkig-terminal .internal-research-format-pdf {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.bkig-terminal .internal-research-format-csv {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+.bkig-terminal .internal-research-format-zip {
+  background: rgba(100, 116, 139, 0.3);
+  color: #94a3b8;
+}
+
+/* ---------------------------------------------------------------------------
+   Meeting Intelligence — Call Report style inputs (rounded-none, thin border)
+--------------------------------------------------------------------------- */
+.bkig-terminal .mi-input {
+  border-radius: 0;
+  border-width: 1px;
+}
+/* PDF export: IB report style (used in hidden #meeting-intel-pdf-source) */
+.meeting-intel-pdf-source {
+  position: absolute;
+  left: -9999px;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 11px;
+  color: #1e293b;
+  background: #fff;
+}
+.meeting-intel-pdf-source .pdf-header {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #0f172a;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+.meeting-intel-pdf-source .pdf-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 48px;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.08);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.meeting-intel-pdf-source .pdf-section {
+  margin-bottom: 12px;
+}
+.meeting-intel-pdf-source .pdf-section-title {
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.meeting-intel-pdf-source .pdf-meta-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.meeting-intel-pdf-source .pdf-meta-item {
+  font-size: 10px;
+}
+.meeting-intel-pdf-source .pdf-meta-item strong {
+  color: #475569;
+}
+
+/* ---------------------------------------------------------------------------
+   Upload Drawer (Slide-over / Right Drawer) — Internal Research
+--------------------------------------------------------------------------- */
+.upload-drawer {
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s;
+}
+.upload-drawer.upload-drawer-open {
+  visibility: visible;
+  pointer-events: auto;
+  transition: visibility 0s linear 0s;
+}
+.upload-drawer.upload-drawer-open .upload-drawer-backdrop {
+  opacity: 1;
+}
+.upload-drawer.upload-drawer-open .upload-drawer-panel {
+  transform: translateX(0);
+}
+.bkig-terminal .upload-drawer-category.is-active {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.5);
+  color: #67e8f9;
+}
+.bkig-terminal .upload-ticker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(71, 85, 105, 0.6);
+  border: 1px solid rgba(71, 85, 105, 0.8);
+  color: #e2e8f0;
+  border-radius: 2px;
+}
+.bkig-terminal .upload-ticker-pill-remove {
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  background: none;
+  border: none;
+  font-size: 14px;
+  line-height: 0.8;
+}
+.bkig-terminal .upload-ticker-pill-remove:hover {
+  color: #f87171;
+}

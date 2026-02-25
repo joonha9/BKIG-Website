@@ -7,6 +7,9 @@
   const VIEW_ATTR = 'data-view';
   const ACTIVE_NAV_CLASSES = ['bg-slate-700/40', 'text-white'];
 
+  /** Internal Research: 원본 데이터 (API에서 한 번 불러온 뒤 검색/필터는 이걸 기반으로 클라이언트 필터링) */
+  let internalResearchData = [];
+
   // -------------------------------------------------------------------------
   // 탭 전환: 클릭한 메뉴 외 모든 section hidden, 해당 섹션만 표시
   // -------------------------------------------------------------------------
@@ -36,6 +39,12 @@
       if (typeof renderWatchlistWidget === 'function') renderWatchlistWidget();
       if (typeof renderSectorHeatmap === 'function') renderSectorHeatmap();
       if (typeof renderKospiSectorHeatmap === 'function') renderKospiSectorHeatmap();
+    }
+    if (viewId === 'view-internal-research') {
+      if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
+    }
+    if (viewId === 'view-meeting-intelligence') {
+      if (typeof window.loadMeetingNotesList === 'function') window.loadMeetingNotesList();
     }
     if (viewId === 'view-profile') loadProfileView();
   }
@@ -1064,6 +1073,306 @@
     if (watchlistBackdrop) watchlistBackdrop.addEventListener('click', closeWatchlistModal);
     if (watchlistCancel) watchlistCancel.addEventListener('click', closeWatchlistModal);
     if (watchlistSave) watchlistSave.addEventListener('click', saveWatchlist);
+
+    // -------------------------------------------------------------------------
+    // Internal Research: Upload Document — 슬라이드 오버 열기/닫기, 카테고리, 티커 pill, 드롭존
+    // -------------------------------------------------------------------------
+    var uploadDrawer = document.getElementById('upload-drawer');
+    var uploadDrawerBackdrop = document.getElementById('upload-drawer-backdrop');
+    var uploadDrawerPanel = document.getElementById('upload-drawer-panel');
+    var uploadDrawerClose = document.getElementById('upload-drawer-close');
+    var uploadDrawerCancel = document.getElementById('upload-drawer-cancel');
+    var uploadDrawerForm = document.getElementById('upload-drawer-form');
+    var uploadTickerWrap = document.getElementById('upload-ticker-wrap');
+    var uploadTickerPills = document.getElementById('upload-ticker-pills');
+    var uploadTickerInput = document.getElementById('upload-ticker-input');
+    var uploadDocCategory = document.getElementById('upload-doc-category');
+    var uploadFileInput = document.getElementById('upload-file-input');
+    var uploadDropZone = document.getElementById('upload-drop-zone');
+
+    function openUploadDrawer() {
+      if (uploadDrawer) {
+        uploadDrawer.classList.add('upload-drawer-open');
+        uploadDrawer.setAttribute('aria-hidden', 'false');
+      }
+    }
+    function closeUploadDrawer() {
+      if (uploadDrawer) {
+        uploadDrawer.classList.remove('upload-drawer-open');
+        uploadDrawer.setAttribute('aria-hidden', 'true');
+      }
+      if (uploadDrawerForm && uploadDrawerForm.reset) {
+        uploadDrawerForm.reset();
+        uploadTickerList = [];
+        renderUploadTickerPills();
+        document.querySelectorAll('.upload-drawer-category').forEach(function (b) { b.classList.remove('is-active'); });
+        if (uploadDocCategory) uploadDocCategory.value = '';
+        if (typeof updateUploadFileLabel === 'function') updateUploadFileLabel();
+      }
+    }
+
+    var uploadTickerList = [];
+    function renderUploadTickerPills() {
+      if (!uploadTickerPills) return;
+      uploadTickerPills.innerHTML = uploadTickerList.map(function (ticker) {
+        return '<span class="upload-ticker-pill">' + escapeHtml(ticker) +
+          '<button type="button" class="upload-ticker-pill-remove" data-ticker="' + escapeHtml(ticker) + '" aria-label="Remove ' + escapeHtml(ticker) + '">×</button></span>';
+      }).join('');
+      uploadTickerPills.querySelectorAll('.upload-ticker-pill-remove').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var t = btn.getAttribute('data-ticker');
+          uploadTickerList = uploadTickerList.filter(function (x) { return x !== t; });
+          renderUploadTickerPills();
+        });
+      });
+    }
+    function escapeHtml(s) {
+      var div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    var internalResearchLoadRetryCount = 0;
+    var INTERNAL_RESEARCH_RETRY_MAX = 1;
+
+    function loadInternalResearchList(isRetry, preload) {
+      var section = document.getElementById('view-internal-research');
+      if (!preload && section && section.classList.contains('hidden')) return;
+      if (!isRetry) internalResearchLoadRetryCount = 0;
+
+      var tbody = document.getElementById('internal-research-tbody');
+      var emptyRow = document.getElementById('internal-research-empty-row');
+      if (tbody && emptyRow) {
+        emptyRow.style.display = '';
+        emptyRow.innerHTML = '<td colspan="7" class="py-6 px-2 text-center text-slate-500 text-xs">Loading…</td>';
+      }
+
+      var category = 'all';
+      var widget = document.getElementById('internal-research-widget');
+      if (widget) {
+        var activeFilter = widget.querySelector('.internal-research-filter.is-active');
+        if (activeFilter) category = activeFilter.getAttribute('data-filter') || 'all';
+      }
+      var searchEl = document.getElementById('internal-research-search');
+      var q = (searchEl && searchEl.value) ? String(searchEl.value).trim() : '';
+      var params = new URLSearchParams();
+      if (category && category !== 'all') params.set('category', category);
+      if (q) params.set('q', q);
+      var url = '/api/internal-research' + (params.toString() ? '?' + params.toString() : '');
+      var listTbody = document.getElementById('internal-research-tbody');
+      var listEmptyRow = document.getElementById('internal-research-empty-row');
+      var hadNoFilter = !params.has('category') && !params.has('q');
+
+      function applyListResult(data) {
+        if (!listTbody) return;
+        var docs = (data && data.documents) || [];
+        if (docs.length === 0) {
+          if (hadNoFilter && !isRetry && internalResearchLoadRetryCount < INTERNAL_RESEARCH_RETRY_MAX) {
+            internalResearchLoadRetryCount += 1;
+            setTimeout(function () { loadInternalResearchList(true); }, 200);
+            return;
+          }
+          if (listEmptyRow) {
+            listEmptyRow.style.display = '';
+            var emptyMsg = q ? 'No documents match your search.' : 'No documents yet. Upload one to get started.';
+            listEmptyRow.innerHTML = '<td colspan="7" class="py-6 px-2 text-center text-slate-500 text-xs">' + emptyMsg + '</td>';
+          }
+          listTbody.querySelectorAll('.internal-research-row').forEach(function (tr) { tr.remove(); });
+          return;
+        }
+        internalResearchLoadRetryCount = 0;
+        if (listEmptyRow) listEmptyRow.style.display = 'none';
+        listTbody.querySelectorAll('.internal-research-row').forEach(function (tr) { tr.remove(); });
+        var escapeHtml = function (s) {
+          var div = document.createElement('div');
+          div.textContent = s;
+          return div.innerHTML;
+        };
+        var fmtClass = { xlsx: 'xlsx', pdf: 'pdf', csv: 'csv', zip: 'zip' };
+        docs.forEach(function (d) {
+          var dateStr = (d.created_at || '').slice(0, 10);
+          var cat = (d.category || '').toLowerCase();
+          var tickerDisplay = (d.tickers || '').trim() || '—';
+          var tickerHtml = tickerDisplay === '—' ? '—' : '<a href="#" class="text-cyan-400 hover:text-cyan-300 hover:underline">' + escapeHtml(tickerDisplay) + '</a>';
+          var fmt = (d.file_format || '').toLowerCase();
+          var fmtCls = fmtClass[fmt] || 'zip';
+          var downloadUrl = '/api/internal-research/' + d.id + '/download';
+          var tr = document.createElement('tr');
+          tr.className = 'internal-research-row border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors';
+          tr.setAttribute('data-category', cat);
+          tr.innerHTML =
+            '<td class="py-1.5 px-2 tabular-nums text-slate-300" style="font-size: 12px;">' + escapeHtml(dateStr) + '</td>' +
+            '<td class="py-1.5 px-2"><span class="internal-research-badge internal-research-badge-' + escapeHtml(cat) + '">' + escapeHtml((d.category || '').charAt(0).toUpperCase() + (d.category || '').slice(1)) + '</span></td>' +
+            '<td class="py-1.5 px-2">' + tickerHtml + '</td>' +
+            '<td class="py-1.5 px-2 text-slate-200">' + escapeHtml(d.document_title || '') + '</td>' +
+            '<td class="py-1.5 px-2 text-slate-400">' + escapeHtml(d.author || '') + '</td>' +
+            '<td class="py-1.5 px-2"><span class="internal-research-format internal-research-format-' + fmtCls + '">' + escapeHtml((d.file_format || '').toUpperCase()) + '</span></td>' +
+            '<td class="py-1.5 px-2"><a href="' + escapeHtml(downloadUrl) + '" class="internal-research-download text-slate-500 hover:text-cyan-400 transition-colors p-0.5 inline-block" title="Download" aria-label="Download">↓</a></td>';
+          listTbody.appendChild(tr);
+        });
+      }
+
+      fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (res) {
+          if (!res.ok) return Promise.reject(new Error('' + res.status));
+          return res.json();
+        })
+        .then(function (data) {
+          applyListResult(data);
+        })
+        .catch(function () {
+          if (hadNoFilter && !isRetry && internalResearchLoadRetryCount < INTERNAL_RESEARCH_RETRY_MAX) {
+            internalResearchLoadRetryCount += 1;
+            setTimeout(function () { loadInternalResearchList(true); }, 200);
+            return;
+          }
+          internalResearchLoadRetryCount = 0;
+          if (listTbody && listEmptyRow) {
+            listEmptyRow.style.display = '';
+            listEmptyRow.innerHTML = '<td colspan="7" class="py-6 px-2 text-center text-slate-500 text-xs">Failed to load documents.</td>';
+          }
+        });
+    }
+    window.loadInternalResearchList = loadInternalResearchList;
+
+    document.querySelectorAll('#internal-research-widget .internal-research-filter').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#internal-research-widget .internal-research-filter').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
+      });
+    });
+    var searchInput = document.getElementById('internal-research-search');
+    if (searchInput) {
+      var searchTimeout;
+      searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function () {
+          if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
+        }, 300);
+      });
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          clearTimeout(searchTimeout);
+          if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
+        }
+      });
+    }
+
+    if (document.getElementById('internal-research-upload-btn')) {
+      document.getElementById('internal-research-upload-btn').addEventListener('click', openUploadDrawer);
+    }
+    if (uploadDrawerClose) uploadDrawerClose.addEventListener('click', closeUploadDrawer);
+    if (uploadDrawerCancel) uploadDrawerCancel.addEventListener('click', closeUploadDrawer);
+    if (uploadDrawerBackdrop) uploadDrawerBackdrop.addEventListener('click', closeUploadDrawer);
+
+    if (uploadDrawerForm) {
+      uploadDrawerForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var titleEl = document.getElementById('upload-doc-title');
+        var authorEl = document.getElementById('upload-doc-author');
+        var fileInput = document.getElementById('upload-file-input');
+        if (!titleEl || !authorEl || !uploadDocCategory || !fileInput) return;
+        var title = (titleEl.value || '').trim();
+        var category = (uploadDocCategory.value || '').trim();
+        var author = (authorEl.value || '').trim();
+        var file = fileInput.files && fileInput.files[0];
+        if (!title || !category || !author) {
+          alert('Please fill Document Title, Category, and Author.');
+          return;
+        }
+        if (!file) {
+          alert('Please select a file (XLSX, PDF, CSV, or ZIP).');
+          return;
+        }
+        var fd = new FormData();
+        fd.append('document_title', title);
+        fd.append('category', category);
+        fd.append('author', author);
+        fd.append('tickers', uploadTickerList.join(','));
+        fd.append('file', file);
+        fetch('/api/internal-research', { method: 'POST', body: fd, credentials: 'same-origin' })
+          .then(function (res) {
+            if (res.ok) {
+              closeUploadDrawer();
+              if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
+            } else {
+              return res.json().then(function (data) {
+                alert(data.message || data.error || 'Upload failed.');
+              });
+            }
+          })
+          .catch(function () { alert('Network error.'); });
+      });
+    }
+
+    document.querySelectorAll('.upload-drawer-category').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.upload-drawer-category').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        if (uploadDocCategory) uploadDocCategory.value = btn.getAttribute('data-category') || '';
+      });
+    });
+
+    if (uploadTickerInput) {
+      uploadTickerInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          var val = (uploadTickerInput.value || '').trim().toUpperCase();
+          if (val && uploadTickerList.indexOf(val) === -1) {
+            uploadTickerList.push(val);
+            renderUploadTickerPills();
+            uploadTickerInput.value = '';
+          }
+        } else if (e.key === 'Backspace' && !uploadTickerInput.value && uploadTickerList.length) {
+          uploadTickerList.pop();
+          renderUploadTickerPills();
+        }
+      });
+    }
+
+    function updateUploadFileLabel() {
+      var defaultEl = document.getElementById('upload-drop-default');
+      var selectedEl = document.getElementById('upload-drop-selected');
+      var namesEl = document.getElementById('upload-file-names');
+      if (!uploadFileInput || !defaultEl || !selectedEl || !namesEl) return;
+      var files = uploadFileInput.files;
+      if (files && files.length > 0) {
+        var names = [];
+        for (var i = 0; i < files.length; i++) names.push(files[i].name);
+        namesEl.textContent = names.length === 1 ? names[0] : names.join(', ');
+        defaultEl.classList.add('hidden');
+        selectedEl.classList.remove('hidden');
+      } else {
+        namesEl.textContent = '';
+        defaultEl.classList.remove('hidden');
+        selectedEl.classList.add('hidden');
+      }
+    }
+
+    if (uploadDropZone && uploadFileInput) {
+      uploadDropZone.addEventListener('click', function (e) {
+        if (e.target !== uploadFileInput) uploadFileInput.click();
+      });
+      uploadFileInput.addEventListener('change', updateUploadFileLabel);
+      uploadDropZone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        uploadDropZone.classList.add('border-cyan-500/50', 'bg-slate-800/60');
+      });
+      uploadDropZone.addEventListener('dragleave', function (e) {
+        e.preventDefault();
+        uploadDropZone.classList.remove('border-cyan-500/50', 'bg-slate-800/60');
+      });
+      uploadDropZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        uploadDropZone.classList.remove('border-cyan-500/50', 'bg-slate-800/60');
+        if (e.dataTransfer.files.length) {
+          uploadFileInput.files = e.dataTransfer.files;
+          updateUploadFileLabel();
+        }
+      });
+    }
 
     var announcementNewBtn = document.getElementById('announcement-new-post-btn');
     var announcementNewModal = document.getElementById('announcement-new-modal');
@@ -2475,9 +2784,12 @@
       var json = await res.json().catch(function () { return {}; });
       var useApi = res.ok && (json.hasOwnProperty('institutionalHoldingsPct') || json.hasOwnProperty('insiderTransactions'));
       var data = useApi ? { institutionalHoldingsPct: json.institutionalHoldingsPct != null ? json.institutionalHoldingsPct : 0, insiderTransactions: Array.isArray(json.insiderTransactions) ? json.insiderTransactions : [] } : getOwnershipMockForTicker(ticker);
+      lastOwnershipData = { ticker: ticker, data: data };
       renderOwnershipWithData(content, ticker, data);
     } catch (e) {
-      renderOwnershipWithData(content, ticker, getOwnershipMockForTicker(ticker));
+      var fallback = getOwnershipMockForTicker(ticker);
+      lastOwnershipData = { ticker: ticker, data: fallback };
+      renderOwnershipWithData(content, ticker, fallback);
     }
   }
 
@@ -2593,8 +2905,10 @@
       var useApi = res.ok && (json.hasOwnProperty('currentPrice') || json.hasOwnProperty('priceTarget') || json.hasOwnProperty('earningsEstimates'));
       var data = useApi ? { currentPrice: json.currentPrice, priceTarget: json.priceTarget || {}, earningsEstimates: Array.isArray(json.earningsEstimates) ? json.earningsEstimates : [] } : ESTIMATES_MOCK;
       if (data.priceTarget && json.priceTarget && json.priceTarget.currentPrice != null) data.currentPrice = data.currentPrice != null ? data.currentPrice : json.priceTarget.currentPrice;
+      lastEstimatesData = { ticker: ticker, data: data };
       renderEstimatesWithData(content, ticker, data);
     } catch (e) {
+      lastEstimatesData = { ticker: ticker, data: ESTIMATES_MOCK };
       renderEstimatesWithData(content, ticker, ESTIMATES_MOCK);
     }
   }
@@ -2777,7 +3091,16 @@
       });
   }
 
+  var currentFinancialTab = '';
+  var EXCEL_TABS = ['overview', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates'];
+  var lastOwnershipData = null;
+  var lastEstimatesData = null;
+
   function loadAndRenderTab(tab) {
+    currentFinancialTab = tab || '';
+    var excelBar = document.getElementById('tool-excel-bar');
+    if (excelBar) excelBar.classList.toggle('hidden', EXCEL_TABS.indexOf(tab) === -1);
+
     setActiveFinancialTab(tab);
     var content = document.getElementById('tool-content');
     if (!content) return;
@@ -2847,6 +3170,9 @@
     currentTicker = ticker;
     if (!financialCache[currentTicker]) financialCache[currentTicker] = {};
     showToolLoader();
+    currentFinancialTab = 'overview';
+    var excelBar = document.getElementById('tool-excel-bar');
+    if (excelBar) excelBar.classList.remove('hidden');
     setActiveFinancialTab('overview');
     fetch('/api/tools/profile/' + ticker)
       .then(function (res) { return res.json(); })
@@ -2865,6 +3191,125 @@
       });
   }
 
+  function exportFinancialToExcel() {
+    if (typeof XLSX === 'undefined') { alert('Excel export library not loaded.'); return; }
+    var tab = currentFinancialTab;
+    var t = (currentTicker || '').trim().toUpperCase();
+    var aoa = [];
+    var sheetName = tab || 'Sheet1';
+    var baseName = (t || 'export') + '_' + tab;
+
+    function numFmt(x) {
+      if (x == null || x === '' || x === undefined) return '—';
+      var n = Number(x);
+      if (isNaN(n)) return String(x);
+      return n;
+    }
+
+    if (tab === 'overview' && financialChartHistorical && financialChartHistorical.length) {
+      aoa = [['Date', 'Open', 'High', 'Low', 'Close', 'Volume']];
+      financialChartHistorical.forEach(function (d) {
+        aoa.push([
+          d.date || '',
+          d.open != null ? numFmt(d.open) : '',
+          d.high != null ? numFmt(d.high) : '',
+          d.low != null ? numFmt(d.low) : '',
+          d.close != null ? numFmt(d.close) : '',
+          d.volume != null ? numFmt(d.volume) : '',
+        ]);
+      });
+    } else if ((tab === 'income' || tab === 'balance' || tab === 'cashflow') && t && financialCache[t] && financialCache[t][tab]) {
+      var statements = financialCache[t][tab];
+      var layout = tab === 'income' ? INCOME_STATEMENT_LAYOUT : (tab === 'balance' ? BALANCE_SHEET_LAYOUT : CASH_FLOW_LAYOUT);
+      var dates = statements.map(function (s) { return s.date || s.calendarYear || ''; });
+      aoa = [['Account'].concat(dates)];
+      layout.forEach(function (item) {
+        var row = [item.label];
+        statements.forEach(function (s) { row.push(getStatementValue(s, item.keys) != null ? numFmt(getStatementValue(s, item.keys)) : '—'); });
+        aoa.push(row);
+      });
+    } else if (tab === 'ratios' && t && financialCache[t] && financialCache[t].ratios) {
+      var out = statementToRows(financialCache[t].ratios);
+      aoa = [['Account'].concat(out.dates)];
+      out.rows.forEach(function (r) {
+        aoa.push([r.label].concat(r.values.map(function (v) { return v != null && v !== '' ? (r.isPct ? Number(v).toFixed(2) + '%' : numFmt(v)) : '—'; })));
+      });
+    } else if (tab === 'trend') {
+      var years = TREND_MOCK.years;
+      var data = TREND_MOCK.data;
+      var keys = trendSelectedKeys.length ? trendSelectedKeys : Object.keys(data);
+      aoa = [['Metric'].concat(years).concat(['YoY %', '5Y CAGR'])];
+      keys.forEach(function (key) {
+        var vals = data[key] || [];
+        var yoy = trendYoy(vals);
+        var cagr = trendCagr(vals);
+        var label = trendGetLabel(key);
+        var row = [label];
+        vals.forEach(function (v) { row.push(v != null ? numFmt(v) : '—'); });
+        row.push(yoy != null ? (yoy >= 0 ? '+' : '') + yoy.toFixed(2) + '%' : '—');
+        row.push(cagr != null ? (cagr >= 0 ? '+' : '') + cagr.toFixed(2) + '%' : '—');
+        aoa.push(row);
+      });
+    } else if (tab === 'comps') {
+      var dataByTicker = {};
+      COMPS_MOCK.data.forEach(function (row) { dataByTicker[row.ticker] = row; });
+      var selected = compSelectedTickers.length ? compSelectedTickers : [currentTicker || 'AAPL'].concat(COMPS_MOCK.peers);
+      aoa = [['Ticker', 'Market Cap (B)', 'EV (B)', 'LTM Revenue (B)', 'LTM EBITDA (B)', 'Gross Margin %', 'EV/EBITDA', 'P/E', 'P/B', 'ROE %']];
+      selected.forEach(function (ticker) {
+        var row = dataByTicker[ticker];
+        if (!row) return;
+        aoa.push([
+          ticker,
+          row.marketCap != null ? row.marketCap : '—',
+          row.ev != null ? row.ev : '—',
+          row.ltmRevenue != null ? row.ltmRevenue : '—',
+          row.ltmEbitda != null ? row.ltmEbitda : '—',
+          row.grossMargin != null ? row.grossMargin : '—',
+          row.evToEbitda != null ? row.evToEbitda : '—',
+          row.peRatio != null ? row.peRatio : '—',
+          row.pbRatio != null ? row.pbRatio : '—',
+          row.roe != null ? row.roe : '—',
+        ]);
+      });
+    } else if (tab === 'ownership' && lastOwnershipData) {
+      var od = lastOwnershipData.data;
+      aoa = [['Institutional Holdings %'], [od.institutionalHoldingsPct != null ? od.institutionalHoldingsPct : '—']];
+      aoa.push([]);
+      aoa.push(['Date', 'Insider', 'Title', 'Type', 'Shares', 'Price', 'Value']);
+      (od.insiderTransactions || []).forEach(function (tr) {
+        aoa.push([
+          tr.date || '—',
+          tr.insiderName || tr.name || '—',
+          tr.title || '—',
+          tr.transactionType || '—',
+          tr.shares != null ? tr.shares : '—',
+          tr.price != null ? tr.price : '—',
+          tr.value != null ? tr.value : '—',
+        ]);
+      });
+    } else if (tab === 'estimates' && lastEstimatesData) {
+      var ed = lastEstimatesData.data;
+      aoa = [['Current Price', ed.currentPrice != null ? ed.currentPrice : '—'], ['Price Target Low', (ed.priceTarget && ed.priceTarget.low) != null ? ed.priceTarget.low : '—'], ['Price Target High', (ed.priceTarget && ed.priceTarget.high) != null ? ed.priceTarget.high : '—'], ['Price Target Avg', (ed.priceTarget && ed.priceTarget.average) != null ? ed.priceTarget.average : '—'], []];
+      aoa.push(['Period', 'Estimated EPS', 'Estimated Revenue (B)']);
+      (ed.earningsEstimates || []).forEach(function (row) {
+        aoa.push([
+          row.period || '—',
+          row.estimatedEps != null ? row.estimatedEps : '—',
+          row.estimatedRevenue != null ? row.estimatedRevenue : '—',
+        ]);
+      });
+    }
+
+    if (aoa.length === 0) {
+      alert('No data to export for this tab. Load data first.');
+      return;
+    }
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, baseName + '.xlsx');
+  }
+
   function initFinancialTools() {
     var searchBtn = document.getElementById('ticker-search-btn');
     var tickerInput = document.getElementById('ticker-input');
@@ -2880,6 +3325,8 @@
         if (tab) loadAndRenderTab(tab);
       });
     });
+    var excelBtn = document.getElementById('tool-download-excel-btn');
+    if (excelBtn) excelBtn.addEventListener('click', exportFinancialToExcel);
   }
 
   // -------------------------------------------------------------------------
@@ -2906,6 +3353,7 @@
     initActionsDelegation();
     initDashboardModals();
     initFinancialTools();
+    if (typeof window.initMeetingIntelForm === 'function') window.initMeetingIntelForm();
   }
 
   if (document.readyState === 'loading') {
