@@ -29,6 +29,30 @@ from werkzeug.utils import secure_filename
 db = SQLAlchemy()
 
 
+class Division(db.Model):
+    """Division (e.g. Equity, Fixed Income). Used for division rooms and RBAC."""
+    __tablename__ = "terminal_divisions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+
+    teams = db.relationship("Team", backref="division", lazy="dynamic")
+    rooms = db.relationship("Room", backref="division", foreign_keys="Room.division_id", lazy="dynamic")
+    users = db.relationship("User", backref="division_ref", foreign_keys="User.division_id", lazy="dynamic")
+
+
+class Team(db.Model):
+    """Team within a division. Used for team rooms and RBAC."""
+    __tablename__ = "terminal_teams"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    division_id = db.Column(db.Integer, db.ForeignKey("terminal_divisions.id"), nullable=False)
+
+    rooms = db.relationship("Room", backref="team_ref", foreign_keys="Room.team_id", lazy="dynamic")
+    users = db.relationship("User", backref="team_ref", foreign_keys="User.team_id", lazy="dynamic")
+
+
 class User(db.Model):
     __tablename__ = "terminal_users"
 
@@ -37,10 +61,12 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(120), nullable=False)
     division = db.Column(db.String(120), nullable=False)
-    team = db.Column(db.Integer, nullable=True)  # 팀 번호 (숫자)
-    role = db.Column(db.String(32), nullable=False, default="analyst")
+    team = db.Column(db.Integer, nullable=True)  # 팀 번호 (숫자) — legacy/display
+    role = db.Column(db.String(32), nullable=False, default="analyst")  # super_admin, division_lead, team_lead, analyst
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     watchlist = db.Column(db.String(120), nullable=True)  # 최대 3개 티커, 쉼표 구분 예: "AAPL,TSLA,MSFT"
+    division_id = db.Column(db.Integer, db.ForeignKey("terminal_divisions.id"), nullable=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("terminal_teams.id"), nullable=True)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -54,6 +80,8 @@ class User(db.Model):
             "team": getattr(self, "team", None),
             "role": self.role,
             "is_active": getattr(self, "is_active", True),
+            "division_id": getattr(self, "division_id", None),
+            "team_id": getattr(self, "team_id", None),
         }
 
 
@@ -157,6 +185,55 @@ class MeetingNote(db.Model):
     created_by = db.relationship("User", foreign_keys=[created_by_id])
 
 
+class Room(db.Model):
+    """Comms room: executive, division, or team. Used for RBAC (who can invite)."""
+    __tablename__ = "terminal_rooms"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    room_type = db.Column(db.String(32), nullable=False)  # executive, division, team
+    division_id = db.Column(db.Integer, db.ForeignKey("terminal_divisions.id"), nullable=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("terminal_teams.id"), nullable=True)
+
+    members = db.relationship("RoomMember", backref="room", lazy="dynamic", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "room_type": self.room_type,
+            "division_id": self.division_id,
+            "team_id": self.team_id,
+        }
+
+
+class RoomMember(db.Model):
+    """Association: User <-> Room with joined_at."""
+    __tablename__ = "terminal_room_members"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey("terminal_rooms.id"), nullable=False)
+    joined_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    user = db.relationship("User", backref=db.backref("room_memberships", lazy="dynamic"))
+    __table_args__ = (db.UniqueConstraint("user_id", "room_id", name="uq_room_member"),)
+
+
+class RoomMessage(db.Model):
+    """Chat message in a room. Only room members can read/send."""
+    __tablename__ = "terminal_room_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey("terminal_rooms.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    room = db.relationship("Room", backref=db.backref("messages", lazy="dynamic"))
+    user = db.relationship("User", backref=db.backref("room_messages", lazy="dynamic"))
+
+
 def init_terminal_db(app):
     """Flask app에 Terminal DB·Migrate 연결 (스키마 변경은 flask db upgrade 로 적용)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -213,6 +290,8 @@ def get_current_user():
         "name": user.name,
         "division": user.division,
         "role": user.role,
+        "division_id": getattr(user, "division_id", None),
+        "team_id": getattr(user, "team_id", None),
     }
 
 
@@ -1113,6 +1192,271 @@ def _meeting_note_to_dict(note):
     }
 
 
+def sync_room_memberships():
+    """
+    Ensure room memberships by role:
+    - All division_leads are in every executive room.
+    - All super_admins are in every room (executive + division + team).
+    - Each division room has its division_lead as member.
+    - Division_lead is added to a team room only when that room's team_id matches their team_id
+      (so they are only in the team(s) they belong to, not every team in the division).
+    - Analysts / team_lead: add to their team room.
+    """
+    executive_rooms = Room.query.filter_by(room_type="executive").all()
+    division_rooms = Room.query.filter_by(room_type="division").all()
+    team_rooms = Room.query.filter_by(room_type="team").all()
+    all_rooms = Room.query.all()
+
+    def ensure_member(room_id, user_id):
+        if RoomMember.query.filter_by(room_id=room_id, user_id=user_id).first():
+            return
+        db.session.add(RoomMember(room_id=room_id, user_id=user_id))
+
+    # Super_admin: add to all rooms
+    for u in User.query.filter_by(role="super_admin", is_active=True).all():
+        for r in all_rooms:
+            ensure_member(r.id, u.id)
+
+    # Division_lead: executive + own division room + only the team room(s) where room.team_id == u.team_id
+    for u in User.query.filter(User.role == "division_lead", User.is_active.is_(True)).all():
+        for r in executive_rooms:
+            ensure_member(r.id, u.id)
+        for r in division_rooms:
+            if r.division_id and r.division_id == u.division_id:
+                ensure_member(r.id, u.id)
+        for r in team_rooms:
+            if r.division_id and r.division_id == u.division_id and u.team_id is not None and r.team_id == u.team_id:
+                ensure_member(r.id, u.id)
+        # Remove division_lead from team rooms they should not be in (wrong division or wrong team)
+        for r in team_rooms:
+            if r.division_id != u.division_id:
+                continue
+            if u.team_id is None or r.team_id != u.team_id:
+                rm = RoomMember.query.filter_by(room_id=r.id, user_id=u.id).first()
+                if rm:
+                    db.session.delete(rm)
+
+    # Analysts / team_lead: add to their team room (division_lead already added above)
+    for u in User.query.filter(User.is_active.is_(True)).all():
+        if u.role in ("super_admin", "division_lead"):
+            continue
+        if not u.team_id:
+            continue
+        for r in team_rooms:
+            if r.team_id == u.team_id:
+                ensure_member(r.id, u.id)
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+
+
+def can_invite_to_room(user_dict, room):
+    """
+    RBAC: who can invite members to a room.
+    - executive: only Super_Admin
+    - division: Super_Admin OR (Division_Lead AND user.division_id == room.division_id)
+    - team: Super_Admin OR (Division_Lead AND user.division_id == room.division_id) OR (Team_Lead AND user.team_id == room.team_id)
+    """
+    if not user_dict or not room:
+        return False
+    role = (user_dict.get("role") or "").strip().lower()
+    if role == "super_admin":
+        return True
+    if room.room_type == "executive":
+        return False
+    if room.room_type == "division":
+        return role == "division_lead" and user_dict.get("division_id") is not None and user_dict.get("division_id") == room.division_id
+    if room.room_type == "team":
+        if role == "division_lead" and user_dict.get("division_id") is not None and user_dict.get("division_id") == room.division_id:
+            return True
+        return role == "team_lead" and user_dict.get("team_id") is not None and user_dict.get("team_id") == room.team_id
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Comms: rooms, members, messages, invite (RBAC)
+# ---------------------------------------------------------------------------
+def _comms_user_in_room(user_id, room_id):
+    """True if user is a member of the room."""
+    return RoomMember.query.filter_by(room_id=room_id, user_id=user_id).first() is not None
+
+
+@terminal_bp.route("/api/comms/rooms", methods=["GET"])
+@login_required_api
+def api_comms_rooms():
+    """GET: Rooms grouped by Executive, Division, Team. Each room includes can_invite for current user."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    sync_room_memberships()
+    executive_rooms = Room.query.filter_by(room_type="executive").order_by(Room.name).all()
+    division_rooms = Room.query.filter_by(room_type="division").order_by(Room.division_id, Room.name).all()
+    team_rooms = Room.query.filter_by(room_type="team").order_by(Room.team_id, Room.name).all()
+    def with_can_invite(room):
+        d = room.to_dict()
+        d["can_invite"] = can_invite_to_room(user, room)
+        return d
+    return jsonify({
+        "executive": [with_can_invite(r) for r in executive_rooms],
+        "division": [with_can_invite(r) for r in division_rooms],
+        "team": [with_can_invite(r) for r in team_rooms],
+    })
+
+
+@terminal_bp.route("/api/comms/rooms/<int:room_id>/members", methods=["GET"])
+@login_required_api
+def api_comms_room_members(room_id):
+    """GET: Members of a room. 403 if current user is not a member (no access)."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    room = Room.query.get(room_id)
+    if not room:
+        return jsonify({"error": "Not found", "message": "Room not found"}), 404
+    if not _comms_user_in_room(user["id"], room_id):
+        return jsonify({"error": "Forbidden", "message": "엑세스가 없습니다"}), 403
+    members = RoomMember.query.filter_by(room_id=room_id).order_by(RoomMember.joined_at).all()
+    result = []
+    for m in members:
+        u = m.user
+        if not u:
+            continue
+        result.append({
+            "id": u.id,
+            "name": u.name,
+            "email": u.email,
+            "role": u.role,
+            "joined_at": m.joined_at.isoformat() if m.joined_at else None,
+        })
+    room_dict = room.to_dict()
+    room_dict["can_invite"] = can_invite_to_room(user, room)
+    return jsonify({"room": room_dict, "members": result})
+
+
+@terminal_bp.route("/api/comms/rooms/<int:room_id>/invite-options", methods=["GET"])
+@login_required_api
+def api_comms_invite_options(room_id):
+    """GET: Users that can be invited to the room (active, not already members). 403 if not a room member."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    room = Room.query.get(room_id)
+    if not room:
+        return jsonify({"error": "Not found", "message": "Room not found"}), 404
+    if not _comms_user_in_room(user["id"], room_id):
+        return jsonify({"error": "Forbidden", "message": "엑세스가 없습니다"}), 403
+    member_ids = {m.user_id for m in RoomMember.query.filter_by(room_id=room_id).all()}
+    users = User.query.filter(User.is_active.is_(True), User.id.notin_(member_ids)).order_by(User.name).all()
+    return jsonify({"users": [{"id": u.id, "name": u.name, "email": u.email} for u in users]})
+
+
+@terminal_bp.route("/api/comms/rooms/<int:room_id>/messages", methods=["GET"])
+@login_required_api
+def api_comms_room_messages(room_id):
+    """GET: Messages in the room (IRC-style). 403 if current user is not a member."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    room = Room.query.get(room_id)
+    if not room:
+        return jsonify({"error": "Not found", "message": "Room not found"}), 404
+    if not _comms_user_in_room(user["id"], room_id):
+        return jsonify({"error": "Forbidden", "message": "엑세스가 없습니다"}), 403
+    messages = RoomMessage.query.filter_by(room_id=room_id).order_by(RoomMessage.created_at.asc()).all()
+    out = []
+    for m in messages:
+        author = m.user
+        out.append({
+            "id": m.id,
+            "user_id": m.user_id,
+            "username": author.name if author else "",
+            "body": m.body or "",
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        })
+    return jsonify({"messages": out})
+
+
+@terminal_bp.route("/api/comms/rooms/<int:room_id>/messages", methods=["POST"])
+@login_required_api
+def api_comms_room_send_message(room_id):
+    """POST: Send a message. Body: { "body": "..." }. 403 if not a room member."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    room = Room.query.get(room_id)
+    if not room:
+        return jsonify({"error": "Not found", "message": "Room not found"}), 404
+    if not _comms_user_in_room(user["id"], room_id):
+        return jsonify({"error": "Forbidden", "message": "엑세스가 없습니다"}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    body = (data.get("body") or "").strip()
+    if not body:
+        return jsonify({"error": "Bad request", "message": "body is required"}), 400
+    msg = RoomMessage(room_id=room_id, user_id=user["id"], body=body)
+    db.session.add(msg)
+    db.session.commit()
+    author = User.query.get(user["id"])
+    return jsonify({
+        "id": msg.id,
+        "user_id": msg.user_id,
+        "username": author.name if author else "",
+        "body": msg.body,
+        "created_at": msg.created_at.isoformat() if msg.created_at else None,
+    }), 201
+
+
+@terminal_bp.route("/api/comms/invite", methods=["POST"])
+@login_required_api
+def api_comms_invite():
+    """
+    POST: Invite user(s) to a room. Body: room_id, user_id (int) or user_ids (list of int).
+    Strict RBAC: 403 if current user is not allowed to invite to this room.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized", "message": "Login required"}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    room_id = data.get("room_id")
+    user_id = data.get("user_id")
+    user_ids = data.get("user_ids")
+    if room_id is None:
+        return jsonify({"error": "Bad request", "message": "room_id is required"}), 400
+    ids_to_add = []
+    if user_id is not None:
+        ids_to_add.append(int(user_id))
+    if user_ids is not None:
+        if not isinstance(user_ids, list):
+            return jsonify({"error": "Bad request", "message": "user_ids must be an array"}), 400
+        ids_to_add.extend([int(x) for x in user_ids if x is not None])
+    ids_to_add = list(dict.fromkeys(ids_to_add))
+    if not ids_to_add:
+        return jsonify({"error": "Bad request", "message": "user_id or user_ids required"}), 400
+
+    room = Room.query.get(room_id)
+    if not room:
+        return jsonify({"error": "Not found", "message": "Room not found"}), 404
+    if not can_invite_to_room(user, room):
+        return jsonify({"error": "Forbidden", "message": "You do not have permission to invite members to this room"}), 403
+
+    added = []
+    for uid in ids_to_add:
+        if uid == user["id"]:
+            continue
+        target = User.query.get(uid)
+        if not target or not getattr(target, "is_active", True):
+            continue
+        existing = RoomMember.query.filter_by(room_id=room_id, user_id=uid).first()
+        if existing:
+            continue
+        rm = RoomMember(room_id=room_id, user_id=uid)
+        db.session.add(rm)
+        added.append({"id": target.id, "name": target.name})
+    db.session.commit()
+    return jsonify({"success": True, "added": added})
+
+
 @terminal_bp.route("/api/users/options")
 @login_required_api
 def api_users_options():
@@ -1203,7 +1547,7 @@ def api_users():
         else:
             team = None
         role = (data.get("role") or "analyst").strip() or "analyst"
-        if role not in ("super_admin", "analyst", "division_lead"):
+        if role not in ("super_admin", "analyst", "division_lead", "team_lead"):
             role = "analyst"
 
         if not email or not password or not name or not division:
@@ -1232,7 +1576,7 @@ def api_users():
 @terminal_bp.route("/api/users/<int:user_id>", methods=["PATCH", "DELETE"])
 @login_required_api
 def api_user_by_id(user_id):
-    """PATCH: is_active 토글 (Pause/Resume). DELETE: 계정 삭제 (Terminate). super_admin만."""
+    """PATCH: is_active 토글 (Pause/Resume) 또는 name, email, division, team, role 수정. DELETE: 계정 삭제 (Terminate). super_admin만."""
     forbidden = require_super_admin()
     if forbidden is not None:
         return forbidden
@@ -1244,8 +1588,52 @@ def api_user_by_id(user_id):
     if request.method == "PATCH":
         data = request.get_json(force=True, silent=True) or {}
         is_active = data.get("is_active")
+
+        if "name" in data or "email" in data or "division" in data or "team" in data or "role" in data or "password" in data:
+            # Edit profile (name, email, division, team, role; optional password)
+            if "name" in data:
+                user.name = (data.get("name") or "").strip() or user.name
+            if "email" in data:
+                raw = (data.get("email") or "").strip()
+                if raw and raw != user.email:
+                    if User.query.filter_by(email=raw).filter(User.id != user.id).first():
+                        return jsonify({"error": "Conflict", "message": "Email already in use"}), 409
+                    user.email = raw
+            if "division" in data:
+                div_name = (data.get("division") or "").strip()
+                user.division = div_name or user.division
+                if div_name:
+                    div = Division.query.filter_by(name=div_name).first()
+                    user.division_id = div.id if div else None
+                else:
+                    user.division_id = None
+            if "team" in data:
+                team_val = data.get("team")
+                if team_val is None or team_val == "":
+                    user.team = None
+                    user.team_id = None
+                else:
+                    try:
+                        num = int(team_val)
+                        user.team = num
+                        if user.division_id:
+                            t = Team.query.filter_by(division_id=user.division_id, name=str(num)).first()
+                            user.team_id = t.id if t else None
+                        else:
+                            user.team_id = None
+                    except (TypeError, ValueError):
+                        user.team = None
+                        user.team_id = None
+            if "role" in data:
+                role = (data.get("role") or "analyst").strip() or "analyst"
+                if role in ("super_admin", "division_lead", "team_lead", "analyst"):
+                    user.role = role
+            if data.get("password"):
+                user.password_hash = generate_password_hash(data.get("password"))
+            db.session.commit()
+            return jsonify({"user": user.to_dict()})
         if is_active is None:
-            return jsonify({"error": "Bad request", "message": "is_active required"}), 400
+            return jsonify({"error": "Bad request", "message": "is_active or edit fields required"}), 400
         user.is_active = bool(is_active)
         db.session.commit()
         return jsonify({"user": user.to_dict()})

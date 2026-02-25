@@ -206,13 +206,86 @@
       </div>
     </section>
 
-    <!-- view-comms -->
-    <section id="view-comms" class="flex-1 overflow-y-auto bkig-scroll p-6 hidden">
-      <div class="max-w-4xl">
-        <h2 class="text-xl font-semibold text-slate-200 mb-1">Comms</h2>
-        <p class="text-slate-500 text-sm mb-6">Internal communications and announcements.</p>
-        <div class="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6 text-slate-400 text-sm">
-          No messages yet.
+    <!-- view-comms: 3-pane financial terminal (rooms | chat | members) -->
+    <section id="view-comms" class="flex-1 flex overflow-hidden bg-[#0f172a] text-slate-200 hidden min-h-0">
+      <!-- Left: Room list accordion (Executive, Division, Team) -->
+      <aside class="comms-sidebar w-56 shrink-0 border-r border-slate-700/60 flex flex-col bg-[#0d1220] overflow-hidden">
+        <div class="p-3 border-b border-slate-700/60">
+          <h2 class="text-sm font-semibold text-slate-300 tracking-wide">Rooms</h2>
+        </div>
+        <div class="flex-1 overflow-y-auto bkig-scroll py-2">
+          <div id="comms-accordion-executive" class="comms-accordion-group">
+            <button type="button" class="comms-accordion-trigger w-full text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-400 flex items-center justify-between" aria-expanded="true" data-group="executive">
+              <span>Executive</span>
+              <svg class="comms-accordion-chevron w-3.5 h-3.5 text-slate-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div class="comms-accordion-panel" data-group="executive">
+              <ul id="comms-rooms-executive" class="pb-2 space-y-0.5"></ul>
+            </div>
+          </div>
+          <div id="comms-accordion-division" class="comms-accordion-group">
+            <button type="button" class="comms-accordion-trigger w-full text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-400 flex items-center justify-between" aria-expanded="true" data-group="division">
+              <span>Division</span>
+              <svg class="comms-accordion-chevron w-3.5 h-3.5 text-slate-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div class="comms-accordion-panel" data-group="division">
+              <ul id="comms-rooms-division" class="pb-2 space-y-0.5"></ul>
+            </div>
+          </div>
+          <div id="comms-accordion-team" class="comms-accordion-group">
+            <button type="button" class="comms-accordion-trigger w-full text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-400 flex items-center justify-between" aria-expanded="true" data-group="team">
+              <span>Team</span>
+              <svg class="comms-accordion-chevron w-3.5 h-3.5 text-slate-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div class="comms-accordion-panel" data-group="team">
+              <ul id="comms-rooms-team" class="pb-2 space-y-0.5"></ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <!-- Center: IRC-style chat (high density, single row per message) -->
+      <div class="comms-center flex-1 min-w-0 flex flex-col bg-[#111827] border-r border-slate-700/60">
+        <div class="shrink-0 px-3 py-2 border-b border-slate-700/60">
+          <h3 id="comms-room-title" class="text-sm font-medium text-slate-400">Select a room</h3>
+        </div>
+        <div id="comms-messages" class="flex-1 overflow-y-auto bkig-scroll p-2 font-mono text-xs text-slate-300 min-h-0" style="line-height: 1.5;">
+          <div id="comms-messages-placeholder" class="text-slate-500 py-4 px-2">No room selected.</div>
+          <div id="comms-messages-access-denied" class="hidden py-8 px-4 text-center text-amber-400/90 font-medium">엑세스가 없습니다.</div>
+          <div id="comms-messages-list" class="hidden space-y-0"></div>
+        </div>
+        <div class="shrink-0 p-2 border-t border-slate-700/60">
+          <input type="text" id="comms-message-input" placeholder="Type a message…" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50" disabled>
+        </div>
+      </div>
+      <!-- Right: Members & Invite -->
+      <aside class="comms-members w-52 shrink-0 flex flex-col bg-[#0d1220] overflow-hidden">
+        <div class="p-3 border-b border-slate-700/60 flex flex-col gap-2">
+          <h3 class="text-sm font-semibold text-slate-300 tracking-wide">Members</h3>
+          <button type="button" id="comms-invite-btn" class="hidden w-full py-2 px-3 rounded-md text-xs font-medium bg-emerald-600/90 hover:bg-emerald-500/90 text-white transition-colors flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+            + Invite Members
+          </button>
+        </div>
+        <ul id="comms-members-list" class="flex-1 overflow-y-auto bkig-scroll py-2 px-2 space-y-1 text-sm text-slate-400">
+          <li id="comms-members-placeholder" class="text-slate-500 text-xs py-2">Select a room.</li>
+        </ul>
+      </aside>
+      <!-- Invite modal -->
+      <div id="comms-invite-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+        <div class="absolute inset-0 bg-black/60" data-comms-invite-close></div>
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-[#0f172a] border border-slate-700 rounded-lg shadow-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-semibold text-slate-200">Invite to room</h4>
+            <button type="button" id="comms-invite-modal-close" class="p-1 text-slate-500 hover:text-slate-300 rounded" aria-label="Close">&times;</button>
+          </div>
+          <p id="comms-invite-room-name" class="text-xs text-slate-500 mb-2"></p>
+          <select id="comms-invite-select" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 text-slate-200 text-sm mb-3">
+            <option value="">Choose a user…</option>
+          </select>
+          <div class="flex justify-end gap-2">
+            <button type="button" data-comms-invite-close class="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 rounded border border-slate-600">Cancel</button>
+            <button type="button" id="comms-invite-submit" class="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded">Invite</button>
+          </div>
         </div>
       </div>
     </section>
@@ -540,6 +613,7 @@
             <label for="add-role" class="block text-xs font-medium text-slate-400 mb-1">Role</label>
             <select id="add-role" name="role" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
               <option value="analyst">Analyst</option>
+              <option value="team_lead">Team Lead</option>
               <option value="division_lead">Division Lead</option>
               <option value="super_admin">Super Admin</option>
             </select>
@@ -548,6 +622,57 @@
         <div class="mt-6 flex justify-end gap-2">
           <button type="button" id="admin-modal-cancel" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors">Cancel</button>
           <button type="submit" form="admin-add-form" class="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Admin: Edit User Modal (숨김) -->
+  <div id="admin-edit-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" id="admin-edit-modal-backdrop">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+        <h3 class="text-lg font-semibold text-white mb-1">Edit User</h3>
+        <p class="text-slate-400 text-sm mb-6">Update name, email, division, team, and role.</p>
+        <form id="admin-edit-form" class="space-y-4">
+          <input type="hidden" id="edit-user-id" name="user_id" value="">
+          <div>
+            <label for="edit-name" class="block text-xs font-medium text-slate-400 mb-1">Name</label>
+            <input type="text" id="edit-name" name="name" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          </div>
+          <div>
+            <label for="edit-email" class="block text-xs font-medium text-slate-400 mb-1">Email</label>
+            <input type="email" id="edit-email" name="email" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          </div>
+          <div>
+            <label for="edit-password" class="block text-xs font-medium text-slate-400 mb-1">Password (leave blank to keep current)</label>
+            <input type="password" id="edit-password" name="password" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" placeholder="••••••••">
+          </div>
+          <div>
+            <label for="edit-division" class="block text-xs font-medium text-slate-400 mb-1">Division</label>
+            <select id="edit-division" name="division" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              <option value="">Select division</option>
+              <option value="Research">Research</option>
+              <option value="Investment">Investment</option>
+              <option value="Case Study">Case Study</option>
+              <option value="PD/PR">PD/PR</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit-team" class="block text-xs font-medium text-slate-400 mb-1">Team</label>
+            <input type="number" id="edit-team" name="team" min="0" step="1" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" placeholder="팀 번호">
+          </div>
+          <div>
+            <label for="edit-role" class="block text-xs font-medium text-slate-400 mb-1">Role</label>
+            <select id="edit-role" name="role" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              <option value="analyst">Analyst</option>
+              <option value="team_lead">Team Lead</option>
+              <option value="division_lead">Division Lead</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+        </form>
+        <div class="mt-6 flex justify-end gap-2">
+          <button type="button" id="admin-edit-modal-cancel" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors">Cancel</button>
+          <button type="button" id="admin-edit-submit" class="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors">Save Changes</button>
         </div>
       </div>
     </div>

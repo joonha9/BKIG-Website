@@ -47,6 +47,9 @@
       if (typeof window.loadMeetingNotesList === 'function') window.loadMeetingNotesList();
     }
     if (viewId === 'view-profile') loadProfileView();
+    if (viewId === 'view-comms') {
+      if (typeof loadCommsRooms === 'function') loadCommsRooms();
+    }
   }
 
   function initTabRouting() {
@@ -69,6 +72,317 @@
       loadDashboardMeetings();
     }
   }
+
+  // -------------------------------------------------------------------------
+  // Comms: 3-pane rooms, IRC-style chat, members, invite (RBAC)
+  // -------------------------------------------------------------------------
+  var commsRoomsData = { executive: [], division: [], team: [] };
+  var commsActiveRoomId = null;
+  var commsActiveRoom = null;
+
+  function renderCommsRoomRow(room) {
+    var active = commsActiveRoomId === room.id ? ' bg-slate-700/50 text-white' : ' text-slate-400 hover:bg-slate-700/30 hover:text-slate-200';
+    return '<li><button type="button" class="comms-room-btn w-full text-left px-3 py-1.5 rounded text-xs font-medium' + active + '" data-room-id="' + room.id + '">' + escapeHtml(room.name) + '</button></li>';
+  }
+
+  function loadCommsRooms() {
+    var execList = document.getElementById('comms-rooms-executive');
+    var divList = document.getElementById('comms-rooms-division');
+    var teamList = document.getElementById('comms-rooms-team');
+    if (!execList || !divList || !teamList) return;
+    execList.innerHTML = '';
+    divList.innerHTML = '';
+    teamList.innerHTML = '';
+    fetch('/api/comms/rooms')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        commsRoomsData = {
+          executive: data.executive || [],
+          division: data.division || [],
+          team: data.team || []
+        };
+        commsRoomsData.executive.forEach(function (r) { execList.insertAdjacentHTML('beforeend', renderCommsRoomRow(r)); });
+        commsRoomsData.division.forEach(function (r) { divList.insertAdjacentHTML('beforeend', renderCommsRoomRow(r)); });
+        commsRoomsData.team.forEach(function (r) { teamList.insertAdjacentHTML('beforeend', renderCommsRoomRow(r)); });
+        document.querySelectorAll('.comms-room-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var roomId = parseInt(btn.getAttribute('data-room-id'), 10);
+            selectCommsRoom(roomId);
+          });
+        });
+        initCommsAccordion();
+      })
+      .catch(function () {
+        execList.innerHTML = '<li class="px-3 py-1.5 text-xs text-slate-500">Failed to load</li>';
+      });
+  }
+
+  function initCommsAccordion() {
+    document.querySelectorAll('.comms-accordion-trigger').forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        var group = trigger.getAttribute('data-group');
+        var panel = document.querySelector('.comms-accordion-panel[data-group="' + group + '"]');
+        var expanded = trigger.getAttribute('aria-expanded') !== 'true';
+        trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (panel) panel.classList.toggle('hidden', !expanded);
+        var chevron = trigger.querySelector('.comms-accordion-chevron');
+        if (chevron) chevron.style.transform = expanded ? 'rotate(0deg)' : 'rotate(-90deg)';
+      });
+    });
+  }
+
+  function selectCommsRoom(roomId) {
+    commsActiveRoomId = roomId;
+    var allRooms = commsRoomsData.executive.concat(commsRoomsData.division, commsRoomsData.team);
+    commsActiveRoom = allRooms.find(function (r) { return r.id === roomId; }) || null;
+    document.querySelectorAll('.comms-room-btn').forEach(function (btn) {
+      var id = parseInt(btn.getAttribute('data-room-id'), 10);
+      if (id === roomId) {
+        btn.classList.add('bg-slate-700/50', 'text-white');
+        btn.classList.remove('text-slate-400');
+      } else {
+        btn.classList.remove('bg-slate-700/50', 'text-white');
+        btn.classList.add('text-slate-400');
+      }
+    });
+    var titleEl = document.getElementById('comms-room-title');
+    if (titleEl) titleEl.textContent = commsActiveRoom ? commsActiveRoom.name : 'Select a room';
+    var placeholder = document.getElementById('comms-messages-placeholder');
+    var accessDeniedEl = document.getElementById('comms-messages-access-denied');
+    var listEl = document.getElementById('comms-messages-list');
+    if (placeholder) placeholder.classList.toggle('hidden', !!commsActiveRoom);
+    if (accessDeniedEl) accessDeniedEl.classList.add('hidden');
+    if (listEl) listEl.classList.add('hidden');
+    var inputEl = document.getElementById('comms-message-input');
+    if (inputEl) inputEl.disabled = true;
+    if (commsActiveRoom) {
+      loadCommsRoomMessages(roomId);
+    }
+    var inviteBtn = document.getElementById('comms-invite-btn');
+    if (inviteBtn) {
+      if (commsActiveRoom && commsActiveRoom.can_invite) {
+        inviteBtn.classList.remove('hidden');
+      } else {
+        inviteBtn.classList.add('hidden');
+      }
+    }
+    loadCommsRoomMembers(roomId);
+  }
+
+  function formatCommsTime(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function loadCommsRoomMessages(roomId) {
+    var placeholder = document.getElementById('comms-messages-placeholder');
+    var accessDeniedEl = document.getElementById('comms-messages-access-denied');
+    var listEl = document.getElementById('comms-messages-list');
+    var inputEl = document.getElementById('comms-message-input');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="text-slate-500 py-2">Loading…</div>';
+    listEl.classList.remove('hidden');
+    if (accessDeniedEl) accessDeniedEl.classList.add('hidden');
+    if (inputEl) inputEl.disabled = true;
+    fetch('/api/comms/rooms/' + roomId + '/messages')
+      .then(function (res) {
+        if (res.status === 403) {
+          listEl.classList.add('hidden');
+          listEl.innerHTML = '';
+          if (accessDeniedEl) {
+            accessDeniedEl.classList.remove('hidden');
+          }
+          return null;
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        if (data === null) return;
+        var messages = data.messages || [];
+        listEl.innerHTML = '';
+        if (messages.length === 0) {
+          listEl.insertAdjacentHTML('beforeend', '<div class="text-slate-500 py-2">No messages yet.</div>');
+        } else {
+          messages.forEach(function (m) {
+            var ts = formatCommsTime(m.created_at);
+            var row = '<div class="py-0.5">[<span class="text-slate-500">' + escapeHtml(ts) + '</span>] <span class="text-slate-400">' + escapeHtml(m.username || '') + '</span>: ' + escapeHtml(m.body || '') + '</div>';
+            listEl.insertAdjacentHTML('beforeend', row);
+          });
+        }
+        listEl.scrollTop = listEl.scrollHeight;
+        if (inputEl) inputEl.disabled = false;
+      })
+      .catch(function () {
+        listEl.innerHTML = '<div class="text-slate-500 py-2">Failed to load messages.</div>';
+      });
+  }
+
+  function sendCommsMessage() {
+    var inputEl = document.getElementById('comms-message-input');
+    if (!inputEl || !commsActiveRoomId) return;
+    var body = (inputEl.value || '').trim();
+    if (!body) return;
+    inputEl.disabled = true;
+    fetch('/api/comms/rooms/' + commsActiveRoomId + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body: body })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 403) {
+          var accessDeniedEl = document.getElementById('comms-messages-access-denied');
+          var listEl = document.getElementById('comms-messages-list');
+          if (listEl) listEl.classList.add('hidden');
+          if (accessDeniedEl) accessDeniedEl.classList.remove('hidden');
+          return;
+        }
+        if (result.status === 201 && result.data) {
+          inputEl.value = '';
+          var listEl = document.getElementById('comms-messages-list');
+          if (listEl) {
+            var m = result.data;
+            var ts = formatCommsTime(m.created_at);
+            var row = '<div class="py-0.5">[<span class="text-slate-500">' + escapeHtml(ts) + '</span>] <span class="text-slate-400">' + escapeHtml(m.username || '') + '</span>: ' + escapeHtml(m.body || '') + '</div>';
+            listEl.insertAdjacentHTML('beforeend', row);
+            listEl.scrollTop = listEl.scrollHeight;
+          }
+        } else {
+          alert(result.data.message || result.data.error || 'Send failed.');
+        }
+      })
+      .catch(function () {
+        alert('Network error.');
+      })
+      .finally(function () {
+        inputEl.disabled = false;
+      });
+  }
+
+  function loadCommsRoomMembers(roomId) {
+    var placeholder = document.getElementById('comms-members-placeholder');
+    var listEl = document.getElementById('comms-members-list');
+    if (!listEl) return;
+    var singleLi = listEl.querySelector('li:not(#comms-members-placeholder)');
+    if (singleLi) singleLi.remove();
+    listEl.innerHTML = '';
+    if (!roomId) {
+      if (placeholder) {
+        placeholder.classList.remove('hidden');
+        placeholder.textContent = 'Select a room.';
+        listEl.appendChild(placeholder);
+      }
+      return;
+    }
+    if (placeholder) placeholder.classList.add('hidden');
+    listEl.innerHTML = '<li class="text-slate-500 text-xs py-2">Loading…</li>';
+    fetch('/api/comms/rooms/' + roomId + '/members')
+      .then(function (res) {
+        if (res.status === 403) {
+          listEl.innerHTML = '<li class="text-amber-400/90 text-xs py-2 font-medium">엑세스가 없습니다.</li>';
+          return null;
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        if (data === null) return;
+        var members = data.members || [];
+        listEl.innerHTML = '';
+        if (members.length === 0) {
+          listEl.insertAdjacentHTML('beforeend', '<li class="text-slate-500 text-xs py-2">No members</li>');
+        } else {
+          members.forEach(function (m) {
+            listEl.insertAdjacentHTML('beforeend', '<li class="py-1.5 px-2 rounded text-xs text-slate-300">' + escapeHtml(m.name) + ' <span class="text-slate-500">' + escapeHtml(m.role || '') + '</span></li>');
+          });
+        }
+      })
+      .catch(function () {
+        listEl.innerHTML = '<li class="text-slate-500 text-xs py-2">Failed to load</li>';
+      });
+  }
+
+  function openCommsInviteModal() {
+    if (!commsActiveRoomId || !commsActiveRoom) return;
+    var modal = document.getElementById('comms-invite-modal');
+    var roomNameEl = document.getElementById('comms-invite-room-name');
+    var selectEl = document.getElementById('comms-invite-select');
+    if (!modal || !selectEl) return;
+    if (roomNameEl) roomNameEl.textContent = 'Room: ' + (commsActiveRoom.name || '');
+    selectEl.innerHTML = '<option value="">Choose a user…</option>';
+    fetch('/api/comms/rooms/' + commsActiveRoomId + '/invite-options')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var users = data.users || [];
+        users.forEach(function (u) {
+          selectEl.insertAdjacentHTML('beforeend', '<option value="' + u.id + '">' + escapeHtml(u.name) + (u.email ? ' (' + escapeHtml(u.email) + ')' : '') + '</option>');
+        });
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+      })
+      .catch(function () {
+        selectEl.innerHTML = '<option value="">Failed to load users</option>';
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+      });
+  }
+
+  function closeCommsInviteModal() {
+    var modal = document.getElementById('comms-invite-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function submitCommsInvite() {
+    var selectEl = document.getElementById('comms-invite-select');
+    var userId = selectEl && selectEl.value ? parseInt(selectEl.value, 10) : null;
+    if (!userId || !commsActiveRoomId) return;
+    fetch('/api/comms/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_id: commsActiveRoomId, user_id: userId })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (result.ok) {
+          closeCommsInviteModal();
+          loadCommsRoomMembers(commsActiveRoomId);
+        } else {
+          alert(result.data.message || result.data.error || 'Invite failed.');
+        }
+      })
+      .catch(function () {
+        alert('Network error.');
+      });
+  }
+
+  (function bindCommsInvite() {
+    var inviteBtn = document.getElementById('comms-invite-btn');
+    var modal = document.getElementById('comms-invite-modal');
+    var closeBtn = document.getElementById('comms-invite-modal-close');
+    var submitBtn = document.getElementById('comms-invite-submit');
+    if (inviteBtn) inviteBtn.addEventListener('click', openCommsInviteModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeCommsInviteModal);
+    if (submitBtn) submitBtn.addEventListener('click', submitCommsInvite);
+    document.querySelectorAll('[data-comms-invite-close]').forEach(function (el) {
+      el.addEventListener('click', closeCommsInviteModal);
+    });
+    var msgInput = document.getElementById('comms-message-input');
+    if (msgInput) {
+      msgInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendCommsMessage();
+        }
+      });
+    }
+  })();
 
   // -------------------------------------------------------------------------
   // Dashboard: Live Market Ticker
@@ -862,6 +1176,13 @@
     var user = typeof window.TERMINAL_CURRENT_USER !== 'undefined' ? window.TERMINAL_CURRENT_USER : {};
     var name = user.name || user.email || '—';
     var email = user.email || '—';
+    var roleRaw = (user.role || '').trim();
+    var roleDisplay = '—';
+    if (roleRaw) {
+      roleDisplay = roleRaw.split('_').map(function (w) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      }).join(' ');
+    }
     var token = getPortfolioToken();
     var nickname = portfolioState.facctingNickname || (portfolioState.portfolioData && (portfolioState.portfolioData.nickname || (portfolioState.portfolioData.user && portfolioState.portfolioData.user.nickname)));
     root.innerHTML =
@@ -870,6 +1191,7 @@
       '<div class="space-y-4">' +
       '<div><label class="block text-slate-500 text-xs mb-1">Name</label><p class="text-slate-200">' + escapeHtml(name) + '</p></div>' +
       '<div><label class="block text-slate-500 text-xs mb-1">Email</label><p class="text-slate-200">' + escapeHtml(email) + '</p></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">직책</label><p class="text-slate-200">' + escapeHtml(roleDisplay) + '</p></div>' +
       '<div id="profile-faccting-nickname-row"><label class="block text-slate-500 text-xs mb-1">FACCTing Nickname</label><p id="profile-faccting-nickname" class="text-slate-200">' + (nickname ? escapeHtml(nickname) : '—') + '</p></div>' +
       '<div><label class="block text-slate-500 text-xs mb-1">FACCTing API Token</label>' +
       '<input type="password" id="profile-token-input" value="' + escapeHtml(token) + '" placeholder="Paste token (stored in browser only)" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 text-slate-200 font-mono text-sm mt-1" style="border-radius:0;">' +
@@ -1452,6 +1774,7 @@
               '<td class="px-4 py-3"><span class="text-slate-400">' + escapeHtml(roleDisplay(u.role)) + '</span></td>' +
               '<td class="px-4 py-3">' + statusHtml + '</td>' +
               '<td class="px-4 py-3">' +
+              '<button type="button" class="admin-btn-edit mr-2 px-2 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-600 transition-colors" data-user-id="' + escapeHtml(String(u.id)) + '">Edit</button>' +
               '<button type="button" class="admin-btn-pause-resume mr-2 px-2 py-1 rounded text-xs font-medium transition-colors ' + pauseClass + '" data-user-id="' + escapeHtml(String(u.id)) + '" data-active="' + (active(u) ? '1' : '0') + '">' + escapeHtml(pauseLabel) + '</button>' +
               '<button type="button" class="admin-btn-terminate px-2 py-1 rounded text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors" data-user-id="' + escapeHtml(String(u.id)) + '">Terminate Account</button>' +
               '</td>' +
@@ -1495,10 +1818,50 @@
     }
   }
 
+  function openEditModal(user) {
+    if (!user) return;
+    var modal = document.getElementById('admin-edit-modal');
+    var idEl = document.getElementById('edit-user-id');
+    var nameEl = document.getElementById('edit-name');
+    var emailEl = document.getElementById('edit-email');
+    var passEl = document.getElementById('edit-password');
+    var divEl = document.getElementById('edit-division');
+    var teamEl = document.getElementById('edit-team');
+    var roleEl = document.getElementById('edit-role');
+    if (!modal || !idEl) return;
+    idEl.value = user.id;
+    if (nameEl) nameEl.value = user.name || '';
+    if (emailEl) emailEl.value = user.email || '';
+    if (passEl) passEl.value = '';
+    if (divEl) divEl.value = (user.division || '').trim() || '';
+    if (teamEl) teamEl.value = (user.team != null && user.team !== '') ? String(user.team) : '';
+    if (roleEl) roleEl.value = (user.role || 'analyst').trim() || 'analyst';
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeEditModal() {
+    var modal = document.getElementById('admin-edit-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   function initActionsDelegation() {
     const tbody = document.getElementById('user-table-body');
     if (!tbody) return;
     tbody.addEventListener('click', function (e) {
+      const editBtn = e.target.closest('.admin-btn-edit');
+      if (editBtn) {
+        e.preventDefault();
+        const id = editBtn.getAttribute('data-user-id');
+        if (id) {
+          const user = adminUsersList.find(function (u) { return String(u.id) === String(id); });
+          openEditModal(user);
+        }
+        return;
+      }
       const btn = e.target.closest('.admin-btn-pause-resume');
       if (btn) {
         e.preventDefault();
@@ -1523,15 +1886,19 @@
     return div.innerHTML;
   }
 
+  var adminUsersList = [];
+
   async function loadAdminUsers() {
     const tbody = document.getElementById('user-table-body');
     if (!tbody) return;
     try {
       const users = await fetchUsers();
+      adminUsersList = users || [];
       renderUsersTable(users);
     } catch (e) {
+      adminUsersList = [];
       tbody.innerHTML =
-        '<tr><td colspan="6" class="px-4 py-8 text-center text-red-400">Failed to load users.</td></tr>';
+        '<tr><td colspan="7" class="px-4 py-8 text-center text-red-400">Failed to load users.</td></tr>';
     }
   }
 
@@ -1561,6 +1928,51 @@
     if (addBtn) addBtn.addEventListener('click', openAddModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeAddModal);
     if (backdrop) backdrop.addEventListener('click', closeAddModal);
+    var editCancel = document.getElementById('admin-edit-modal-cancel');
+    var editBackdrop = document.getElementById('admin-edit-modal-backdrop');
+    var editSubmit = document.getElementById('admin-edit-submit');
+    if (editCancel) editCancel.addEventListener('click', closeEditModal);
+    if (editBackdrop) editBackdrop.addEventListener('click', closeEditModal);
+    if (editSubmit) editSubmit.addEventListener('click', function () {
+      var idEl = document.getElementById('edit-user-id');
+      var userId = idEl && idEl.value ? idEl.value.trim() : '';
+      if (!userId) return;
+      var nameEl = document.getElementById('edit-name');
+      var emailEl = document.getElementById('edit-email');
+      var passEl = document.getElementById('edit-password');
+      var divEl = document.getElementById('edit-division');
+      var teamEl = document.getElementById('edit-team');
+      var roleEl = document.getElementById('edit-role');
+      var payload = {
+        name: (nameEl && nameEl.value) ? nameEl.value.trim() : '',
+        email: (emailEl && emailEl.value) ? emailEl.value.trim() : '',
+        division: (divEl && divEl.value) ? divEl.value.trim() : '',
+        team: (teamEl && teamEl.value.trim() !== '') ? teamEl.value.trim() : null,
+        role: (roleEl && roleEl.value) ? roleEl.value.trim() : 'analyst',
+      };
+      if (passEl && passEl.value.trim()) payload.password = passEl.value;
+      editSubmit.disabled = true;
+      editSubmit.textContent = 'Saving…';
+      fetch('/api/users/' + userId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (result.ok) {
+            closeEditModal();
+            loadAdminUsers();
+          } else {
+            alert(result.data.message || result.data.error || 'Update failed.');
+          }
+        })
+        .catch(function () { alert('Network error.'); })
+        .finally(function () {
+          editSubmit.disabled = false;
+          editSubmit.textContent = 'Save Changes';
+        });
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -1756,6 +2168,7 @@
     var volCtx = document.getElementById('volume-chart');
     if (!mainCtx || !volCtx || typeof Chart === 'undefined') return;
 
+    var contentEl = content;
     var crosshairPlugin = typeof Chart !== 'undefined' && Chart.registry && Chart.registry.getPlugin('crosshair');
     var commonScaleOptions = {
       grid: { color: GRID_COLOR },
@@ -1865,38 +2278,6 @@
       });
     }
 
-    buildCharts();
-
-    content.querySelectorAll('.chart-period-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var p = btn.getAttribute('data-period');
-        if (p === financialChartPeriod) return;
-        financialChartPeriod = p;
-        content.querySelectorAll('.chart-period-btn').forEach(function (b) {
-          var active = b.getAttribute('data-period') === financialChartPeriod;
-          b.classList.toggle('bg-blue-600', active);
-          b.classList.toggle('text-white', active);
-          b.classList.toggle('text-slate-400', !active);
-        });
-        fetchAndRedrawOverview();
-      });
-    });
-    content.querySelectorAll('.chart-type-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var t = btn.getAttribute('data-chart-type');
-        if (t === financialChartType) return;
-        financialChartType = t;
-        content.querySelectorAll('.chart-type-btn').forEach(function (b) {
-          var active = b.getAttribute('data-chart-type') === financialChartType;
-          b.classList.toggle('bg-blue-600', active);
-          b.classList.toggle('text-white', active);
-          b.classList.toggle('text-slate-400', !active);
-        });
-        buildCharts();
-        resizeCharts();
-      });
-    });
-
     function resizeCharts() {
       var mainWrap = document.getElementById('financial-main-chart-wrapper');
       var volWrap = document.getElementById('financial-volume-chart-wrapper');
@@ -1911,8 +2292,49 @@
       if (financialChartInstance) financialChartInstance.resize();
       if (financialVolumeChartInstance) financialVolumeChartInstance.resize();
     }
-    setTimeout(resizeCharts, 80);
-    window.addEventListener('resize', resizeCharts);
+
+    function initChartAndListeners() {
+      buildCharts();
+      setTimeout(resizeCharts, 50);
+      contentEl.querySelectorAll('.chart-period-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var p = btn.getAttribute('data-period');
+          if (p === financialChartPeriod) return;
+          financialChartPeriod = p;
+          contentEl.querySelectorAll('.chart-period-btn').forEach(function (b) {
+            var active = b.getAttribute('data-period') === financialChartPeriod;
+            b.classList.toggle('bg-blue-600', active);
+            b.classList.toggle('text-white', active);
+            b.classList.toggle('text-slate-400', !active);
+          });
+          fetchAndRedrawOverview();
+        });
+      });
+      contentEl.querySelectorAll('.chart-type-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var t = btn.getAttribute('data-chart-type');
+          if (t === financialChartType) return;
+          financialChartType = t;
+          contentEl.querySelectorAll('.chart-type-btn').forEach(function (b) {
+            var active = b.getAttribute('data-chart-type') === financialChartType;
+            b.classList.toggle('bg-blue-600', active);
+            b.classList.toggle('text-white', active);
+            b.classList.toggle('text-slate-400', !active);
+          });
+          buildCharts();
+          resizeCharts();
+        });
+      });
+      window.addEventListener('resize', resizeCharts);
+    }
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        var mainChartEl = document.getElementById('main-chart');
+        if (!mainChartEl || mainChartEl.closest('#tool-content') !== contentEl) return;
+        initChartAndListeners();
+      });
+    });
   }
 
   function fetchAndRedrawOverview() {
