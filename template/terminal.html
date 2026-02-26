@@ -570,6 +570,31 @@
             </tbody>
           </table>
         </div>
+        <!-- Applications (Join Us 신청 목록) -->
+        <div class="mt-10">
+          <h3 class="text-xl font-bold text-white mb-2">Applications</h3>
+          <p class="text-slate-400 text-sm mb-4">Apply to BKIG submissions from the Join Us page.</p>
+          <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-800/80 border-b border-slate-700">
+                <tr>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Date</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">School</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Major</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Grade</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Division</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Resume</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="applications-table-body" class="divide-y divide-slate-700/50">
+                <!-- JS에서 /api/applications 로 동적 주입 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
     {% endif %}

@@ -15,7 +15,7 @@ import json
 import os
 import uuid
 from functools import wraps
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, send_from_directory, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy import or_
@@ -234,9 +234,59 @@ class RoomMessage(db.Model):
     user = db.relationship("User", backref=db.backref("room_messages", lazy="dynamic"))
 
 
+class BkigApplication(db.Model):
+    """Join Us 페이지 Apply to BKIG 모달에서 제출된 신청 데이터."""
+    __tablename__ = "terminal_bkig_applications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    school = db.Column(db.String(200), nullable=False)
+    major = db.Column(db.String(200), nullable=True)
+    grade = db.Column(db.String(32), nullable=True)  # freshman, sophomore, ...
+    division = db.Column(db.String(64), nullable=True)  # equity_research, investment, ...
+    resume_path = db.Column(db.String(500), nullable=True)  # 저장된 이력서 파일 경로
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    approved_user_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=True)  # 승인 시 생성된 유저
+
+    approved_user = db.relationship("User", foreign_keys=[approved_user_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "school": self.school,
+            "major": self.major or "",
+            "grade": self.grade or "",
+            "division": self.division or "",
+            "resume_path": self.resume_path or "",
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+            "approved_user_id": self.approved_user_id,
+        }
+
+    @staticmethod
+    def application_division_to_user_division(division):
+        """Apply 폼 division 값 → User.division 값 매핑."""
+        if not division:
+            return "Research"
+        m = {
+            "equity_research": "Research",
+            "investment": "Investment",
+            "case_competition": "Case Study",
+            "pd_pr": "PD/PR",
+        }
+        return m.get(division.strip().lower(), "Research")
+
+
 def init_terminal_db(app):
     """Flask app에 Terminal DB·Migrate 연결 (스키마 변경은 flask db upgrade 로 적용)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    uri = os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI")
+    if uri:
+        if uri.startswith("postgres://"):
+            uri = "postgresql://" + uri[11:]
+        app.config["SQLALCHEMY_DATABASE_URI"] = uri
     app.config.setdefault(
         "SQLALCHEMY_DATABASE_URI",
         "sqlite:///" + os.path.join(base_dir, "terminal.db"),
@@ -979,6 +1029,8 @@ def api_internal_research_list():
                 InternalResearchDocument.author.ilike(q_pattern),
             )
         )
+    user = get_current_user()
+    current_user_id = user["id"] if user else None
     docs = query.order_by(InternalResearchDocument.created_at.desc()).all()
     return jsonify({
         "documents": [
@@ -990,6 +1042,8 @@ def api_internal_research_list():
                 "author": d.author,
                 "file_format": d.file_format,
                 "created_at": d.created_at.isoformat() if d.created_at else None,
+                "uploaded_by_id": getattr(d, "uploaded_by_id", None),
+                "can_delete": current_user_id is not None and getattr(d, "uploaded_by_id", None) == current_user_id,
             }
             for d in docs
         ]
@@ -1073,6 +1127,30 @@ def api_internal_research_download(doc_id):
     if not os.path.isfile(path):
         return jsonify({"error": "Not found", "message": "File missing"}), 404
     return send_from_directory(upload_dir, doc.file_path, as_attachment=True, download_name=doc.document_title + "." + doc.file_format.lower())
+
+
+@terminal_bp.route("/api/internal-research/<int:doc_id>", methods=["DELETE"])
+@login_required_api
+def api_internal_research_delete(doc_id):
+    """DELETE: Remove document. Only the uploader (uploaded_by_id) can delete."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    doc = InternalResearchDocument.query.get(doc_id)
+    if not doc:
+        return jsonify({"error": "Not found", "message": "Document not found"}), 404
+    if getattr(doc, "uploaded_by_id", None) != user["id"]:
+        return jsonify({"error": "Forbidden", "message": "You can only delete your own uploads"}), 403
+    upload_dir = _internal_research_upload_dir()
+    path = os.path.join(upload_dir, doc.file_path)
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+    except OSError:
+        pass
+    db.session.delete(doc)
+    db.session.commit()
+    return jsonify({"success": True}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -1515,6 +1593,139 @@ def terminal_page():
         team_members=team_members,
         announcements=announcements,
     )
+
+
+# ---------------------------------------------------------------------------
+# BKIG Applications (Join Us 페이지 신청 — 공개 제출, Admin에서 조회)
+# ---------------------------------------------------------------------------
+APPLICATIONS_UPLOAD_FOLDER = "applications_resumes"
+
+
+def _applications_upload_dir():
+    """Resume 파일 저장/읽기용 디렉터리. instance 폴더가 없으면 root_path/instance 사용."""
+    base = getattr(current_app, "instance_path", None)
+    if not base or not os.path.isabs(base):
+        base = os.path.join(current_app.root_path, "instance")
+    return os.path.join(base, APPLICATIONS_UPLOAD_FOLDER)
+
+
+@terminal_bp.route("/api/applications", methods=["POST"])
+def api_applications_submit():
+    """
+    Apply to BKIG 모달에서 제출. 로그인 불필요.
+    FormData: name, email, school, major, grade, division, resume(optional file)
+    """
+    form = request.form
+    name = (form.get("name") or "").strip()
+    email = (form.get("email") or "").strip()
+    school = (form.get("school") or "").strip()
+    major = (form.get("major") or "").strip()
+    grade = (form.get("grade") or "").strip()
+    division = (form.get("division") or "").strip()
+
+    if not name or not email or not school:
+        return jsonify({"error": "Bad request", "message": "Name, email, and school are required"}), 400
+
+    resume_path = None
+    resume_file = request.files.get("resume")
+    if resume_file and resume_file.filename:
+        ext = os.path.splitext(resume_file.filename)[1].lower()
+        if ext != ".pdf":
+            return jsonify({"error": "Bad request", "message": "Resume must be a PDF file"}), 400
+        try:
+            upload_dir = _applications_upload_dir()
+            os.makedirs(upload_dir, exist_ok=True)
+            safe_name = secure_filename(resume_file.filename) or "resume.pdf"
+            unique_name = f"{uuid.uuid4().hex}_{safe_name}"
+            full_path = os.path.join(upload_dir, unique_name)
+            resume_file.save(full_path)
+            resume_path = unique_name
+        except Exception as e:
+            resume_path = None  # proceed without resume on file save error
+
+    try:
+        app_record = BkigApplication(
+            name=name,
+            email=email,
+            school=school,
+            major=major or None,
+            grade=grade or None,
+            division=division or None,
+            resume_path=resume_path,
+        )
+        db.session.add(app_record)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Application submitted successfully", "id": app_record.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        err_msg = str(e)
+        if "no such column" in err_msg.lower() or "no such table" in err_msg.lower() or "approved_user_id" in err_msg:
+            err_msg = "Database schema outdated. Run: FLASK_APP=app.py flask db upgrade"
+        return jsonify({"error": "Server error", "message": err_msg}), 500
+
+
+@terminal_bp.route("/api/applications", methods=["GET"])
+@login_required_api
+def api_applications_list():
+    """GET: 신청 목록. super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    applications = BkigApplication.query.order_by(BkigApplication.created_at.desc()).all()
+    return jsonify({"applications": [a.to_dict() for a in applications]})
+
+
+DEFAULT_APPROVED_PASSWORD = "1234"
+
+
+@terminal_bp.route("/api/applications/<int:app_id>/approve", methods=["POST"])
+@login_required_api
+def api_application_approve(app_id):
+    """승인 시 해당 신청 정보로 유저 계정 생성. 비밀번호 기본 1234. super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    app_record = BkigApplication.query.get(app_id)
+    if not app_record:
+        return jsonify({"error": "Not found", "message": "Application not found"}), 404
+    if app_record.approved_user_id:
+        return jsonify({"error": "Conflict", "message": "Already approved"}), 409
+    division = BkigApplication.application_division_to_user_division(app_record.division)
+    try:
+        user = User(
+            email=app_record.email,
+            password_hash=generate_password_hash(DEFAULT_APPROVED_PASSWORD),
+            name=app_record.name,
+            division=division,
+            team=None,
+            role="analyst",
+            is_active=True,
+        )
+        db.session.add(user)
+        db.session.flush()  # user.id 할당
+        app_record.approved_user_id = user.id
+        db.session.commit()
+        return jsonify({"success": True, "user": user.to_dict(), "message": "User account created (password: 1234)"}), 200
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Conflict", "message": "Email already exists"}), 409
+
+
+@terminal_bp.route("/api/applications/<int:app_id>/resume")
+@login_required_api
+def api_application_resume_download(app_id):
+    """이력서 파일 다운로드. super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    app_record = BkigApplication.query.get(app_id)
+    if not app_record or not app_record.resume_path:
+        return jsonify({"error": "Not found"}), 404
+    upload_dir = _applications_upload_dir()
+    path = os.path.join(upload_dir, app_record.resume_path)
+    if not os.path.isfile(path):
+        return jsonify({"error": "File not found"}), 404
+    return send_from_directory(upload_dir, app_record.resume_path, as_attachment=True)
 
 
 @terminal_bp.route("/api/users", methods=["GET", "POST"])

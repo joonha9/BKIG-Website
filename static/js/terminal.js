@@ -28,7 +28,10 @@
       }
     });
 
-    if (viewId === 'view-admin') loadAdminUsers();
+    if (viewId === 'view-admin') {
+      loadAdminUsers();
+      if (typeof loadAdminApplications === 'function') loadAdminApplications();
+    }
     if (viewId === 'view-dashboard') {
       loadMarketData();
       loadDashboardTasks();
@@ -1519,6 +1522,11 @@
           var fmt = (d.file_format || '').toLowerCase();
           var fmtCls = fmtClass[fmt] || 'zip';
           var downloadUrl = '/api/internal-research/' + d.id + '/download';
+          var canDelete = d.can_delete === true;
+          var actionHtml = '<a href="' + escapeHtml(downloadUrl) + '" class="internal-research-download text-slate-500 hover:text-cyan-400 transition-colors p-0.5 inline-block" title="Download" aria-label="Download">↓</a>';
+          if (canDelete) {
+            actionHtml += ' <button type="button" class="internal-research-delete ml-1 text-slate-500 hover:text-red-400 transition-colors p-0.5 inline-block" title="Delete" aria-label="Delete" data-doc-id="' + d.id + '">✕</button>';
+          }
           var tr = document.createElement('tr');
           tr.className = 'internal-research-row border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors';
           tr.setAttribute('data-category', cat);
@@ -1529,7 +1537,7 @@
             '<td class="py-1.5 px-2 text-slate-200">' + escapeHtml(d.document_title || '') + '</td>' +
             '<td class="py-1.5 px-2 text-slate-400">' + escapeHtml(d.author || '') + '</td>' +
             '<td class="py-1.5 px-2"><span class="internal-research-format internal-research-format-' + fmtCls + '">' + escapeHtml((d.file_format || '').toUpperCase()) + '</span></td>' +
-            '<td class="py-1.5 px-2"><a href="' + escapeHtml(downloadUrl) + '" class="internal-research-download text-slate-500 hover:text-cyan-400 transition-colors p-0.5 inline-block" title="Download" aria-label="Download">↓</a></td>';
+            '<td class="py-1.5 px-2">' + actionHtml + '</td>';
           listTbody.appendChild(tr);
         });
       }
@@ -1582,6 +1590,23 @@
       });
     }
 
+    var internalResearchTbody = document.getElementById('internal-research-tbody');
+    if (internalResearchTbody) {
+      internalResearchTbody.addEventListener('click', function (e) {
+        var delBtn = e.target.closest('.internal-research-delete');
+        if (!delBtn) return;
+        e.preventDefault();
+        var docId = delBtn.getAttribute('data-doc-id');
+        if (!docId || !confirm('Delete this document? This cannot be undone.')) return;
+        fetch('/api/internal-research/' + docId, { method: 'DELETE', credentials: 'same-origin' })
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (result.ok && typeof loadInternalResearchList === 'function') loadInternalResearchList();
+            else if (!result.ok) alert(result.data.message || result.data.error || 'Delete failed.');
+          })
+          .catch(function () { alert('Network error.'); });
+      });
+    }
     if (document.getElementById('internal-research-upload-btn')) {
       document.getElementById('internal-research-upload-btn').addEventListener('click', openUploadDrawer);
     }
@@ -1900,6 +1925,103 @@
       tbody.innerHTML =
         '<tr><td colspan="7" class="px-4 py-8 text-center text-red-400">Failed to load users.</td></tr>';
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Admin: Applications (Join Us 신청 목록)
+  // -------------------------------------------------------------------------
+  async function fetchApplications() {
+    const res = await fetch('/api/applications', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Failed to fetch applications');
+    const data = await res.json();
+    return data.applications || [];
+  }
+
+  function divisionDisplay(division) {
+    if (division === 'equity_research') return 'Equity Research';
+    if (division === 'investment') return 'Investment';
+    if (division === 'case_competition') return 'Case Competition';
+    if (division === 'pd_pr') return 'PD/PR';
+    return division || '—';
+  }
+
+  function renderApplicationsTable(applications) {
+    const tbody = document.getElementById('applications-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = applications.length
+      ? applications
+          .map(function (a) {
+            const dateStr = a.created_at ? a.created_at.slice(0, 10) : '—';
+            const resumeHtml = a.resume_path
+              ? '<a href="/api/applications/' + a.id + '/resume" class="text-cyan-400 hover:text-cyan-300 text-xs font-medium" target="_blank" rel="noopener">Download</a>'
+              : '<span class="text-slate-500">—</span>';
+            const approved = a.approved_user_id != null && a.approved_user_id !== '';
+            const actionsHtml = approved
+              ? '<span class="text-emerald-400/90 text-xs font-medium">Approved</span>'
+              : '<button type="button" class="admin-btn-approve-app px-2 py-1 rounded text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-colors" data-application-id="' + a.id + '">Approve</button>';
+            return (
+              '<tr class="hover:bg-slate-700/20" data-application-id="' + a.id + '">' +
+              '<td class="px-4 py-3 text-slate-400 text-xs">' + escapeHtml(dateStr) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(a.name) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(a.email) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(a.school) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + (a.major ? escapeHtml(a.major) : '—') + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + (a.grade ? escapeHtml(a.grade) : '—') + '</td>' +
+              '<td class="px-4 py-3 text-slate-400">' + escapeHtml(divisionDisplay(a.division)) + '</td>' +
+              '<td class="px-4 py-3">' + resumeHtml + '</td>' +
+              '<td class="px-4 py-3">' + actionsHtml + '</td>' +
+              '</tr>'
+            );
+          })
+          .join('')
+      : '<tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">No applications yet.</td></tr>';
+  }
+
+  async function approveApplication(applicationId) {
+    try {
+      const res = await fetch('/api/applications/' + applicationId + '/approve', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        alert(data.message || data.error || 'Approval failed.');
+        return;
+      }
+      if (typeof loadAdminApplications === 'function') loadAdminApplications();
+      if (typeof loadAdminUsers === 'function') loadAdminUsers();
+    } catch (e) {
+      alert('Network error.');
+    }
+  }
+
+  async function loadAdminApplications() {
+    const tbody = document.getElementById('applications-table-body');
+    if (!tbody) return;
+    try {
+      const applications = await fetchApplications();
+      renderApplicationsTable(applications);
+      initApplicationsActions();
+    } catch (e) {
+      tbody.innerHTML =
+        '<tr><td colspan="9" class="px-4 py-8 text-center text-red-400">Failed to load applications.</td></tr>';
+    }
+  }
+
+  function initApplicationsActions() {
+    const tbody = document.getElementById('applications-table-body');
+    if (!tbody) return;
+    tbody.removeEventListener('click', handleApplicationsTableClick);
+    tbody.addEventListener('click', handleApplicationsTableClick);
+  }
+
+  function handleApplicationsTableClick(e) {
+    const btn = e.target.closest('.admin-btn-approve-app');
+    if (!btn) return;
+    e.preventDefault();
+    const id = btn.getAttribute('data-application-id');
+    if (id) approveApplication(id);
   }
 
   // -------------------------------------------------------------------------

@@ -10,6 +10,9 @@ terminal.db
 # Internal Research uploads
 internal_research_uploads/
 
+# Join Us application resumes (instance folder)
+instance/applications_resumes/
+
 # Python
 __pycache__/
 *.py[cod]
