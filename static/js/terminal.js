@@ -31,6 +31,7 @@
     if (viewId === 'view-admin') {
       loadAdminUsers();
       if (typeof loadAdminApplications === 'function') loadAdminApplications();
+      if (typeof loadAdminDonations === 'function') loadAdminDonations();
     }
     if (viewId === 'view-dashboard') {
       loadMarketData();
@@ -2022,6 +2023,91 @@
     e.preventDefault();
     const id = btn.getAttribute('data-application-id');
     if (id) approveApplication(id);
+  }
+
+  // -------------------------------------------------------------------------
+  // Admin: Donations (기부하기 신청 목록)
+  // -------------------------------------------------------------------------
+  async function fetchDonations() {
+    const res = await fetch('/api/donations', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Failed to fetch donations');
+    const data = await res.json();
+    return data.donations || [];
+  }
+
+  function renderDonationsTable(donations) {
+    const tbody = document.getElementById('donations-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = donations.length
+      ? donations
+          .map(function (d) {
+            const dateStr = d.created_at ? d.created_at.slice(0, 10) : '—';
+            const completed = d.completed === true;
+            const statusHtml = completed
+              ? '<span class="text-emerald-400/90 text-xs font-medium">Complete</span>'
+              : '<span class="text-amber-400/90 text-xs font-medium">Pending</span>';
+            const actionsHtml = completed
+              ? '<span class="text-slate-500 text-xs">—</span>'
+              : '<button type="button" class="admin-btn-donation-complete px-2 py-1 rounded text-xs font-medium text-white bg-amber-600 hover:bg-amber-500 transition-colors" data-donation-id="' + d.id + '" title="Mark complete">✓</button>';
+            return (
+              '<tr class="hover:bg-slate-700/20" data-donation-id="' + d.id + '">' +
+              '<td class="px-4 py-3 text-slate-400 text-xs">' + escapeHtml(dateStr) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(d.name) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(d.email) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(d.amount) + '</td>' +
+              '<td class="px-4 py-3">' + statusHtml + '</td>' +
+              '<td class="px-4 py-3">' + actionsHtml + '</td>' +
+              '</tr>'
+            );
+          })
+          .join('')
+      : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No donations yet.</td></tr>';
+  }
+
+  async function completeDonation(donationId) {
+    try {
+      const res = await fetch('/api/donations/' + donationId + '/complete', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        alert(data.message || data.error || 'Failed to mark as complete.');
+        return;
+      }
+      if (typeof loadAdminDonations === 'function') loadAdminDonations();
+    } catch (e) {
+      alert('Network error.');
+    }
+  }
+
+  async function loadAdminDonations() {
+    const tbody = document.getElementById('donations-table-body');
+    if (!tbody) return;
+    try {
+      const donations = await fetchDonations();
+      renderDonationsTable(donations);
+      initDonationsActions();
+    } catch (e) {
+      tbody.innerHTML =
+        '<tr><td colspan="6" class="px-4 py-8 text-center text-red-400">Failed to load donations.</td></tr>';
+    }
+  }
+
+  function initDonationsActions() {
+    const tbody = document.getElementById('donations-table-body');
+    if (!tbody) return;
+    tbody.removeEventListener('click', handleDonationsTableClick);
+    tbody.addEventListener('click', handleDonationsTableClick);
+  }
+
+  function handleDonationsTableClick(e) {
+    const btn = e.target.closest('.admin-btn-donation-complete');
+    if (!btn) return;
+    e.preventDefault();
+    const id = btn.getAttribute('data-donation-id');
+    if (id) completeDonation(id);
   }
 
   // -------------------------------------------------------------------------

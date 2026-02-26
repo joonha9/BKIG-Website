@@ -115,9 +115,9 @@
         <div class="bg-slate-900 rounded-xl p-8 sm:p-10 shadow-xl">
           <div class="text-center">
             <p class="text-white/90 text-sm uppercase tracking-widest mb-6">Support BKIG</p>
-            <a href="#donate-form" class="inline-block w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-slate-900 bg-white border-2 border-yellow-500 hover:bg-yellow-50 transition-colors text-center">
+            <button type="button" id="donate-open-btn" class="inline-block w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-slate-900 bg-white border-2 border-yellow-500 hover:bg-yellow-50 transition-colors text-center cursor-pointer">
               Become a Patron (기부하기)
-            </a>
+            </button>
             <p class="mt-6">
               <a href="#corporate" class="text-yellow-500/90 text-sm hover:text-yellow-400 underline underline-offset-2 transition-colors">
                 Corporate Sponsorship Inquiry
@@ -128,6 +128,53 @@
       </div>
     </div>
   </section>
+
+  <!-- Donation Modal -->
+  <div id="donate-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" aria-labelledby="donate-modal-title" role="dialog">
+    <div id="donate-modal-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" id="donate-modal-box">
+      <div class="sticky top-0 bg-white border-b border-slate-200 px-5 py-3 rounded-t-2xl flex items-start justify-between gap-4">
+        <div>
+          <h2 id="donate-modal-title" class="text-lg font-bold text-slate-900">기부하기</h2>
+          <p class="text-slate-500 text-xs mt-0.5">BKIG를 후원해 주셔서 감사합니다.</p>
+        </div>
+        <button type="button" id="donate-modal-close" class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" aria-label="모달 닫기">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="donate-form" class="px-5 pb-5 pt-4 space-y-4" action="#" method="post">
+        <div>
+          <label for="donate-name" class="block text-sm font-medium text-slate-700 mb-1">기부자 이름</label>
+          <input type="text" id="donate-name" name="name" required placeholder="이름을 입력하세요" class="w-full px-3 py-2 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-shadow">
+        </div>
+        <div>
+          <label for="donate-email" class="block text-sm font-medium text-slate-700 mb-1">이메일</label>
+          <input type="email" id="donate-email" name="email" required placeholder="example@email.com" class="w-full px-3 py-2 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-shadow">
+        </div>
+        <div>
+          <label for="donate-amount" class="block text-sm font-medium text-slate-700 mb-1">희망금액</label>
+          <input type="text" id="donate-amount" name="amount" required placeholder="예: 50,000원" class="w-full px-3 py-2 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-shadow">
+        </div>
+        <div class="pt-2">
+          <button type="submit" class="w-full py-2.5 text-sm rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700 focus:ring-offset-2">
+            기부 신청하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Thank-you Modal (기부 신청 완료 후) -->
+  <div id="donate-thankyou-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal="true" role="dialog">
+    <div id="donate-thankyou-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full px-6 py-6 text-center" id="donate-thankyou-box">
+      <p class="text-slate-800 font-medium mb-1">감사합니다.</p>
+      <p class="text-slate-700 text-sm mb-5">기부 신청이 완료되었습니다.<br>곧 BKIG에서 연락드리겠습니다.</p>
+      <button type="button" id="donate-thankyou-ok" class="w-full py-2.5 text-sm rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">
+        확인
+      </button>
+    </div>
+  </div>
 </main>
 <script src="{{ url_for('static', filename='js/donation.js') }}"></script>
 {% endblock %}

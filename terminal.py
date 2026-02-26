@@ -279,6 +279,28 @@ class BkigApplication(db.Model):
         return m.get(division.strip().lower(), "Research")
 
 
+class BkigDonation(db.Model):
+    """Donation 페이지 기부하기 모달에서 제출된 기부 신청."""
+    __tablename__ = "terminal_bkig_donations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    amount = db.Column(db.String(120), nullable=False)  # 희망금액 (예: 50,000원)
+    completed = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "amount": self.amount or "",
+            "completed": bool(self.completed),
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+        }
+
+
 def init_terminal_db(app):
     """Flask app에 Terminal DB·Migrate 연결 (스키마 변경은 flask db upgrade 로 적용)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1726,6 +1748,62 @@ def api_application_resume_download(app_id):
     if not os.path.isfile(path):
         return jsonify({"error": "File not found"}), 404
     return send_from_directory(upload_dir, app_record.resume_path, as_attachment=True)
+
+
+# ---------------------------------------------------------------------------
+# BKIG Donations (Donation 페이지 기부하기 — 공개 제출, Admin에서 조회/완료 처리)
+# ---------------------------------------------------------------------------
+@terminal_bp.route("/api/donations", methods=["POST"])
+def api_donations_submit():
+    """
+    Donation 페이지 기부하기 모달에서 제출. 로그인 불필요.
+    JSON 또는 form: name, email, amount
+    """
+    data = request.get_json(silent=True) or request.form or {}
+    name = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip()
+    amount = (data.get("amount") or "").strip()
+
+    if not name or not email or not amount:
+        return jsonify({"error": "Bad request", "message": "Name, email, and amount are required"}), 400
+
+    try:
+        donation = BkigDonation(name=name, email=email, amount=amount)
+        db.session.add(donation)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Donation request submitted.", "id": donation.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        err_msg = str(e)
+        if "no such column" in err_msg.lower() or "no such table" in err_msg.lower():
+            err_msg = "Database schema outdated. Run: FLASK_APP=app.py flask db upgrade"
+        return jsonify({"error": "Server error", "message": err_msg}), 500
+
+
+@terminal_bp.route("/api/donations", methods=["GET"])
+@login_required_api
+def api_donations_list():
+    """GET: 기부 신청 목록. super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    donations = BkigDonation.query.order_by(BkigDonation.created_at.desc()).all()
+    return jsonify({"donations": [d.to_dict() for d in donations]})
+
+
+@terminal_bp.route("/api/donations/<int:donation_id>/complete", methods=["POST"])
+@login_required_api
+def api_donation_complete(donation_id):
+    """기부 신청 완료 처리. super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    donation = BkigDonation.query.get(donation_id)
+    if not donation:
+        return jsonify({"error": "Not found", "message": "Donation not found"}), 404
+    donation.completed = True
+    db.session.commit()
+    return jsonify({"success": True, "message": "Marked as completed"})
 
 
 @terminal_bp.route("/api/users", methods=["GET", "POST"])
