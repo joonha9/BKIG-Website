@@ -1189,15 +1189,20 @@
     }
     var token = getPortfolioToken();
     var nickname = portfolioState.facctingNickname || (portfolioState.portfolioData && (portfolioState.portfolioData.nickname || (portfolioState.portfolioData.user && portfolioState.portfolioData.user.nickname)));
+    var inputCls = 'w-full px-3 py-2 bg-slate-800 border border-slate-600 text-slate-200 font-mono text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500';
     root.innerHTML =
       '<div class="border border-slate-600 p-6" style="border-radius:0;">' +
       '<div class="text-slate-500 text-xs uppercase tracking-wider mb-4">Profile</div>' +
       '<div class="space-y-4">' +
-      '<div><label class="block text-slate-500 text-xs mb-1">Name</label><p class="text-slate-200">' + escapeHtml(name) + '</p></div>' +
-      '<div><label class="block text-slate-500 text-xs mb-1">Email</label><p class="text-slate-200">' + escapeHtml(email) + '</p></div>' +
-      '<div><label class="block text-slate-500 text-xs mb-1">직책</label><p class="text-slate-200">' + escapeHtml(roleDisplay) + '</p></div>' +
-      '<div id="profile-faccting-nickname-row"><label class="block text-slate-500 text-xs mb-1">FACCTing Nickname</label><p id="profile-faccting-nickname" class="text-slate-200">' + (nickname ? escapeHtml(nickname) : '—') + '</p></div>' +
-      '<div><label class="block text-slate-500 text-xs mb-1">FACCTing API Token</label>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Name</label><input type="text" id="profile-name-input" value="' + escapeHtml(name === '—' ? '' : name) + '" placeholder="Your name" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Email</label><input type="email" id="profile-email-input" value="' + escapeHtml(email === '—' ? '' : email) + '" placeholder="you@example.com" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">비밀번호 변경</label><input type="password" id="profile-password-input" value="" placeholder="새 비밀번호 (변경 시에만 입력)" class="' + inputCls + '" style="border-radius:0;" autocomplete="new-password"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">직책</label><p class="text-slate-200 pt-2">' + escapeHtml(roleDisplay) + '</p></div>' +
+      '<div class="flex gap-2 pt-2">' +
+      '<button type="button" id="profile-save-btn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-sm transition-colors" style="border-radius:0;">프로필 저장</button>' +
+      '<span id="profile-save-message" class="py-2 text-slate-400 text-xs"></span></div>' +
+      '<div id="profile-faccting-nickname-row" class="pt-4 mt-4 border-t border-slate-700"><label class="block text-slate-500 text-xs mb-1">FACCTing Nickname</label><p id="profile-faccting-nickname" class="text-slate-200">' + (nickname ? escapeHtml(nickname) : '—') + '</p></div>' +
+      '<div class="mt-4"><label class="block text-slate-500 text-xs mb-1">FACCTing API Token</label>' +
       '<input type="password" id="profile-token-input" value="' + escapeHtml(token) + '" placeholder="Paste token (stored in browser only)" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 text-slate-200 font-mono text-sm mt-1" style="border-radius:0;">' +
       '<p class="text-slate-500 text-xs mt-1">Used for Portfolio / FACCTing. Stored in this device only.</p></div>' +
       '<div class="flex gap-2 pt-2">' +
@@ -1205,6 +1210,49 @@
       '<button type="button" id="profile-token-toggle" class="px-4 py-2 border border-slate-500 text-slate-300 hover:border-slate-400 transition-colors font-mono text-sm" style="border-radius:0;">Show / Hide</button>' +
       '</div>' +
       '</div></div>';
+    var profileSaveBtn = document.getElementById('profile-save-btn');
+    var profileSaveMsg = document.getElementById('profile-save-message');
+    if (profileSaveBtn) {
+      profileSaveBtn.addEventListener('click', function () {
+        var nameEl = document.getElementById('profile-name-input');
+        var emailEl = document.getElementById('profile-email-input');
+        var passwordEl = document.getElementById('profile-password-input');
+        var name = nameEl ? (nameEl.value || '').trim() : '';
+        var email = emailEl ? (emailEl.value || '').trim() : '';
+        var password = passwordEl ? (passwordEl.value || '').trim() : '';
+        if (!email) {
+          if (profileSaveMsg) profileSaveMsg.textContent = '이메일을 입력하세요.';
+          return;
+        }
+        if (profileSaveMsg) profileSaveMsg.textContent = '저장 중…';
+        var payload = { name: name || undefined, email: email };
+        if (password) payload.password = password;
+        fetch('/api/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            if (res.ok) {
+              if (data.user) window.TERMINAL_CURRENT_USER = data.user;
+              var nameDisplay = document.getElementById('sidebar-user-name');
+              var pEl = document.getElementById('sidebar-user-p');
+              if (nameDisplay && data.user) nameDisplay.textContent = data.user.name || data.user.email || '';
+              if (pEl && data.user) pEl.setAttribute('title', data.user.email || '');
+              if (profileSaveMsg) profileSaveMsg.textContent = '저장되었습니다.';
+              if (passwordEl) passwordEl.value = '';
+              setTimeout(function () { if (profileSaveMsg) profileSaveMsg.textContent = ''; }, 2500);
+            } else {
+              if (profileSaveMsg) profileSaveMsg.textContent = (data && data.message) ? data.message : '저장 실패';
+            }
+          }).catch(function () {
+            if (profileSaveMsg) profileSaveMsg.textContent = '저장 실패';
+          });
+        }).catch(function () {
+          if (profileSaveMsg) profileSaveMsg.textContent = '네트워크 오류';
+        });
+      });
+    }
     var input = document.getElementById('profile-token-input');
     var saveBtn = document.getElementById('profile-token-save');
     var toggleBtn = document.getElementById('profile-token-toggle');

@@ -1,8 +1,10 @@
 <!DOCTYPE html>
+<!-- 이 웹사이트 작성자: 권준하 -->
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" type="image/jpeg">
   <title>BKIG Terminal | Boston Korea Investment Group</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='terminal.css') }}">
@@ -12,8 +14,8 @@
   </script>
 </head>
 <body class="bkig-terminal bg-[#0a0e17] text-slate-200 min-h-screen flex">
-  <!-- LNB: 사이드바 -->
-  <aside class="bkig-lnb w-56 shrink-0 border-r border-slate-700/60 flex flex-col bg-[#0d1220]">
+  <!-- LNB: 사이드바 (항상 뷰포트 높이 100%, 스크롤 시에도 잘리지 않음) -->
+  <aside class="bkig-lnb w-56 shrink-0 h-screen max-h-screen sticky top-0 border-r border-slate-700/60 flex flex-col bg-[#0d1220] self-start">
     <div class="p-4 border-b border-slate-700/60">
       <h1 class="text-sm font-semibold text-slate-300 tracking-wide">BKIG Terminal</h1>
       <p class="text-xs text-slate-500 mt-0.5">Internal Intranet</p>
@@ -66,7 +68,7 @@
     </nav>
     <div class="p-3 border-t border-slate-700/60">
       <div class="flex items-center gap-2 flex-wrap">
-        <p class="text-xs text-slate-500 truncate flex-1 min-w-0" title="{{ current_user.email }}">{{ current_user.name }}<span id="sidebar-faccting-nickname" class="text-slate-400"></span></p>
+        <p id="sidebar-user-p" class="text-xs text-slate-500 truncate flex-1 min-w-0" title="{{ current_user.email }}"><span id="sidebar-user-name">{{ current_user.name }}</span><span id="sidebar-faccting-nickname" class="text-slate-400"></span></p>
         <button type="button" id="sidebar-profile-btn" class="text-xs text-slate-400 hover:text-cyan-400 transition-colors shrink-0" title="Profile">Profile</button>
       </div>
       <p class="text-xs text-slate-600">{{ current_user.role }}</p>

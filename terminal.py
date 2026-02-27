@@ -415,6 +415,31 @@ def api_logout():
     return redirect(url_for("index"))
 
 
+@terminal_bp.route("/api/me", methods=["PATCH"])
+@login_required_api
+def api_me():
+    """현재 로그인 사용자가 자신의 name, email, password만 수정."""
+    user_dict = get_current_user()
+    if not user_dict:
+        return jsonify({"error": "Unauthorized"}), 401
+    user = User.query.get(user_dict["id"])
+    if not user:
+        return jsonify({"error": "Not found"}), 404
+    data = request.get_json(force=True, silent=True) or {}
+    if "name" in data:
+        user.name = (data.get("name") or "").strip() or user.name
+    if "email" in data:
+        raw = (data.get("email") or "").strip()
+        if raw and raw != user.email:
+            if User.query.filter_by(email=raw).filter(User.id != user.id).first():
+                return jsonify({"error": "Conflict", "message": "Email already in use"}), 409
+            user.email = raw
+    if data.get("password"):
+        user.password_hash = generate_password_hash(data.get("password"))
+    db.session.commit()
+    return jsonify({"user": user.to_dict()})
+
+
 # ---------------------------------------------------------------------------
 # Page & API routes (인증 필요)
 # ---------------------------------------------------------------------------
