@@ -32,6 +32,7 @@
       loadAdminUsers();
       if (typeof loadAdminApplications === 'function') loadAdminApplications();
       if (typeof loadAdminDonations === 'function') loadAdminDonations();
+      if (typeof loadAdminInquiries === 'function') loadAdminInquiries();
     }
     if (viewId === 'view-dashboard') {
       loadMarketData();
@@ -86,7 +87,11 @@
 
   function renderCommsRoomRow(room) {
     var active = commsActiveRoomId === room.id ? ' bg-slate-700/50 text-white' : ' text-slate-400 hover:bg-slate-700/30 hover:text-slate-200';
-    return '<li><button type="button" class="comms-room-btn w-full text-left px-3 py-1.5 rounded text-xs font-medium' + active + '" data-room-id="' + room.id + '">' + escapeHtml(room.name) + '</button></li>';
+    var hasAccess = room.has_access === true;
+    var indicatorColor = hasAccess ? '#22c55e' : '#ef4444';
+    var indicatorGlow = hasAccess ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)';
+    var indicatorHtml = '<span class="comms-room-access-dot shrink-0 inline-block w-2 h-2 rounded-full border border-slate-500/50" style="background-color:' + indicatorColor + '; box-shadow: 0 0 6px ' + indicatorGlow + ';" title="' + (hasAccess ? 'Access granted' : 'No access') + '" aria-hidden="true"></span>';
+    return '<li><button type="button" class="comms-room-btn w-full text-left px-3 py-1.5 rounded text-xs font-medium flex items-center gap-2' + active + '" data-room-id="' + room.id + '">' + indicatorHtml + '<span class="min-w-0 truncate">' + escapeHtml(room.name) + '</span></button></li>';
   }
 
   function loadCommsRooms() {
@@ -927,11 +932,21 @@
     var root = document.getElementById('portfolio-root');
     if (!root) return;
     root.innerHTML =
-      '<div class="portfolio-auth-box border border-slate-600 p-6 max-w-md mx-auto mt-16" style="border-radius:0; background:#0d1220;">' +
+      '<div class="portfolio-auth-wrapper max-w-md mx-auto mt-16">' +
+      '<div class="portfolio-auth-box border border-slate-600 p-6 mb-6" style="border-radius:0; background:#0d1220;">' +
       '<div class="text-slate-400 text-xs uppercase tracking-wider mb-4">[ FACCTING API AUTHORIZATION REQUIRED ]</div>' +
       '<label class="block text-slate-400 text-xs mb-2">Token</label>' +
       '<input type="password" id="portfolio-token-input" placeholder="Paste FACCTing API token" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 text-slate-200 font-mono text-sm mb-4" style="border-radius:0;">' +
       '<button type="button" id="portfolio-connect-btn" class="w-full py-2 border border-slate-500 text-slate-300 hover:border-cyan-500 hover:text-cyan-300 transition-colors font-mono text-sm" style="border-radius:0;">[ CONNECT ACCOUNT ]</button>' +
+      '</div>' +
+      '<div class="portfolio-auth-guide border border-slate-600/80 p-6 font-mono text-sm" style="border-radius:0; background:rgba(15,23,42,0.6);">' +
+      '<div class="text-slate-300 text-xs uppercase tracking-wider mb-4 pb-2 border-b border-slate-600/60">How to Access my Portfolio?</div>' +
+      '<ol class="space-y-3 text-slate-400 text-xs leading-relaxed">' +
+      '<li class="flex gap-3"><span class="text-cyan-400/90 font-semibold shrink-0">1.</span><span>Sign up at <a href="https://faccting.com" target="_blank" rel="noopener noreferrer" class="text-cyan-400/90 hover:text-cyan-300 underline">FACCTing.com</a>.</span></li>' +
+      '<li class="flex gap-3"><span class="text-cyan-400/90 font-semibold shrink-0">2.</span><span>Go to <strong class="text-slate-300">Profile</strong> → <strong class="text-slate-300">Edit Profile</strong> and generate an API key.</span></li>' +
+      '<li class="flex gap-3"><span class="text-cyan-400/90 font-semibold shrink-0">3.</span><span>Paste the API key in the field above and click <strong class="text-slate-300">[ CONNECT ACCOUNT ]</strong>.</span></li>' +
+      '</ol>' +
+      '</div>' +
       '</div>';
     var btn = document.getElementById('portfolio-connect-btn');
     var input = document.getElementById('portfolio-token-input');
@@ -2174,6 +2189,50 @@
     e.preventDefault();
     const id = btn.getAttribute('data-donation-id');
     if (id) completeDonation(id);
+  }
+
+  // -------------------------------------------------------------------------
+  // Admin: Inquiries (Contact 페이지 문의 목록)
+  // -------------------------------------------------------------------------
+  async function fetchInquiries() {
+    const res = await fetch('/api/inquiries', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Failed to fetch inquiries');
+    const data = await res.json();
+    return data.inquiries || [];
+  }
+
+  function renderInquiriesTable(inquiries) {
+    const tbody = document.getElementById('inquiries-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = inquiries.length
+      ? inquiries
+          .map(function (i) {
+            const dateStr = i.created_at ? i.created_at.slice(0, 10) : '—';
+            const msgShort = (i.message || '').length > 80 ? (i.message || '').slice(0, 80) + '…' : (i.message || '');
+            return (
+              '<tr class="hover:bg-slate-700/20">' +
+              '<td class="px-4 py-3 text-slate-400 text-xs">' + escapeHtml(dateStr) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(i.name) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(i.email) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(i.subject) + '</td>' +
+              '<td class="px-4 py-3 text-slate-400 text-xs max-w-[280px] truncate" title="' + escapeHtml(i.message || '') + '">' + escapeHtml(msgShort) + '</td>' +
+              '</tr>'
+            );
+          })
+          .join('')
+      : '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No inquiries yet.</td></tr>';
+  }
+
+  async function loadAdminInquiries() {
+    const tbody = document.getElementById('inquiries-table-body');
+    if (!tbody) return;
+    try {
+      const inquiries = await fetchInquiries();
+      renderInquiriesTable(inquiries);
+    } catch (e) {
+      tbody.innerHTML =
+        '<tr><td colspan="5" class="px-4 py-8 text-center text-red-400">Failed to load inquiries.</td></tr>';
+    }
   }
 
   // -------------------------------------------------------------------------

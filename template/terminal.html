@@ -619,6 +619,27 @@
             </table>
           </div>
         </div>
+        <!-- Inquiries (Contact 페이지 Send Message 제출 목록) -->
+        <div class="mt-10">
+          <h3 class="text-xl font-bold text-white mb-2">Inquiries</h3>
+          <p class="text-slate-400 text-sm mb-4">Contact page submissions (name, email, subject, message).</p>
+          <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-800/80 border-b border-slate-700">
+                <tr>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Date</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium">Subject</th>
+                  <th class="px-4 py-3 text-slate-400 font-medium" style="max-width: 280px;">Message</th>
+                </tr>
+              </thead>
+              <tbody id="inquiries-table-body" class="divide-y divide-slate-700/50">
+                <!-- JS에서 /api/inquiries 로 동적 주입 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
     {% endif %}

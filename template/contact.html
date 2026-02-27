@@ -122,6 +122,19 @@
     </div>
   </section>
 
+  <!-- Success modal: Inquiry sent -->
+  <div id="contact-success-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" aria-modal="true" aria-labelledby="contact-success-title" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" aria-hidden="true" data-contact-modal-close></div>
+    <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 text-center">
+      <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4" aria-hidden="true">
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h2 id="contact-success-title" class="text-xl font-semibold text-slate-900 mb-2">Inquiry sent!</h2>
+      <p class="text-slate-600 text-sm mb-6">Thank you for reaching out. We'll get back to you within 2–3 business days.</p>
+      <button type="button" class="w-full px-4 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors" data-contact-modal-close>OK</button>
+    </div>
+  </div>
+
   <!-- Section 3: Location -->
   <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="location-title">
     <div class="max-w-3xl mx-auto px-6 sm:px-8 text-center">

@@ -301,6 +301,28 @@ class BkigDonation(db.Model):
         }
 
 
+class BkigInquiry(db.Model):
+    """Contact 페이지 Send Message 폼에서 제출된 문의."""
+    __tablename__ = "terminal_bkig_inquiries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    subject = db.Column(db.String(120), nullable=False)  # recruiting, partnership, donation, other
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "subject": self.subject or "",
+            "message": self.message or "",
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+        }
+
+
 def init_terminal_db(app):
     """Flask app에 Terminal DB·Migrate 연결 (스키마 변경은 flask db upgrade 로 적용)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1429,14 +1451,15 @@ def api_comms_rooms():
     executive_rooms = Room.query.filter_by(room_type="executive").order_by(Room.name).all()
     division_rooms = Room.query.filter_by(room_type="division").order_by(Room.division_id, Room.name).all()
     team_rooms = Room.query.filter_by(room_type="team").order_by(Room.team_id, Room.name).all()
-    def with_can_invite(room):
+    def with_can_invite_and_access(room):
         d = room.to_dict()
         d["can_invite"] = can_invite_to_room(user, room)
+        d["has_access"] = _comms_user_in_room(user["id"], room.id)
         return d
     return jsonify({
-        "executive": [with_can_invite(r) for r in executive_rooms],
-        "division": [with_can_invite(r) for r in division_rooms],
-        "team": [with_can_invite(r) for r in team_rooms],
+        "executive": [with_can_invite_and_access(r) for r in executive_rooms],
+        "division": [with_can_invite_and_access(r) for r in division_rooms],
+        "team": [with_can_invite_and_access(r) for r in team_rooms],
     })
 
 
@@ -1839,6 +1862,48 @@ def api_donation_complete(donation_id):
     donation.completed = True
     db.session.commit()
     return jsonify({"success": True, "message": "Marked as completed"})
+
+
+# ---------------------------------------------------------------------------
+# BKIG Inquiries (Contact 페이지 Send Message — 공개 제출, Admin에서 조회)
+# ---------------------------------------------------------------------------
+@terminal_bp.route("/api/inquiries", methods=["POST"])
+def api_inquiries_submit():
+    """
+    Contact 페이지 Send Message 폼에서 제출. 로그인 불필요.
+    JSON 또는 form: name, email, subject, message
+    """
+    data = request.get_json(silent=True) or request.form or {}
+    name = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip()
+    subject = (data.get("subject") or "").strip()
+    message = (data.get("message") or "").strip()
+
+    if not name or not email or not subject or not message:
+        return jsonify({"error": "Bad request", "message": "Name, email, subject, and message are required"}), 400
+
+    try:
+        inquiry = BkigInquiry(name=name, email=email, subject=subject, message=message)
+        db.session.add(inquiry)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Inquiry sent.", "id": inquiry.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        err_msg = str(e)
+        if "no such column" in err_msg.lower() or "no such table" in err_msg.lower():
+            err_msg = "Database schema outdated. Run: FLASK_APP=app.py flask db upgrade"
+        return jsonify({"error": "Server error", "message": err_msg}), 500
+
+
+@terminal_bp.route("/api/inquiries", methods=["GET"])
+@login_required_api
+def api_inquiries_list():
+    """GET: 문의 목록. super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    inquiries = BkigInquiry.query.order_by(BkigInquiry.created_at.desc()).all()
+    return jsonify({"inquiries": [i.to_dict() for i in inquiries]})
 
 
 @terminal_bp.route("/api/users", methods=["GET", "POST"])
