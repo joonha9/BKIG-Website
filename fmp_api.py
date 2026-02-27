@@ -328,13 +328,19 @@ def get_comps_data(symbol):
     ratios = _fmp_stable_get("/ratios", {"symbol": sym, "limit": 1, "period": "annual"})
     if isinstance(ratios, list) and ratios:
         r = ratios[0]
-        out["evToEbitda"] = _safe_float(r.get("enterpriseValueOverEBITDA") or r.get("evToEbitda"))
-        out["peRatio"] = _safe_float(r.get("priceEarningsRatio") or r.get("peRatio"))
-        out["pbRatio"] = _safe_float(r.get("priceToBookRatio") or r.get("pbRatio"))
-        roe = _safe_float(r.get("returnOnEquity") or r.get("roe"))
+        out["evToEbitda"] = _safe_float(
+            r.get("enterpriseValueOverEBITDA") or r.get("evToEbitda") or r.get("enterprise_value_over_ebitda") or r.get("ev_to_ebitda")
+        )
+        out["peRatio"] = _safe_float(
+            r.get("priceEarningsRatio") or r.get("peRatio") or r.get("price_earnings_ratio")
+        )
+        out["pbRatio"] = _safe_float(
+            r.get("priceToBookRatio") or r.get("pbRatio") or r.get("price_to_book_ratio")
+        )
+        roe = _safe_float(r.get("returnOnEquity") or r.get("roe") or r.get("return_on_equity"))
         if roe is not None:
             out["roe"] = round(roe * 100, 1) if abs(roe) <= 5 else round(roe, 1)
-        roic = _safe_float(r.get("returnOnCapitalEmployed") or r.get("roic"))
+        roic = _safe_float(r.get("returnOnCapitalEmployed") or r.get("roic") or r.get("return_on_capital_employed"))
         if roic is not None:
             out["roic"] = round(roic * 100, 1) if abs(roic) <= 5 else round(roic, 1)
     key_metrics = _fmp_stable_get("/key-metrics", {"symbol": sym, "limit": 1})
@@ -348,6 +354,17 @@ def get_comps_data(symbol):
             ev = _safe_float(m.get("enterpriseValueTTM") or m.get("enterpriseValue"))
             if ev is not None:
                 out["ev"] = round(ev / 1e9, 1) if ev >= 1e9 else round(ev, 1)
+        if out["evToEbitda"] is None:
+            out["evToEbitda"] = _safe_float(m.get("enterpriseValueOverEBITDA") or m.get("evToEbitda"))
+        if out["peRatio"] is None:
+            out["peRatio"] = _safe_float(m.get("peRatio") or m.get("priceEarningsRatio"))
+        if out["roe"] is None:
+            roe_km = _safe_float(m.get("roe") or m.get("returnOnEquity"))
+            if roe_km is not None:
+                out["roe"] = round(roe_km * 100, 1) if abs(roe_km) <= 5 else round(roe_km, 1)
+    # EV/EBITDA: ratios/key_metrics에 없으면 EV ÷ LTM EBITDA로 직접 계산
+    if out["evToEbitda"] is None and out["ev"] is not None and out["ltmEbitda"] is not None and out["ltmEbitda"] != 0:
+        out["evToEbitda"] = round(out["ev"] / out["ltmEbitda"], 1)
     return out
 
 

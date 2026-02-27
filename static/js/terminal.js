@@ -3187,6 +3187,7 @@
   var compPeerTickers = [];
   var compLastTarget = '';
   var compSelectedTickers = [];
+  var lastCompsDataByTicker = {};
 
   function compGetCompany(ticker) {
     return COMPS_MOCK.data.find(function (r) { return r.ticker === ticker; });
@@ -3211,15 +3212,79 @@
     var inputEl = document.getElementById('ticker-input');
     var target = (currentTicker || (inputEl && inputEl.value) || '').trim().toUpperCase();
     if (!target) return;
-    var rawPeers = compPeerTickers.filter(function (p) { return (p || '').trim().toUpperCase() !== target; });
 
     var dataByTicker = {};
-    COMPS_MOCK.data.forEach(function (row) { dataByTicker[row.ticker] = row; });
+    var rawPeers = compPeerTickers.filter(function (p) { return (p || '').trim().toUpperCase() !== target; });
+    var allTickers = [target].concat(rawPeers);
+    var selected = compSelectedTickers.length ? compSelectedTickers.slice() : [target].concat(rawPeers.slice(0, 4));
+
+    function renderCompsShell(loadingMsg) {
+      var html = '<div class="bkig-trend trend-mono text-slate-300" style="background:#0A0E17;">';
+      html += '<div class="mb-4 border border-slate-700 p-3" style="border-radius:0;">';
+      html += '<div class="text-xs text-slate-500 mb-2 uppercase tracking-wider">Peer Group <span class="normal-case font-normal">(선택한 피어 + EV 기준 가까운 순)</span></div>';
+      html += '<div class="flex flex-wrap gap-2">';
+      allTickers.forEach(function (t) {
+        var isTarget = t === target;
+        var isSel = selected.indexOf(t) !== -1;
+        var chipBg = isTarget ? 'rgba(255,230,0,0.15)' : (isSel ? 'rgba(0,255,65,0.12)' : 'rgba(71,85,105,0.3)');
+        var chipBorder = isTarget ? '#FFE600' : (isSel ? '#00FF41' : '#475569');
+        html += '<div class="comps-chip flex items-center gap-1.5 px-2.5 py-1 border font-mono text-sm" style="border-radius:0;border-color:' + chipBorder + ';background:' + chipBg + ';">';
+        html += '<label class="flex items-center gap-1.5 cursor-pointer">';
+        html += '<input type="checkbox" class="comps-peer-cb border border-slate-600 bg-slate-900" data-ticker="' + escapeHtml(t) + '"' + (isSel ? ' checked' : '') + '>';
+        html += '<span class="' + (isTarget ? 'text-amber-300 font-semibold' : '') + '">' + escapeHtml(t) + '</span></label>';
+        if (!isTarget) html += '<button type="button" class="comps-peer-remove text-slate-500 hover:text-rose-400 ml-0.5" data-ticker="' + escapeHtml(t) + '" aria-label="Remove">×</button>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+      html += '<div class="mb-4 border border-slate-700 p-3 flex items-center justify-center text-slate-500 font-mono text-sm" style="height:320px;border-radius:0;" id="comps-chart-area"><span>' + (loadingMsg || '') + '</span></div>';
+      var colLabels = ['Ticker', 'Market Cap (B)', 'EV (B)', 'LTM Revenue (B)', 'LTM EBITDA (B)', 'Gross Margin %', 'EV/EBITDA', 'P/E', 'P/B', 'ROE %'];
+      html += '<div class="overflow-x-auto border border-slate-700 trend-table" style="border-radius:0;">';
+      html += '<table class="w-full border-collapse" style="font-family:inherit;"><thead><tr class="border-b border-slate-700">';
+      html += '<th class="py-2 pr-4 text-left text-slate-500 font-medium">' + escapeHtml(colLabels[0]) + '</th>';
+      for (var c = 1; c < colLabels.length; c++) html += '<th class="py-2 pr-4 text-right text-slate-500 font-medium">' + escapeHtml(colLabels[c]) + '</th>';
+      html += '</tr></thead><tbody id="comps-tbody">';
+      if (loadingMsg) {
+        html += '<tr class="border-b border-slate-700/50"><td colspan="10" class="py-4 text-center text-slate-500 font-mono text-sm">' + escapeHtml(loadingMsg) + '</td></tr>';
+      }
+      html += '</tbody></table></div></div>';
+      content.innerHTML = html;
+      content.classList.add('bkig-trend');
+      content.style.background = '#0A0E17';
+    }
+
+    renderCompsShell('Loading comps…');
+    content.classList.add('bkig-trend');
+    content.style.background = '#0A0E17';
+
+    try {
+      var peersRes = await fetch('/api/tools/peers/' + encodeURIComponent(target));
+      var peersJson = await peersRes.json().catch(function () { return {}; });
+      var apiPeers = Array.isArray(peersJson.peers) ? peersJson.peers : [];
+      if (target !== compLastTarget) {
+        compPeerTickers = apiPeers.slice(0, 4);
+      }
+      rawPeers = compPeerTickers.filter(function (p) { return (p || '').trim().toUpperCase() !== target; });
+      allTickers = [target].concat(rawPeers);
+      var tickersToFetch = [target].concat(rawPeers).slice(0, 5);
+      var compsRes = await fetch('/api/tools/comps-data?tickers=' + encodeURIComponent(tickersToFetch.join(',')));
+      var compsJson = await compsRes.json().catch(function () { return {}; });
+      var compsList = Array.isArray(compsJson.data) ? compsJson.data : [];
+      compsList.forEach(function (row) {
+        if (row && row.ticker) dataByTicker[row.ticker] = row;
+      });
+      COMPS_MOCK.data.forEach(function (row) { if (!dataByTicker[row.ticker]) dataByTicker[row.ticker] = row; });
+    } catch (e) {
+      var tbody = document.getElementById('comps-tbody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="py-4 text-center text-slate-500">Failed to load comps.</td></tr>';
+      return;
+    }
+
     [target].concat(rawPeers).forEach(function (t) {
       if (!dataByTicker[t]) {
         dataByTicker[t] = { ticker: t, marketCap: null, ev: null, ltmRevenue: null, ltmEbitda: null, grossMargin: null, evToEbitda: null, peRatio: null, pbRatio: null, roe: null, roic: null, revenueCagr5y: null };
       }
     });
+    lastCompsDataByTicker = dataByTicker;
     var targetEv = dataByTicker[target].ev != null ? dataByTicker[target].ev : 0;
     var peersWithEv = rawPeers.filter(function (p) { var d = dataByTicker[p]; return d && d.ev != null && !isNaN(d.ev); });
     peersWithEv.sort(function (a, b) {
@@ -3229,10 +3294,10 @@
     });
     var peersNoEv = rawPeers.filter(function (p) { return peersWithEv.indexOf(p) === -1; });
     var peersOrdered = peersWithEv.concat(peersNoEv);
-    var allTickers = [target].concat(peersOrdered);
+    var allTickers = [target].concat(peersOrdered).slice(0, 5);
     if (target !== compLastTarget) {
       compLastTarget = target;
-      compSelectedTickers = [target].concat(peersOrdered);
+      compSelectedTickers = [target].concat(peersOrdered).slice(0, 5);
     }
     var selected = compSelectedTickers.slice();
 
@@ -3327,9 +3392,9 @@
       var ctx = document.getElementById('comps-scatter-canvas');
       if (ctx) {
         if (compScatterInstance) { compScatterInstance.destroy(); compScatterInstance = null; }
-        var xKey = 'roic';
+        var xKey = 'roe';
         var yKey = 'evToEbitda';
-        var xLabel = 'ROIC (%)';
+        var xLabel = 'ROE (%)';
         var yLabel = 'EV / EBITDA';
         var datasets = selected.map(function (ticker, i) {
           var row = dataByTicker[ticker];
@@ -3929,8 +3994,7 @@
         aoa.push(row);
       });
     } else if (tab === 'comps') {
-      var dataByTicker = {};
-      COMPS_MOCK.data.forEach(function (row) { dataByTicker[row.ticker] = row; });
+      var dataByTicker = Object.keys(lastCompsDataByTicker).length ? lastCompsDataByTicker : (function () { var o = {}; COMPS_MOCK.data.forEach(function (row) { o[row.ticker] = row; }); return o; })();
       var selected = compSelectedTickers.length ? compSelectedTickers : [currentTicker || 'AAPL'].concat(COMPS_MOCK.peers);
       aoa = [['Ticker', 'Market Cap (B)', 'EV (B)', 'LTM Revenue (B)', 'LTM EBITDA (B)', 'Gross Margin %', 'EV/EBITDA', 'P/E', 'P/B', 'ROE %']];
       selected.forEach(function (ticker) {

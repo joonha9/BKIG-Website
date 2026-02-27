@@ -539,14 +539,24 @@ def api_tools_peers(ticker):
 @terminal_bp.route("/api/tools/comps-data")
 @login_required_api
 def api_tools_comps_data():
-    """Comps 테이블/차트용 티커별 지표. Query: tickers=TSLA,WMT,AAPL,TGT (최대 6개)."""
+    """Comps 테이블/차트용 티커별 지표. Query: tickers=TSLA,WMT,AAPL,TGT (최대 6개). 병렬 조회로 지연 감소."""
     try:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         from fmp_api import get_comps_data
         tickers_param = (request.args.get("tickers") or request.args.get("symbols") or "").strip()
         if not tickers_param:
             return jsonify({"data": []})
-        tickers = [s.strip().upper() for s in tickers_param.split(",") if s.strip()][:6]
-        data = [get_comps_data(t) for t in tickers]
+        tickers = [s.strip().upper() for s in tickers_param.split(",") if s.strip()][:5]
+        data = []
+        with ThreadPoolExecutor(max_workers=min(5, len(tickers))) as ex:
+            future_to_t = {ex.submit(get_comps_data, t): t for t in tickers}
+            for future in as_completed(future_to_t):
+                try:
+                    data.append(future.result())
+                except Exception:
+                    t = future_to_t[future]
+                    data.append({"ticker": t, "marketCap": None, "ev": None, "ltmRevenue": None, "ltmEbitda": None, "grossMargin": None, "evToEbitda": None, "peRatio": None, "pbRatio": None, "roe": None, "roic": None})
+        data.sort(key=lambda r: tickers.index(r["ticker"]) if r["ticker"] in tickers else 999)
         return jsonify({"data": data})
     except Exception:
         return jsonify({"data": []})
