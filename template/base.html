@@ -21,7 +21,7 @@
       <!-- Header: logo + close -->
       <header class="flex items-center justify-between px-5 py-4 shrink-0">
         <a href="{{ url_for('index') }}" class="logo-link flex items-center" aria-label="BKIG 홈">
-          <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="" class="h-10 w-auto object-contain">
+          <img src="{{ url_for('static', filename='images/BKIG(Transparent).png') }}" alt="" class="h-10 w-auto object-contain">
         </a>
         <button type="button" id="mobile-nav-close" class="mobile-nav-close flex items-center justify-center w-14 h-14 min-w-[3.5rem] min-h-[3.5rem] rounded-full text-white hover:bg-white/15 transition-colors touch-manipulation" aria-label="메뉴 닫기">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12"/></svg>
@@ -152,7 +152,8 @@
 
   <header class="header">
     <a href="{{ url_for('index') }}" class="logo-link">
-      <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="Boston Korea Investment Group" class="logo-img">
+      <img src="{{ url_for('static', filename='images/BKIG(Transparent).png') }}" alt="Boston Korea Investment Group" class="logo-img logo-img-default">
+      <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="Boston Korea Investment Group" class="logo-img logo-img-scrolled">
     </a>
     <nav class="nav">
       <a href="{{ url_for('index') }}#home" class="nav-link">Home</a>
@@ -191,7 +192,7 @@
       <div class="footer-grid">
         <div class="footer-col footer-brand">
           <a href="{{ url_for('index') }}" class="footer-logo-link" aria-label="BKIG 홈으로 이동">
-            <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="" class="footer-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <img src="{{ url_for('static', filename='images/BKIG(Transparent).png') }}" alt="" class="footer-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
             <span class="footer-logo-text" aria-hidden="true">BKIG</span>
           </a>
           <p class="footer-slogan">Connecting Seoul & Boston</p>

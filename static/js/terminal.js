@@ -730,17 +730,35 @@
     facctingNickname: null
   };
 
+  function facctingTokenStorageKey() {
+    var user = typeof window.TERMINAL_CURRENT_USER !== 'undefined' ? window.TERMINAL_CURRENT_USER : null;
+    var userId = user && (user.id != null ? String(user.id) : (user.email ? String(user.email) : ''));
+    return 'faccting_portfolio_token' + (userId ? '_' + userId : '');
+  }
+
   function getPortfolioToken() {
     try {
-      return (localStorage.getItem('faccting_portfolio_token') || '').trim();
+      var key = facctingTokenStorageKey();
+      var val = (localStorage.getItem(key) || '').trim();
+      // 한 번만: 예전 단일 키에만 토큰이 있으면 계정별 키로 이전
+      if (!val && key !== 'faccting_portfolio_token') {
+        var legacy = (localStorage.getItem('faccting_portfolio_token') || '').trim();
+        if (legacy) {
+          localStorage.setItem(key, legacy);
+          localStorage.removeItem('faccting_portfolio_token');
+          val = legacy;
+        }
+      }
+      return val;
     } catch (e) {
       return '';
     }
   }
   function setPortfolioToken(val) {
     try {
-      if (val) localStorage.setItem('faccting_portfolio_token', val);
-      else localStorage.removeItem('faccting_portfolio_token');
+      var key = facctingTokenStorageKey();
+      if (val) localStorage.setItem(key, val);
+      else localStorage.removeItem(key);
     } catch (e) {}
   }
 

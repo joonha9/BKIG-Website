@@ -78,9 +78,9 @@
 
   <!-- Main Content: 뷰 컨테이너 -->
   <main class="flex-1 min-w-0 flex flex-col overflow-hidden relative">
-    <!-- BKIG Logo: 맨 오른쪽 위 -->
-    <div class="absolute top-0 right-0 z-10 p-4 flex justify-end pointer-events-none">
-      <img src="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" alt="BKIG" class="h-8 w-auto object-contain opacity-90">
+    <!-- BKIG Logo: 맨 오른쪽 위 (Comms 등 모든 뷰 위에 표시) -->
+    <div class="absolute top-0 right-0 z-[100] p-4 flex justify-end pointer-events-none">
+      <img src="{{ url_for('static', filename='images/BKIG(Transparent).png') }}" alt="BKIG" class="h-8 w-auto object-contain opacity-90">
     </div>
     <!-- view-dashboard: Bloomberg/SaaS 스타일 그리드 (로고와 겹치지 않도록 우측 여백) -->
     <section id="view-dashboard" class="flex-1 overflow-y-auto bkig-scroll p-6 pr-24 bg-slate-900 text-slate-200">
@@ -208,8 +208,8 @@
       </div>
     </section>
 
-    <!-- view-comms: 3-pane financial terminal (rooms | chat | members) -->
-    <section id="view-comms" class="flex-1 flex overflow-hidden bg-[#0f172a] text-slate-200 hidden min-h-0">
+    <!-- view-comms: 3-pane financial terminal (rooms | chat | members). pr-24: 로고와 Members 패널 겹침 방지 -->
+    <section id="view-comms" class="flex-1 flex overflow-hidden bg-[#0f172a] text-slate-200 hidden min-h-0 pr-24">
       <!-- Left: Room list accordion (Executive, Division, Team) -->
       <aside class="comms-sidebar w-56 shrink-0 border-r border-slate-700/60 flex flex-col bg-[#0d1220] overflow-hidden">
         <div class="p-3 border-b border-slate-700/60">

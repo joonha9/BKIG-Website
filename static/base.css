@@ -27,9 +27,10 @@
 }
 
 .logo-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   text-decoration: none;
+  position: relative;
 }
 
 .logo-img {
@@ -37,6 +38,26 @@
   width: auto;
   display: block;
   object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+.logo-img-scrolled {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.header.scrolled .logo-img-default {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.header.scrolled .logo-img-scrolled {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .nav {
