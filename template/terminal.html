@@ -14,6 +14,16 @@
   </script>
 </head>
 <body class="bkig-terminal bg-[#0a0e17] text-slate-200 min-h-screen flex">
+  <!-- 모바일 전용: 메뉴 백드롭 (클릭 시 메뉴 닫기) -->
+  <div class="bkig-mobile-backdrop" id="mobile-menu-backdrop" aria-hidden="true"></div>
+  <!-- 모바일 전용: 상단 헤더 (햄버거 + 타이틀 + 로고) -->
+  <header class="bkig-mobile-header" aria-label="모바일 헤더">
+    <img src="{{ url_for('static', filename='images/BKIG(Transparent).png') }}" alt="BKIG" class="bkig-mobile-logo">
+    <span class="bkig-mobile-title" id="mobile-view-title">Dashboard</span>
+    <button type="button" class="bkig-mobile-menu-btn" id="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
+  </header>
   <!-- LNB: 사이드바 (항상 뷰포트 높이 100%, 스크롤 시에도 잘리지 않음) -->
   <aside class="bkig-lnb w-56 shrink-0 h-screen max-h-screen sticky top-0 border-r border-slate-700/60 flex flex-col bg-[#0d1220] self-start">
     <div class="p-4 border-b border-slate-700/60">
@@ -644,6 +654,30 @@
     </section>
     {% endif %}
   </main>
+
+  <!-- 모바일 전용: 하단 탭 네비게이션 (금융 앱 스타일) -->
+  <nav class="bkig-bottom-nav" aria-label="주요 메뉴">
+    <button type="button" class="bkig-bottom-nav-item is-active" data-view="view-dashboard" aria-label="Dashboard">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+      <span>Dashboard</span>
+    </button>
+    <button type="button" class="bkig-bottom-nav-item" data-view="view-comms" aria-label="Comms">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+      <span>Comms</span>
+    </button>
+    <button type="button" class="bkig-bottom-nav-item" data-view="view-portfolio" aria-label="Portfolio">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002 2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+      <span>Portfolio</span>
+    </button>
+    <button type="button" class="bkig-bottom-nav-item" data-view="view-watchlist" aria-label="Watchlist">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+      <span>Watchlist</span>
+    </button>
+    <button type="button" class="bkig-bottom-nav-item" id="mobile-more-menu-btn" aria-label="더보기 메뉴">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      <span>Menu</span>
+    </button>
+  </nav>
 
   <!-- Admin: Add Analyst Modal (숨김) -->
   {% if current_user.role == 'super_admin' %}

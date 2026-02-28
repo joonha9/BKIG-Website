@@ -135,26 +135,51 @@ def _fmp_v3_get(path, params=None):
 
 
 def _fmp_unwrap(data):
-    """Stable API가 { "data": [...] } 또는 { "list": [...] } 로 감싸서 오는 경우 언래핑."""
+    """Stable API가 { "data": [...] } 또는 { "list": [...] } 등으로 감싸서 오는 경우 언래핑."""
     if data is None:
         return None
+    if isinstance(data, list):
+        return data
     if isinstance(data, dict):
         if "data" in data and data["data"] is not None:
             return data["data"]
         if "list" in data and data["list"] is not None:
             return data["list"]
+        # 단일 리스트 값인 키가 있으면 사용 (예: incomeStatement, financials 등)
+        for key in ("incomeStatement", "financials", "statements", "result", "items"):
+            if key in data and isinstance(data[key], list):
+                return data[key]
     return data
+
+
+def _symbols_for_fundamentals(symbol):
+    """FMP 재무제표/비율 조회 시 사용할 심볼 후보. .KS/.KQ 등 거래소 접미사가 있으면 베이스 심볼도 시도."""
+    s = (symbol or "").strip().upper()
+    if not s:
+        return []
+    out = [s]
+    if "." in s:
+        base = s.split(".")[0].strip()
+        if base and base not in out:
+            out.append(base)
+    return out
 
 
 def get_company_profile(symbol):
     """회사 프로필 1건. companyName, price, changesPercentage, industry, sector 등."""
     if not (symbol or "").strip():
         return None
-    data = _fmp_stable_get("/profile", {"symbol": symbol.strip().upper()})
-    if isinstance(data, list) and data:
-        return data[0]
-    if isinstance(data, dict) and "Error Message" not in data:
-        return data
+    for sym in _symbols_for_fundamentals(symbol):
+        raw = _fmp_stable_get("/profile", {"symbol": sym})
+        if raw is None:
+            continue
+        data = _fmp_unwrap(raw)
+        if isinstance(data, list) and data:
+            return data[0]
+        if isinstance(data, dict) and data.get("Error Message") is None:
+            return data
+        if isinstance(raw, dict) and raw.get("Error Message") is None and "data" not in raw:
+            return raw
     return None
 
 
@@ -226,43 +251,68 @@ def get_historical_price(symbol, period="1Y"):
 
 
 def get_income_statement(symbol, limit=LIMIT_3):
-    """Income Statement 최근 limit년(기본 3년). period=annual."""
+    """Income Statement 최근 limit년(기본 3년). period=annual. stable 실패 시 v3 폴백."""
     if not (symbol or "").strip():
         return []
-    data = _fmp_stable_get("/income-statement", {"symbol": symbol.strip().upper(), "limit": limit, "period": "annual"})
-    if not isinstance(data, list):
-        return []
-    return data[:limit]
+    for sym in _symbols_for_fundamentals(symbol):
+        raw = _fmp_stable_get("/income-statement", {"symbol": sym, "limit": limit, "period": "annual"})
+        data = _fmp_unwrap(raw) if raw is not None else None
+        if isinstance(data, list) and data:
+            return data[:limit]
+        # v3 폴백 (일부 심볼은 v3에서만 지원될 수 있음)
+        raw_v3 = _fmp_v3_get("/income-statement/" + sym, {"period": "annual", "limit": limit})
+        data_v3 = _fmp_unwrap(raw_v3) if raw_v3 is not None else None
+        if isinstance(data_v3, list) and data_v3:
+            return data_v3[:limit]
+    return []
 
 
 def get_balance_sheet(symbol, limit=LIMIT_3):
-    """Balance Sheet 최근 limit년(기본 3년). period=annual."""
+    """Balance Sheet 최근 limit년(기본 3년). period=annual. stable 실패 시 v3 폴백."""
     if not (symbol or "").strip():
         return []
-    data = _fmp_stable_get("/balance-sheet-statement", {"symbol": symbol.strip().upper(), "limit": limit, "period": "annual"})
-    if not isinstance(data, list):
-        return []
-    return data[:limit]
+    for sym in _symbols_for_fundamentals(symbol):
+        raw = _fmp_stable_get("/balance-sheet-statement", {"symbol": sym, "limit": limit, "period": "annual"})
+        data = _fmp_unwrap(raw) if raw is not None else None
+        if isinstance(data, list) and data:
+            return data[:limit]
+        raw_v3 = _fmp_v3_get("/balance-sheet-statement/" + sym, {"period": "annual", "limit": limit})
+        data_v3 = _fmp_unwrap(raw_v3) if raw_v3 is not None else None
+        if isinstance(data_v3, list) and data_v3:
+            return data_v3[:limit]
+    return []
 
 
 def get_cash_flow_statement(symbol, limit=LIMIT_3):
-    """Cash Flow Statement 최근 limit년(기본 3년). period=annual."""
+    """Cash Flow Statement 최근 limit년(기본 3년). period=annual. stable 실패 시 v3 폴백."""
     if not (symbol or "").strip():
         return []
-    data = _fmp_stable_get("/cash-flow-statement", {"symbol": symbol.strip().upper(), "limit": limit, "period": "annual"})
-    if not isinstance(data, list):
-        return []
-    return data[:limit]
+    for sym in _symbols_for_fundamentals(symbol):
+        raw = _fmp_stable_get("/cash-flow-statement", {"symbol": sym, "limit": limit, "period": "annual"})
+        data = _fmp_unwrap(raw) if raw is not None else None
+        if isinstance(data, list) and data:
+            return data[:limit]
+        raw_v3 = _fmp_v3_get("/cash-flow-statement/" + sym, {"period": "annual", "limit": limit})
+        data_v3 = _fmp_unwrap(raw_v3) if raw_v3 is not None else None
+        if isinstance(data_v3, list) and data_v3:
+            return data_v3[:limit]
+    return []
 
 
 def get_ratios(symbol, limit=LIMIT_3):
-    """Key Ratios 최근 limit년(기본 3년). period=annual."""
+    """Key Ratios 최근 limit년(기본 3년). period=annual. stable 실패 시 v3 폴백."""
     if not (symbol or "").strip():
         return []
-    data = _fmp_stable_get("/ratios", {"symbol": symbol.strip().upper(), "limit": limit, "period": "annual"})
-    if not isinstance(data, list):
-        return []
-    return data[:limit]
+    for sym in _symbols_for_fundamentals(symbol):
+        raw = _fmp_stable_get("/ratios", {"symbol": sym, "limit": limit, "period": "annual"})
+        data = _fmp_unwrap(raw) if raw is not None else None
+        if isinstance(data, list) and data:
+            return data[:limit]
+        raw_v3 = _fmp_v3_get("/ratios/" + sym, {"period": "annual", "limit": limit})
+        data_v3 = _fmp_unwrap(raw_v3) if raw_v3 is not None else None
+        if isinstance(data_v3, list) and data_v3:
+            return data_v3[:limit]
+    return []
 
 
 def _safe_float(val, default=None):
@@ -296,7 +346,7 @@ def _row_eps_revenue(row):
 
 def get_comps_data(symbol):
     """
-    Comps 테이블/차트용 1개 티커 지표. FMP profile, income, ratios 등 조합.
+    Comps 테이블/차트용 1개 티커 지표. Income/Ratios 탭과 동일하게 get_income_statement, get_ratios 사용(.KS v3 폴백 공유).
     반환: { ticker, marketCap, ev, ltmRevenue, ltmEbitda, grossMargin, evToEbitda, peRatio, pbRatio, roe, roic }
     """
     sym = (symbol or "").strip().upper()
@@ -308,12 +358,26 @@ def get_comps_data(symbol):
         mc = _safe_float(profile.get("mktCap") or profile.get("marketCap") or profile.get("marketCapitalization"))
         if mc is not None:
             out["marketCap"] = round(mc / 1e9, 1) if mc >= 1e9 else (round(mc / 1000, 1) if mc >= 1000 else round(mc, 1))
-    ev_data = _fmp_stable_get("/enterprise-values", {"symbol": sym})
-    if isinstance(ev_data, list) and ev_data:
-        ev_val = _safe_float(ev_data[0].get("enterpriseValue") or ev_data[0].get("value"))
-        if ev_val is not None:
-            out["ev"] = round(ev_val / 1e9, 1) if ev_val >= 1e9 else (round(ev_val / 1000, 1) if ev_val >= 1000 else round(ev_val, 1))
-    inc = _fmp_stable_get("/income-statement", {"symbol": sym, "limit": 1, "period": "annual"})
+    # EV: stable + v3 폴백 (getter 없음)
+    for try_sym in _symbols_for_fundamentals(sym):
+        if out["ev"] is not None:
+            break
+        ev_raw = _fmp_stable_get("/enterprise-values", {"symbol": try_sym})
+        ev_data = _fmp_unwrap(ev_raw) if ev_raw is not None else None
+        if isinstance(ev_data, list) and ev_data:
+            ev_val = _safe_float(ev_data[0].get("enterpriseValue") or ev_data[0].get("value"))
+            if ev_val is not None:
+                out["ev"] = round(ev_val / 1e9, 1) if ev_val >= 1e9 else (round(ev_val / 1000, 1) if ev_val >= 1000 else round(ev_val, 1))
+                break
+        ev_v3 = _fmp_v3_get("/enterprise-values", {"symbol": try_sym})
+        ev_list = _fmp_unwrap(ev_v3) if ev_v3 is not None else None
+        if isinstance(ev_list, list) and ev_list:
+            ev_val = _safe_float(ev_list[0].get("enterpriseValue") or ev_list[0].get("value"))
+            if ev_val is not None:
+                out["ev"] = round(ev_val / 1e9, 1) if ev_val >= 1e9 else (round(ev_val / 1000, 1) if ev_val >= 1000 else round(ev_val, 1))
+                break
+    # Income: get_income_statement 사용 → .KS v3 폴백 공유 (Income 탭과 동일)
+    inc = get_income_statement(sym, limit=1)
     if isinstance(inc, list) and inc:
         row = inc[0]
         rev = _safe_float(row.get("revenue") or row.get("Revenue"))
@@ -325,7 +389,8 @@ def get_comps_data(symbol):
         gp = _safe_float(row.get("grossProfit") or row.get("Gross Profit"))
         if rev and rev > 0 and gp is not None:
             out["grossMargin"] = round(100.0 * gp / rev, 1)
-    ratios = _fmp_stable_get("/ratios", {"symbol": sym, "limit": 1, "period": "annual"})
+    # Ratios: get_ratios 사용 → .KS v3 폴백 공유 (Ratios 탭과 동일)
+    ratios = get_ratios(sym, limit=1)
     if isinstance(ratios, list) and ratios:
         r = ratios[0]
         out["evToEbitda"] = _safe_float(
@@ -343,25 +408,54 @@ def get_comps_data(symbol):
         roic = _safe_float(r.get("returnOnCapitalEmployed") or r.get("roic") or r.get("return_on_capital_employed"))
         if roic is not None:
             out["roic"] = round(roic * 100, 1) if abs(roic) <= 5 else round(roic, 1)
-    key_metrics = _fmp_stable_get("/key-metrics", {"symbol": sym, "limit": 1})
-    if isinstance(key_metrics, list) and key_metrics:
-        m = key_metrics[0]
-        if out["marketCap"] is None:
-            mc = _safe_float(m.get("marketCapTTM") or m.get("marketCapitalization"))
-            if mc is not None:
-                out["marketCap"] = round(mc / 1e9, 1) if mc >= 1e9 else round(mc, 1)
-        if out["ev"] is None:
-            ev = _safe_float(m.get("enterpriseValueTTM") or m.get("enterpriseValue"))
-            if ev is not None:
-                out["ev"] = round(ev / 1e9, 1) if ev >= 1e9 else round(ev, 1)
-        if out["evToEbitda"] is None:
-            out["evToEbitda"] = _safe_float(m.get("enterpriseValueOverEBITDA") or m.get("evToEbitda"))
-        if out["peRatio"] is None:
-            out["peRatio"] = _safe_float(m.get("peRatio") or m.get("priceEarningsRatio"))
-        if out["roe"] is None:
-            roe_km = _safe_float(m.get("roe") or m.get("returnOnEquity"))
-            if roe_km is not None:
-                out["roe"] = round(roe_km * 100, 1) if abs(roe_km) <= 5 else round(roe_km, 1)
+    # key-metrics: stable + v3 폴백으로 보조 채우기
+    for try_sym in _symbols_for_fundamentals(sym):
+        key_raw = _fmp_stable_get("/key-metrics", {"symbol": try_sym, "limit": 1})
+        key_metrics = _fmp_unwrap(key_raw) if key_raw is not None else None
+        if not isinstance(key_metrics, list) or not key_metrics:
+            key_v3 = _fmp_v3_get("/key-metrics", {"symbol": try_sym, "limit": 1})
+            key_metrics = _fmp_unwrap(key_v3) if key_v3 is not None else None
+        if isinstance(key_metrics, list) and key_metrics:
+            m = key_metrics[0]
+            if out["marketCap"] is None:
+                mc = _safe_float(m.get("marketCapTTM") or m.get("marketCapitalization"))
+                if mc is not None:
+                    out["marketCap"] = round(mc / 1e9, 1) if mc >= 1e9 else round(mc, 1)
+            if out["ev"] is None:
+                ev = _safe_float(m.get("enterpriseValueTTM") or m.get("enterpriseValue"))
+                if ev is not None:
+                    out["ev"] = round(ev / 1e9, 1) if ev >= 1e9 else round(ev, 1)
+            if out["evToEbitda"] is None:
+                out["evToEbitda"] = _safe_float(m.get("enterpriseValueOverEBITDA") or m.get("evToEbitda"))
+            if out["peRatio"] is None:
+                out["peRatio"] = _safe_float(m.get("peRatio") or m.get("priceEarningsRatio"))
+            if out["roe"] is None:
+                roe_km = _safe_float(m.get("roe") or m.get("returnOnEquity"))
+                if roe_km is not None:
+                    out["roe"] = round(roe_km * 100, 1) if abs(roe_km) <= 5 else round(roe_km, 1)
+            break
+    # EV 폴백: FMP enterprise-values가 없으면 EV = 시가총액 + 총부채 - 현금 (Balance Sheet)
+    if out["ev"] is None and profile:
+        mc_raw = _safe_float(profile.get("mktCap") or profile.get("marketCap") or profile.get("marketCapitalization"))
+        if mc_raw is not None and mc_raw > 0:
+            bs = get_balance_sheet(sym, limit=1)
+            if isinstance(bs, list) and bs:
+                row = bs[0]
+                net_debt = _safe_float(row.get("netDebt"))
+                if net_debt is not None:
+                    ev_raw = mc_raw + net_debt
+                else:
+                    total_debt = _safe_float(row.get("totalDebt"))
+                    if total_debt is None:
+                        lt = _safe_float(row.get("longTermDebt")) or 0
+                        st = _safe_float(row.get("shortTermDebt") or row.get("shortTermBorrowings")) or 0
+                        total_debt = lt + st
+                    cash = _safe_float(
+                        row.get("cashAndCashEquivalents") or row.get("cashAndShortTermInvestments") or row.get("cash")
+                    ) or 0
+                    ev_raw = mc_raw + (total_debt or 0) - cash
+                if ev_raw > 0:
+                    out["ev"] = round(ev_raw / 1e9, 1) if ev_raw >= 1e9 else (round(ev_raw / 1000, 1) if ev_raw >= 1000 else round(ev_raw, 1))
     # EV/EBITDA: ratios/key_metrics에 없으면 EV ÷ LTM EBITDA로 직접 계산
     if out["evToEbitda"] is None and out["ev"] is not None and out["ltmEbitda"] is not None and out["ltmEbitda"] != 0:
         out["evToEbitda"] = round(out["ev"] / out["ltmEbitda"], 1)

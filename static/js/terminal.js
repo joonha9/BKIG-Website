@@ -13,6 +13,18 @@
   // -------------------------------------------------------------------------
   // 탭 전환: 클릭한 메뉴 외 모든 section hidden, 해당 섹션만 표시
   // -------------------------------------------------------------------------
+  var MOBILE_VIEW_TITLES = {
+    'view-dashboard': 'Dashboard',
+    'view-comms': 'Comms',
+    'view-financial-tools': 'Financial Tools',
+    'view-portfolio': 'Portfolio',
+    'view-watchlist': 'Watchlist',
+    'view-internal-research': 'Research',
+    'view-meeting-intelligence': 'Meeting Intel',
+    'view-profile': 'Profile',
+    'view-admin': 'Admin'
+  };
+
   function showView(viewId) {
     const sections = document.querySelectorAll('main section[id^="view-"]');
     sections.forEach(function (section) {
@@ -25,6 +37,18 @@
       btn.classList.remove.apply(btn.classList, ACTIVE_NAV_CLASSES);
       if (btn.getAttribute(VIEW_ATTR) === viewId) {
         btn.classList.add.apply(btn.classList, ACTIVE_NAV_CLASSES);
+      }
+    });
+
+    /* 모바일: 메뉴 닫기, 타이틀·하단 탭 활성 갱신 */
+    document.body.classList.remove('mobile-menu-open');
+    var titleEl = document.getElementById('mobile-view-title');
+    if (titleEl) titleEl.textContent = MOBILE_VIEW_TITLES[viewId] || viewId.replace('view-', '');
+    document.querySelectorAll('.bkig-bottom-nav-item').forEach(function (btn) {
+      if (btn.getAttribute('data-view') === viewId) {
+        btn.classList.add('is-active');
+      } else {
+        btn.classList.remove('is-active');
       }
     });
 
@@ -76,6 +100,37 @@
       loadDashboardTasks();
       loadDashboardMeetings();
     }
+  }
+
+  function initMobileNav() {
+    var body = document.body;
+    var menuBtn = document.getElementById('mobile-menu-btn');
+    var backdrop = document.getElementById('mobile-menu-backdrop');
+    var moreBtn = document.getElementById('mobile-more-menu-btn');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', function () {
+        body.classList.toggle('mobile-menu-open');
+        menuBtn.setAttribute('aria-expanded', body.classList.contains('mobile-menu-open'));
+      });
+    }
+    if (backdrop) {
+      backdrop.addEventListener('click', function () {
+        body.classList.remove('mobile-menu-open');
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+      });
+    }
+    if (moreBtn) {
+      moreBtn.addEventListener('click', function () {
+        body.classList.toggle('mobile-menu-open');
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', body.classList.contains('mobile-menu-open'));
+      });
+    }
+    document.querySelectorAll('.bkig-bottom-nav-item[data-view]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var viewId = btn.getAttribute('data-view');
+        if (viewId) showView(viewId);
+      });
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -2486,11 +2541,11 @@
       '<button type="button" class="chart-type-btn p-1.5 rounded ' + (financialChartType === 'candlestick' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200') + '" data-chart-type="candlestick" title="Candle">' +
       '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></button>' +
       '</div></div>' +
-      '<div class="flex-1 min-h-0 flex flex-col gap-1" id="financial-charts-container">' +
-      '<div class="relative min-h-0" id="financial-main-chart-wrapper" style="flex: 0.8;">' +
+      '<div class="flex-1 min-h-0 flex flex-col gap-1" id="financial-charts-container" style="min-height: 420px;">' +
+      '<div class="relative min-h-0" id="financial-main-chart-wrapper" style="flex: 1; min-height: 320px;">' +
       '<canvas id="main-chart"></canvas>' +
       '</div>' +
-      '<div class="relative min-h-0" id="financial-volume-chart-wrapper" style="flex: 0.2; min-height: 60px;">' +
+      '<div class="relative shrink-0" id="financial-volume-chart-wrapper" style="height: 80px; min-height: 60px;">' +
       '<canvas id="volume-chart"></canvas>' +
       '</div></div></div>';
 
@@ -2616,6 +2671,7 @@
       var volWrap = document.getElementById('financial-volume-chart-wrapper');
       if (!mainWrap || !volWrap) return;
       var totalH = mainWrap.offsetHeight + volWrap.offsetHeight;
+      if (totalH < 80) return; // 레이아웃 전 컨테이너 높이 0일 때 적용하지 않음
       var mainH = Math.round(totalH * 0.8);
       var volH = totalH - mainH;
       mainCtx.width = mainWrap.clientWidth;
@@ -2629,6 +2685,9 @@
     function initChartAndListeners() {
       buildCharts();
       setTimeout(resizeCharts, 50);
+      // 탭 전환(valuation/accounting → overview) 후 컨테이너 레이아웃이 늦게 잡힐 수 있으므로 지연 리사이즈 추가
+      setTimeout(resizeCharts, 200);
+      setTimeout(resizeCharts, 450);
       contentEl.querySelectorAll('.chart-period-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var p = btn.getAttribute('data-period');
@@ -2659,6 +2718,12 @@
         });
       });
       window.addEventListener('resize', resizeCharts);
+      var chartsContainer = document.getElementById('financial-charts-container');
+      if (chartsContainer && typeof ResizeObserver !== 'undefined') {
+        var ro = new ResizeObserver(function () { resizeCharts(); });
+        ro.observe(chartsContainer);
+      }
+      contentEl._financialChartResize = resizeCharts;
     }
 
     requestAnimationFrame(function () {
@@ -3956,6 +4021,11 @@
       ensureCached('overview').then(function (cached) {
         if (cached) {
           renderOverview(cached.profile, cached.historical);
+          var contentEl = document.getElementById('tool-content');
+          if (contentEl && contentEl._financialChartResize) {
+            setTimeout(function () { contentEl._financialChartResize(); }, 100);
+            setTimeout(function () { contentEl._financialChartResize(); }, 500);
+          }
         } else {
           content.innerHTML = '<p class="text-slate-500 text-sm">Failed to load data.</p>';
         }
@@ -4166,6 +4236,7 @@
 
   function init() {
     initTabRouting();
+    initMobileNav();
     initProfileButton();
     initModal();
     initAddForm();
@@ -4173,6 +4244,14 @@
     initDashboardModals();
     initFinancialTools();
     if (typeof window.initMeetingIntelForm === 'function') window.initMeetingIntelForm();
+    // 모바일: 메인 스크롤 영역을 맨 위로 맞춰서 위쪽 빈 공간이 안 보이게
+    if (window.innerWidth <= 768) {
+      var mainEl = document.querySelector('.bkig-terminal main');
+      if (mainEl) {
+        mainEl.scrollTop = 0;
+        window.addEventListener('load', function () { mainEl.scrollTop = 0; });
+      }
+    }
   }
 
   if (document.readyState === 'loading') {
