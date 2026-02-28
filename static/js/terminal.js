@@ -2299,6 +2299,7 @@
   function roleDisplay(role) {
     if (role === 'super_admin') return 'Super Admin';
     if (role === 'division_lead') return 'Division Lead';
+    if (role === 'team_lead') return 'Team Lead';
     return 'Analyst';
   }
 
@@ -2317,10 +2318,12 @@
               ? 'admin-btn-pause text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
               : 'admin-btn-resume text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10';
             var teamDisplay = (u.team != null && u.team !== '') ? escapeHtml(String(u.team)) : '—';
+            var schoolDisplay = (u.school || '').trim() ? escapeHtml(u.school) : '—';
             return (
               '<tr class="hover:bg-slate-700/20" data-user-id="' + escapeHtml(String(u.id)) + '">' +
               '<td class="px-4 py-3 text-slate-300">' + escapeHtml(u.name) + '</td>' +
               '<td class="px-4 py-3 text-slate-300">' + escapeHtml(u.email) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + schoolDisplay + '</td>' +
               '<td class="px-4 py-3 text-slate-300">' + escapeHtml(u.division) + '</td>' +
               '<td class="px-4 py-3 text-slate-300">' + teamDisplay + '</td>' +
               '<td class="px-4 py-3"><span class="text-slate-400">' + escapeHtml(roleDisplay(u.role)) + '</span></td>' +
@@ -2334,7 +2337,7 @@
             );
           })
           .join('')
-      : '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No users yet.</td></tr>';
+      : '<tr><td colspan="8" class="px-4 py-8 text-center text-slate-500">No users yet.</td></tr>';
   }
 
   async function pauseResumeUser(userId, setActive) {
@@ -2385,7 +2388,9 @@
     if (nameEl) nameEl.value = user.name || '';
     if (emailEl) emailEl.value = user.email || '';
     if (passEl) passEl.value = '';
+    var schoolEl = document.getElementById('edit-school');
     if (divEl) divEl.value = (user.division || '').trim() || '';
+    if (schoolEl) schoolEl.value = (user.school || '').trim() || '';
     if (teamEl) teamEl.value = (user.team != null && user.team !== '') ? String(user.team) : '';
     if (roleEl) roleEl.value = (user.role || 'analyst').trim() || 'analyst';
     modal.classList.remove('hidden');
@@ -2439,6 +2444,224 @@
   }
 
   var adminUsersList = [];
+  var adminUsersPage = 1;
+  var adminUsersSortKey = 'name';
+  var adminUsersSortDir = 'asc';
+  var adminApplicationsList = [];
+  var adminApplicationsPage = 1;
+  var adminApplicationsSortKey = 'date';
+  var adminApplicationsSortDir = 'desc';
+  var adminDonationsList = [];
+  var adminDonationsPage = 1;
+  var adminDonationsSortKey = 'date';
+  var adminDonationsSortDir = 'desc';
+  var adminInquiriesList = [];
+  var adminInquiriesPage = 1;
+  var adminInquiriesSortKey = 'date';
+  var adminInquiriesSortDir = 'desc';
+  var ADMIN_PAGE_SIZE = 5;
+  var adminRoleChart = null;
+  var adminDivisionChart = null;
+
+  function sortList(list, getValue, key, dir) {
+    if (!list || !list.length) return list;
+    var arr = list.slice();
+    var mult = dir === 'asc' ? 1 : -1;
+    arr.sort(function (a, b) {
+      var va = getValue(a, key);
+      var vb = getValue(b, key);
+      if (va === vb) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === 'number' && typeof vb === 'number') return mult * (va - vb);
+      return mult * String(va).localeCompare(String(vb), undefined, { numeric: true });
+    });
+    return arr;
+  }
+
+  function updateSortHeaders(prefix, sortKey, sortDir) {
+    var table = document.querySelector('table[data-admin-table="' + prefix.replace('admin-', '') + '"]');
+    if (!table) return;
+    var ths = table.querySelectorAll('.admin-th-sort');
+    ths.forEach(function (th) {
+      var label = th.getAttribute('data-label') || '';
+      var key = th.getAttribute('data-sort');
+      var indicator = (key === sortKey) ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+      th.textContent = label + indicator;
+    });
+  }
+
+  function filterListBySearch(list, query, getSearchText) {
+    if (!list || !list.length) return [];
+    var q = (query || '').trim().toLowerCase();
+    if (!q) return list.slice();
+    var matches = [];
+    var rest = [];
+    for (var i = 0; i < list.length; i++) {
+      var text = (getSearchText(list[i]) || '').toLowerCase();
+      if (text.indexOf(q) !== -1) matches.push(list[i]);
+      else rest.push(list[i]);
+    }
+    return matches.concat(rest);
+  }
+
+  function updatePaginationUI(prefix, filteredLength, currentPage) {
+    var totalPages = Math.max(1, Math.ceil(filteredLength / ADMIN_PAGE_SIZE));
+    var paginationEl = document.getElementById(prefix + '-pagination');
+    var infoEl = document.getElementById(prefix + '-page-info');
+    var prevBtn = document.getElementById(prefix + '-prev');
+    var nextBtn = document.getElementById(prefix + '-next');
+    if (paginationEl) paginationEl.classList.toggle('hidden', filteredLength <= ADMIN_PAGE_SIZE);
+    if (infoEl) infoEl.textContent = currentPage + ' / ' + totalPages;
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+  }
+
+  function downloadTableAsExcel(headers, rows, filename) {
+    function escapeCsvCell(cell) {
+      var s = cell == null ? '' : String(cell);
+      if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1)
+        return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    var line = headers.map(escapeCsvCell).join(',');
+    var csv = '\uFEFF' + line + '\n';
+    for (var r = 0; r < rows.length; r++)
+      csv += rows[r].map(escapeCsvCell).join(',') + '\n';
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename || 'export.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function applyAdminUsersView() {
+    var query = (document.getElementById('admin-users-search') && document.getElementById('admin-users-search').value) || '';
+    var filtered = filterListBySearch(adminUsersList, query, function (u) {
+      return [u.name, u.email, u.school || '', u.division, u.team, roleDisplay(u.role), u.is_active !== false ? 'Active' : 'Paused'].join(' ');
+    });
+    function getUserValue(u, key) {
+      if (key === 'name') return u.name;
+      if (key === 'email') return u.email;
+      if (key === 'school') return (u.school || '').trim();
+      if (key === 'division') return u.division;
+      if (key === 'team') return u.team != null && u.team !== '' ? Number(u.team) : null;
+      if (key === 'role') return roleDisplay(u.role);
+      if (key === 'status') return u.is_active !== false ? 'Active' : 'Paused';
+      return '';
+    }
+    filtered = sortList(filtered, getUserValue, adminUsersSortKey, adminUsersSortDir);
+    var totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+    if (adminUsersPage > totalPages) adminUsersPage = totalPages;
+    if (adminUsersPage < 1) adminUsersPage = 1;
+    var start = (adminUsersPage - 1) * ADMIN_PAGE_SIZE;
+    var slice = filtered.slice(start, start + ADMIN_PAGE_SIZE);
+    renderUsersTable(slice);
+    updatePaginationUI('admin-users', filtered.length, adminUsersPage);
+    updateSortHeaders('admin-users', adminUsersSortKey, adminUsersSortDir);
+  }
+
+  function normalizeRoleKey(role) {
+    var s = (role || '').trim().toLowerCase().replace(/\s+/g, '_') || 'analyst';
+    if (s === 'super_admin' || s === 'superadmin') return 'super_admin';
+    if (s === 'division_lead' || s === 'divisionlead') return 'division_lead';
+    if (s === 'team_lead' || s === 'teamlead') return 'team_lead';
+    return 'analyst';
+  }
+
+  function renderAdminCharts(users) {
+    if (typeof Chart === 'undefined') return;
+    var roleOrder = ['super_admin', 'division_lead', 'team_lead', 'analyst'];
+    var roleLabels = { super_admin: 'Super Admin', division_lead: 'Division Lead', team_lead: 'Team Lead', analyst: 'Analyst' };
+    var roleCounts = { super_admin: 0, division_lead: 0, team_lead: 0, analyst: 0 };
+    var divisionOrder = ['Research', 'Investment', 'Case Study', 'PD/PR', 'Admin'];
+    var divisionCounts = {};
+    divisionOrder.forEach(function (d) { divisionCounts[d] = 0; });
+    (users || []).forEach(function (u) {
+      var r = normalizeRoleKey(u.role);
+      roleCounts[r]++;
+      var div = (u.division || '').trim();
+      if (div) {
+        if (divisionCounts[div] != null) divisionCounts[div]++;
+        else { divisionOrder.push(div); divisionCounts[div] = 1; }
+      }
+    });
+    var roleLabelsArr = roleOrder.map(function (k) { return roleLabels[k]; });
+    var roleDataArr = roleOrder.map(function (k) { return roleCounts[k] || 0; });
+    var divisionDataArr = divisionOrder.map(function (d) { return divisionCounts[d] || 0; });
+    var mutedColors = ['#475569', '#64748b', '#0ea5e9', '#f59e0b'];
+    var divisionColors = ['#334155', '#475569', '#64748b', '#94a3b8', '#64748b', '#94a3b8'];
+
+    var roleCanvas = document.getElementById('admin-role-chart');
+    if (roleCanvas) {
+      if (adminRoleChart) { adminRoleChart.destroy(); adminRoleChart = null; }
+      var roleTotal = roleDataArr.reduce(function (a, b) { return a + b; }, 0);
+      adminRoleChart = new Chart(roleCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: roleLabelsArr,
+          datasets: [{ data: roleDataArr, backgroundColor: mutedColors, borderColor: '#0f172a', borderWidth: 2 }]
+        },
+        options: {
+          cutout: '60%',
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          layout: { padding: 8 },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  var value = context.parsed;
+                  var pct = roleTotal ? ((value / roleTotal) * 100).toFixed(1) : '0';
+                  return context.label + ': ' + value + '명 (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    var divisionCanvas = document.getElementById('admin-division-chart');
+    if (divisionCanvas) {
+      if (adminDivisionChart) { adminDivisionChart.destroy(); adminDivisionChart = null; }
+      var divColors = divisionOrder.map(function (_, i) { return divisionColors[i % divisionColors.length]; });
+      adminDivisionChart = new Chart(divisionCanvas, {
+        type: 'bar',
+        data: {
+          labels: divisionOrder,
+          datasets: [{
+            data: divisionDataArr,
+            backgroundColor: divColors,
+            borderSkipped: false,
+            borderRadius: 6,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 8 },
+          scales: {
+            x: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
+            y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    requestAnimationFrame(function () {
+      if (adminRoleChart) adminRoleChart.resize();
+      if (adminDivisionChart) adminDivisionChart.resize();
+    });
+  }
 
   async function loadAdminUsers() {
     const tbody = document.getElementById('user-table-body');
@@ -2446,12 +2669,35 @@
     try {
       const users = await fetchUsers();
       adminUsersList = users || [];
-      renderUsersTable(users);
+      adminUsersPage = 1;
+      applyAdminUsersView();
+      var list = adminUsersList;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          renderAdminCharts(list);
+        });
+      });
     } catch (e) {
       adminUsersList = [];
       tbody.innerHTML =
-        '<tr><td colspan="7" class="px-4 py-8 text-center text-red-400">Failed to load users.</td></tr>';
+        '<tr><td colspan="8" class="px-4 py-8 text-center text-red-400">Failed to load users.</td></tr>';
     }
+  }
+
+  function exportUsersExcel() {
+    var headers = ['Name', 'Email', 'School', 'Division', 'Team', 'Role', 'Status'];
+    var rows = adminUsersList.map(function (u) {
+      return [
+        u.name || '',
+        u.email || '',
+        (u.school || '').trim() || '',
+        u.division || '',
+        (u.team != null && u.team !== '') ? String(u.team) : '',
+        roleDisplay(u.role),
+        u.is_active !== false ? 'Active' : 'Paused'
+      ];
+    });
+    downloadTableAsExcel(headers, rows, 'users.csv');
   }
 
   // -------------------------------------------------------------------------
@@ -2523,17 +2769,66 @@
     }
   }
 
+  function applyAdminApplicationsView() {
+    var searchEl = document.getElementById('admin-applications-search');
+    var query = (searchEl && searchEl.value) || '';
+    var filtered = filterListBySearch(adminApplicationsList, query, function (a) {
+      return [a.name, a.email, a.school, a.major, a.grade, divisionDisplay(a.division), a.created_at].join(' ');
+    });
+    function getAppValue(a, key) {
+      if (key === 'date') return a.created_at || '';
+      if (key === 'name') return a.name;
+      if (key === 'email') return a.email;
+      if (key === 'school') return a.school;
+      if (key === 'major') return a.major;
+      if (key === 'grade') return a.grade;
+      if (key === 'division') return divisionDisplay(a.division);
+      return '';
+    }
+    filtered = sortList(filtered, getAppValue, adminApplicationsSortKey, adminApplicationsSortDir);
+    var totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+    if (adminApplicationsPage > totalPages) adminApplicationsPage = totalPages;
+    if (adminApplicationsPage < 1) adminApplicationsPage = 1;
+    var start = (adminApplicationsPage - 1) * ADMIN_PAGE_SIZE;
+    var slice = filtered.slice(start, start + ADMIN_PAGE_SIZE);
+    renderApplicationsTable(slice);
+    updatePaginationUI('admin-applications', filtered.length, adminApplicationsPage);
+    updateSortHeaders('admin-applications', adminApplicationsSortKey, adminApplicationsSortDir);
+    initApplicationsActions();
+  }
+
   async function loadAdminApplications() {
     const tbody = document.getElementById('applications-table-body');
     if (!tbody) return;
     try {
       const applications = await fetchApplications();
-      renderApplicationsTable(applications);
-      initApplicationsActions();
+      adminApplicationsList = applications || [];
+      adminApplicationsPage = 1;
+      applyAdminApplicationsView();
     } catch (e) {
+      adminApplicationsList = [];
       tbody.innerHTML =
         '<tr><td colspan="9" class="px-4 py-8 text-center text-red-400">Failed to load applications.</td></tr>';
     }
+  }
+
+  function exportApplicationsExcel() {
+    var headers = ['Date', 'Name', 'Email', 'School', 'Major', 'Grade', 'Division', 'Resume', 'Approved'];
+    var rows = adminApplicationsList.map(function (a) {
+      var dateStr = a.created_at ? a.created_at.slice(0, 10) : '';
+      return [
+        dateStr,
+        a.name || '',
+        a.email || '',
+        a.school || '',
+        a.major || '',
+        a.grade || '',
+        divisionDisplay(a.division),
+        a.resume_path ? 'Y' : '',
+        (a.approved_user_id != null && a.approved_user_id !== '') ? 'Yes' : 'No'
+      ];
+    });
+    downloadTableAsExcel(headers, rows, 'applications.csv');
   }
 
   function initApplicationsActions() {
@@ -2608,17 +2903,60 @@
     }
   }
 
+  function applyAdminDonationsView() {
+    var searchEl = document.getElementById('admin-donations-search');
+    var query = (searchEl && searchEl.value) || '';
+    var filtered = filterListBySearch(adminDonationsList, query, function (d) {
+      return [d.name, d.email, d.amount, d.created_at, d.completed ? 'Complete' : 'Pending'].join(' ');
+    });
+    function getDonValue(d, key) {
+      if (key === 'date') return d.created_at || '';
+      if (key === 'name') return d.name;
+      if (key === 'email') return d.email;
+      if (key === 'amount') return d.amount;
+      if (key === 'status') return d.completed === true ? 'Complete' : 'Pending';
+      return '';
+    }
+    filtered = sortList(filtered, getDonValue, adminDonationsSortKey, adminDonationsSortDir);
+    var totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+    if (adminDonationsPage > totalPages) adminDonationsPage = totalPages;
+    if (adminDonationsPage < 1) adminDonationsPage = 1;
+    var start = (adminDonationsPage - 1) * ADMIN_PAGE_SIZE;
+    var slice = filtered.slice(start, start + ADMIN_PAGE_SIZE);
+    renderDonationsTable(slice);
+    updatePaginationUI('admin-donations', filtered.length, adminDonationsPage);
+    updateSortHeaders('admin-donations', adminDonationsSortKey, adminDonationsSortDir);
+    initDonationsActions();
+  }
+
   async function loadAdminDonations() {
     const tbody = document.getElementById('donations-table-body');
     if (!tbody) return;
     try {
       const donations = await fetchDonations();
-      renderDonationsTable(donations);
-      initDonationsActions();
+      adminDonationsList = donations || [];
+      adminDonationsPage = 1;
+      applyAdminDonationsView();
     } catch (e) {
+      adminDonationsList = [];
       tbody.innerHTML =
         '<tr><td colspan="6" class="px-4 py-8 text-center text-red-400">Failed to load donations.</td></tr>';
     }
+  }
+
+  function exportDonationsExcel() {
+    var headers = ['Date', 'Name', 'Email', 'Amount', 'Status'];
+    var rows = adminDonationsList.map(function (d) {
+      var dateStr = d.created_at ? d.created_at.slice(0, 10) : '';
+      return [
+        dateStr,
+        d.name || '',
+        d.email || '',
+        d.amount || '',
+        d.completed === true ? 'Complete' : 'Pending'
+      ];
+    });
+    downloadTableAsExcel(headers, rows, 'donations.csv');
   }
 
   function initDonationsActions() {
@@ -2668,16 +3006,134 @@
       : '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No inquiries yet.</td></tr>';
   }
 
+  function applyAdminInquiriesView() {
+    var searchEl = document.getElementById('admin-inquiries-search');
+    var query = (searchEl && searchEl.value) || '';
+    var filtered = filterListBySearch(adminInquiriesList, query, function (i) {
+      return [i.name, i.email, i.subject, i.message, i.created_at].join(' ');
+    });
+    function getInqValue(i, key) {
+      if (key === 'date') return i.created_at || '';
+      if (key === 'name') return i.name;
+      if (key === 'email') return i.email;
+      if (key === 'subject') return i.subject;
+      return '';
+    }
+    filtered = sortList(filtered, getInqValue, adminInquiriesSortKey, adminInquiriesSortDir);
+    var totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+    if (adminInquiriesPage > totalPages) adminInquiriesPage = totalPages;
+    if (adminInquiriesPage < 1) adminInquiriesPage = 1;
+    var start = (adminInquiriesPage - 1) * ADMIN_PAGE_SIZE;
+    var slice = filtered.slice(start, start + ADMIN_PAGE_SIZE);
+    renderInquiriesTable(slice);
+    updatePaginationUI('admin-inquiries', filtered.length, adminInquiriesPage);
+    updateSortHeaders('admin-inquiries', adminInquiriesSortKey, adminInquiriesSortDir);
+  }
+
   async function loadAdminInquiries() {
     const tbody = document.getElementById('inquiries-table-body');
     if (!tbody) return;
     try {
       const inquiries = await fetchInquiries();
-      renderInquiriesTable(inquiries);
+      adminInquiriesList = inquiries || [];
+      adminInquiriesPage = 1;
+      applyAdminInquiriesView();
     } catch (e) {
+      adminInquiriesList = [];
       tbody.innerHTML =
         '<tr><td colspan="5" class="px-4 py-8 text-center text-red-400">Failed to load inquiries.</td></tr>';
     }
+  }
+
+  function exportInquiriesExcel() {
+    var headers = ['Date', 'Name', 'Email', 'Subject', 'Message'];
+    var rows = adminInquiriesList.map(function (i) {
+      var dateStr = i.created_at ? i.created_at.slice(0, 10) : '';
+      return [
+        dateStr,
+        i.name || '',
+        i.email || '',
+        i.subject || '',
+        (i.message || '').replace(/\r?\n/g, ' ')
+      ];
+    });
+    downloadTableAsExcel(headers, rows, 'inquiries.csv');
+  }
+
+  function handleAdminSortClick(e) {
+    var th = e.target.closest('.admin-th-sort');
+    if (!th) return;
+    var table = th.closest('table');
+    if (!table) return;
+    var tableName = table.getAttribute('data-admin-table');
+    var key = th.getAttribute('data-sort');
+    if (!key) return;
+    if (tableName === 'users') {
+      if (adminUsersSortKey === key) adminUsersSortDir = adminUsersSortDir === 'asc' ? 'desc' : 'asc';
+      else { adminUsersSortKey = key; adminUsersSortDir = 'asc'; }
+      applyAdminUsersView();
+    } else if (tableName === 'applications') {
+      if (adminApplicationsSortKey === key) adminApplicationsSortDir = adminApplicationsSortDir === 'asc' ? 'desc' : 'asc';
+      else { adminApplicationsSortKey = key; adminApplicationsSortDir = 'asc'; }
+      applyAdminApplicationsView();
+    } else if (tableName === 'donations') {
+      if (adminDonationsSortKey === key) adminDonationsSortDir = adminDonationsSortDir === 'asc' ? 'desc' : 'asc';
+      else { adminDonationsSortKey = key; adminDonationsSortDir = 'asc'; }
+      applyAdminDonationsView();
+    } else if (tableName === 'inquiries') {
+      if (adminInquiriesSortKey === key) adminInquiriesSortDir = adminInquiriesSortDir === 'asc' ? 'desc' : 'asc';
+      else { adminInquiriesSortKey = key; adminInquiriesSortDir = 'asc'; }
+      applyAdminInquiriesView();
+    }
+  }
+
+  function initAdminTableControls() {
+    var viewAdmin = document.getElementById('view-admin');
+    if (viewAdmin) viewAdmin.addEventListener('click', handleAdminSortClick);
+
+    var usersSearch = document.getElementById('admin-users-search');
+    var usersPrev = document.getElementById('admin-users-prev');
+    var usersNext = document.getElementById('admin-users-next');
+    var usersExcel = document.getElementById('admin-users-excel');
+    if (usersSearch) {
+      usersSearch.addEventListener('input', function () { adminUsersPage = 1; applyAdminUsersView(); });
+    }
+    if (usersPrev) usersPrev.addEventListener('click', function () { adminUsersPage--; applyAdminUsersView(); });
+    if (usersNext) usersNext.addEventListener('click', function () { adminUsersPage++; applyAdminUsersView(); });
+    if (usersExcel) usersExcel.addEventListener('click', exportUsersExcel);
+
+    var appSearch = document.getElementById('admin-applications-search');
+    var appPrev = document.getElementById('admin-applications-prev');
+    var appNext = document.getElementById('admin-applications-next');
+    var appExcel = document.getElementById('admin-applications-excel');
+    if (appSearch) {
+      appSearch.addEventListener('input', function () { adminApplicationsPage = 1; applyAdminApplicationsView(); });
+    }
+    if (appPrev) appPrev.addEventListener('click', function () { adminApplicationsPage--; applyAdminApplicationsView(); });
+    if (appNext) appNext.addEventListener('click', function () { adminApplicationsPage++; applyAdminApplicationsView(); });
+    if (appExcel) appExcel.addEventListener('click', exportApplicationsExcel);
+
+    var donSearch = document.getElementById('admin-donations-search');
+    var donPrev = document.getElementById('admin-donations-prev');
+    var donNext = document.getElementById('admin-donations-next');
+    var donExcel = document.getElementById('admin-donations-excel');
+    if (donSearch) {
+      donSearch.addEventListener('input', function () { adminDonationsPage = 1; applyAdminDonationsView(); });
+    }
+    if (donPrev) donPrev.addEventListener('click', function () { adminDonationsPage--; applyAdminDonationsView(); });
+    if (donNext) donNext.addEventListener('click', function () { adminDonationsPage++; applyAdminDonationsView(); });
+    if (donExcel) donExcel.addEventListener('click', exportDonationsExcel);
+
+    var inqSearch = document.getElementById('admin-inquiries-search');
+    var inqPrev = document.getElementById('admin-inquiries-prev');
+    var inqNext = document.getElementById('admin-inquiries-next');
+    var inqExcel = document.getElementById('admin-inquiries-excel');
+    if (inqSearch) {
+      inqSearch.addEventListener('input', function () { adminInquiriesPage = 1; applyAdminInquiriesView(); });
+    }
+    if (inqPrev) inqPrev.addEventListener('click', function () { adminInquiriesPage--; applyAdminInquiriesView(); });
+    if (inqNext) inqNext.addEventListener('click', function () { adminInquiriesPage++; applyAdminInquiriesView(); });
+    if (inqExcel) inqExcel.addEventListener('click', exportInquiriesExcel);
   }
 
   // -------------------------------------------------------------------------
@@ -2721,9 +3177,11 @@
       var divEl = document.getElementById('edit-division');
       var teamEl = document.getElementById('edit-team');
       var roleEl = document.getElementById('edit-role');
+      var schoolEl = document.getElementById('edit-school');
       var payload = {
         name: (nameEl && nameEl.value) ? nameEl.value.trim() : '',
         email: (emailEl && emailEl.value) ? emailEl.value.trim() : '',
+        school: (schoolEl && schoolEl.value) ? schoolEl.value.trim() : '',
         division: (divEl && divEl.value) ? divEl.value.trim() : '',
         team: (teamEl && teamEl.value.trim() !== '') ? teamEl.value.trim() : null,
         role: (roleEl && roleEl.value) ? roleEl.value.trim() : 'analyst',
@@ -2766,9 +3224,11 @@
       var divisionEl = document.getElementById('add-division');
       var teamEl = document.getElementById('add-team');
       var roleEl = document.getElementById('add-role');
+      var schoolEl = document.getElementById('add-school');
       var payload = {
         name: document.getElementById('add-name').value.trim(),
         email: document.getElementById('add-email').value.trim(),
+        school: (schoolEl && schoolEl.value) ? schoolEl.value.trim() : '',
         password: document.getElementById('add-password').value,
         division: (divisionEl && divisionEl.value) ? divisionEl.value.trim() : '',
         team: (teamEl && teamEl.value.trim() !== '') ? teamEl.value.trim() : null,
@@ -4633,6 +5093,7 @@
     initModal();
     initAddForm();
     initActionsDelegation();
+    initAdminTableControls();
     initDashboardModals();
     initFinancialTools();
     if (typeof window.initMeetingIntelForm === 'function') window.initMeetingIntelForm();

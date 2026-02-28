@@ -60,6 +60,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(120), nullable=False)
+    school = db.Column(db.String(200), nullable=True)  # 학교 (Applications와 동일)
     division = db.Column(db.String(120), nullable=False)
     team = db.Column(db.Integer, nullable=True)  # 팀 번호 (숫자) — legacy/display
     role = db.Column(db.String(32), nullable=False, default="analyst")  # super_admin, division_lead, team_lead, analyst
@@ -77,6 +78,7 @@ class User(db.Model):
             "id": self.id,
             "email": self.email,
             "name": self.name,
+            "school": getattr(self, "school", None) or "",
             "division": self.division,
             "team": getattr(self, "team", None),
             "role": self.role,
@@ -383,6 +385,7 @@ def get_current_user():
         "id": user.id,
         "email": user.email,
         "name": user.name,
+        "school": getattr(user, "school", None) or "",
         "division": user.division,
         "role": user.role,
         "division_id": getattr(user, "division_id", None),
@@ -2023,6 +2026,7 @@ def api_application_approve(app_id):
             email=app_record.email,
             password_hash=generate_password_hash(DEFAULT_APPROVED_PASSWORD),
             name=app_record.name,
+            school=(app_record.school or "").strip() or None,
             division=division,
             team=None,
             role="analyst",
@@ -2173,6 +2177,7 @@ def api_users():
         email = (data.get("email") or "").strip()
         password = data.get("password") or ""
         name = (data.get("name") or "").strip()
+        school = (data.get("school") or "").strip() or None
         division = (data.get("division") or "").strip()
         team = data.get("team")
         if team is not None and team != "":
@@ -2194,6 +2199,7 @@ def api_users():
                 email=email,
                 password_hash=generate_password_hash(password),
                 name=name,
+                school=school,
                 division=division,
                 team=team,
                 role=role,
@@ -2225,10 +2231,12 @@ def api_user_by_id(user_id):
         data = request.get_json(force=True, silent=True) or {}
         is_active = data.get("is_active")
 
-        if "name" in data or "email" in data or "division" in data or "team" in data or "role" in data or "password" in data:
-            # Edit profile (name, email, division, team, role; optional password)
+        if "name" in data or "email" in data or "school" in data or "division" in data or "team" in data or "role" in data or "password" in data:
+            # Edit profile (name, email, school, division, team, role; optional password)
             if "name" in data:
                 user.name = (data.get("name") or "").strip() or user.name
+            if "school" in data:
+                user.school = (data.get("school") or "").strip() or None
             if "email" in data:
                 raw = (data.get("email") or "").strip()
                 if raw and raw != user.email:

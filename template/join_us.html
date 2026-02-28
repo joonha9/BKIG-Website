@@ -246,7 +246,18 @@
           </div>
           <div>
             <label for="apply-school" class="block text-xs font-medium text-slate-700 mb-0.5">School</label>
-            <input type="text" id="apply-school" name="school" required placeholder="University name" class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+            <select id="apply-school" name="school" required class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white">
+              <option value="">Select school</option>
+              <option value="Boston College">Boston College</option>
+              <option value="Boston University">Boston University</option>
+              <option value="Northeastern University">Northeastern University</option>
+              <option value="Tufts University">Tufts University</option>
+              <option value="Other">Other</option>
+            </select>
+            <div id="apply-school-other-wrap" class="hidden mt-1.5">
+              <label for="apply-school-other" class="block text-xs font-medium text-slate-600 mb-0.5">Please specify your school</label>
+              <input type="text" id="apply-school-other" placeholder="Enter your school name" class="w-full px-3 py-1.5 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+            </div>
           </div>
           <div>
             <label for="apply-major" class="block text-xs font-medium text-slate-700 mb-0.5">Major</label>
@@ -414,6 +425,27 @@
     applyResumeInput.addEventListener('change', updateResumeUI);
   }
 
+  // School: show "Other" text input when "Other" is selected
+  var applySchoolSelect = document.getElementById('apply-school');
+  var applySchoolOtherWrap = document.getElementById('apply-school-other-wrap');
+  var applySchoolOtherInput = document.getElementById('apply-school-other');
+  function toggleSchoolOther() {
+    if (!applySchoolSelect || !applySchoolOtherWrap) return;
+    if (applySchoolSelect.value === 'Other') {
+      applySchoolOtherWrap.classList.remove('hidden');
+      if (applySchoolOtherInput) applySchoolOtherInput.setAttribute('required', 'required');
+    } else {
+      applySchoolOtherWrap.classList.add('hidden');
+      if (applySchoolOtherInput) {
+        applySchoolOtherInput.removeAttribute('required');
+        applySchoolOtherInput.value = '';
+      }
+    }
+  }
+  if (applySchoolSelect) {
+    applySchoolSelect.addEventListener('change', toggleSchoolOther);
+  }
+
   // Apply form: submit via API
   var applyForm = document.getElementById('apply-form');
   var applySubmitBtn = document.getElementById('apply-submit-btn');
@@ -422,6 +454,20 @@
     applyForm.addEventListener('submit', function(e) {
       e.preventDefault();
       if (!applySubmitBtn) return;
+      var schoolSelect = document.getElementById('apply-school');
+      var schoolOtherInput = document.getElementById('apply-school-other');
+      if (schoolSelect && schoolSelect.value === 'Other' && schoolOtherInput) {
+        var otherVal = schoolOtherInput.value.trim();
+        if (!otherVal) {
+          if (applyFormMessage) {
+            applyFormMessage.textContent = 'Please enter your school name.';
+            applyFormMessage.classList.remove('hidden', 'text-emerald-600', 'bg-emerald-50');
+            applyFormMessage.classList.add('text-red-600', 'bg-red-50');
+          }
+          schoolOtherInput.focus();
+          return;
+        }
+      }
       var origText = applySubmitBtn.textContent;
       applySubmitBtn.disabled = true;
       applySubmitBtn.textContent = 'Submitting…';
@@ -430,6 +476,9 @@
         applyFormMessage.textContent = '';
       }
       var formData = new FormData(applyForm);
+      if (schoolSelect && schoolSelect.value === 'Other' && schoolOtherInput) {
+        formData.set('school', schoolOtherInput.value.trim());
+      }
       fetch('/api/applications', {
         method: 'POST',
         body: formData,
@@ -443,6 +492,7 @@
               applyFormMessage.classList.add('text-emerald-600', 'bg-emerald-50');
             }
             applyForm.reset();
+            toggleSchoolOther();
             if (typeof updateResumeUI === 'function') updateResumeUI();
             setTimeout(function() {
               closeApplyModal();

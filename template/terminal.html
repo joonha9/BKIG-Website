@@ -677,17 +677,41 @@
             + Add New Analyst
           </button>
         </div>
+        <!-- Admin 차트: Role 도넛 + Division 가로 막대 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Role별 인원</h3>
+            <div class="flex justify-center">
+              <div class="w-44 h-44 sm:w-48 sm:h-48 md:w-52 md:h-52 shrink-0" style="position: relative;">
+                <canvas id="admin-role-chart" aria-label="Role distribution" style="display: block; width: 100%; height: 100%;"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Division별 인원</h3>
+            <div class="flex justify-center min-h-0" style="min-height: 176px;">
+              <div class="w-[240px] h-44 sm:h-48 md:h-52 shrink-0" style="min-height: 176px;">
+                <canvas id="admin-division-chart" aria-label="Division distribution" style="display: block; width: 100%; height: 100%;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- 유저 데이터 테이블 -->
+        <div class="flex flex-wrap items-center gap-3 mb-3">
+          <input type="text" id="admin-users-search" placeholder="Search users (name, email, school, division…)" class="flex-1 min-w-[200px] px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button type="button" id="admin-users-excel" class="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors shrink-0">Export Excel</button>
+        </div>
         <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
-          <table class="w-full text-left text-sm">
+          <table class="w-full text-left text-sm" data-admin-table="users">
             <thead class="bg-slate-800/80 border-b border-slate-700">
               <tr>
-                <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
-                <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
-                <th class="px-4 py-3 text-slate-400 font-medium">Division</th>
-                <th class="px-4 py-3 text-slate-400 font-medium">Team</th>
-                <th class="px-4 py-3 text-slate-400 font-medium">Role</th>
-                <th class="px-4 py-3 text-slate-400 font-medium">Status</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="name" data-label="Name">Name</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="email" data-label="Email">Email</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="school" data-label="School">School</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="division" data-label="Division">Division</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="team" data-label="Team">Team</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="role" data-label="Role">Role</th>
+                <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="status" data-label="Status">Status</th>
                 <th class="px-4 py-3 text-slate-400 font-medium">Actions</th>
               </tr>
             </thead>
@@ -696,21 +720,32 @@
             </tbody>
           </table>
         </div>
+        <div id="admin-users-pagination" class="flex items-center justify-between mt-2 px-1 text-slate-400 text-sm hidden">
+          <span id="admin-users-page-info">1 / 1</span>
+          <div class="flex gap-2">
+            <button type="button" id="admin-users-prev" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Prev</button>
+            <button type="button" id="admin-users-next" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Next</button>
+          </div>
+        </div>
         <!-- Applications (Join Us 신청 목록) -->
         <div class="mt-10">
           <h3 class="text-xl font-bold text-white mb-2">Applications</h3>
           <p class="text-slate-400 text-sm mb-4">Apply to BKIG submissions from the Join Us page.</p>
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <input type="text" id="admin-applications-search" placeholder="Search (name, email, school, major…)" class="flex-1 min-w-[200px] px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" id="admin-applications-excel" class="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors shrink-0">Export Excel</button>
+          </div>
           <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
-            <table class="w-full text-left text-sm">
+            <table class="w-full text-left text-sm" data-admin-table="applications">
               <thead class="bg-slate-800/80 border-b border-slate-700">
                 <tr>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Date</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">School</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Major</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Grade</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Division</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="date" data-label="Date">Date</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="name" data-label="Name">Name</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="email" data-label="Email">Email</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="school" data-label="School">School</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="major" data-label="Major">Major</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="grade" data-label="Grade">Grade</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="division" data-label="Division">Division</th>
                   <th class="px-4 py-3 text-slate-400 font-medium">Resume</th>
                   <th class="px-4 py-3 text-slate-400 font-medium">Actions</th>
                 </tr>
@@ -720,20 +755,31 @@
               </tbody>
             </table>
           </div>
+          <div id="admin-applications-pagination" class="flex items-center justify-between mt-2 px-1 text-slate-400 text-sm hidden">
+            <span id="admin-applications-page-info">1 / 1</span>
+            <div class="flex gap-2">
+              <button type="button" id="admin-applications-prev" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Prev</button>
+              <button type="button" id="admin-applications-next" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Next</button>
+            </div>
+          </div>
         </div>
         <!-- Donations -->
         <div class="mt-10">
           <h3 class="text-xl font-bold text-white mb-2">Donations</h3>
           <p class="text-slate-400 text-sm mb-4">Donation page submissions (name, email, amount).</p>
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <input type="text" id="admin-donations-search" placeholder="Search (name, email, amount…)" class="flex-1 min-w-[200px] px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" id="admin-donations-excel" class="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors shrink-0">Export Excel</button>
+          </div>
           <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
-            <table class="w-full text-left text-sm">
+            <table class="w-full text-left text-sm" data-admin-table="donations">
               <thead class="bg-slate-800/80 border-b border-slate-700">
                 <tr>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Date</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Amount</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Status</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="date" data-label="Date">Date</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="name" data-label="Name">Name</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="email" data-label="Email">Email</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="amount" data-label="Amount">Amount</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="status" data-label="Status">Status</th>
                   <th class="px-4 py-3 text-slate-400 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -742,19 +788,30 @@
               </tbody>
             </table>
           </div>
+          <div id="admin-donations-pagination" class="flex items-center justify-between mt-2 px-1 text-slate-400 text-sm hidden">
+            <span id="admin-donations-page-info">1 / 1</span>
+            <div class="flex gap-2">
+              <button type="button" id="admin-donations-prev" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Prev</button>
+              <button type="button" id="admin-donations-next" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Next</button>
+            </div>
+          </div>
         </div>
         <!-- Inquiries (Contact 페이지 Send Message 제출 목록) -->
         <div class="mt-10">
           <h3 class="text-xl font-bold text-white mb-2">Inquiries</h3>
           <p class="text-slate-400 text-sm mb-4">Contact page submissions (name, email, subject, message).</p>
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <input type="text" id="admin-inquiries-search" placeholder="Search (name, email, subject, message…)" class="flex-1 min-w-[200px] px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" id="admin-inquiries-excel" class="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors shrink-0">Export Excel</button>
+          </div>
           <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
-            <table class="w-full text-left text-sm">
+            <table class="w-full text-left text-sm" data-admin-table="inquiries">
               <thead class="bg-slate-800/80 border-b border-slate-700">
                 <tr>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Date</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Name</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Email</th>
-                  <th class="px-4 py-3 text-slate-400 font-medium">Subject</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="date" data-label="Date">Date</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="name" data-label="Name">Name</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="email" data-label="Email">Email</th>
+                  <th class="admin-th-sort px-4 py-3 text-slate-400 font-medium cursor-pointer select-none hover:text-slate-300" data-sort="subject" data-label="Subject">Subject</th>
                   <th class="px-4 py-3 text-slate-400 font-medium" style="max-width: 280px;">Message</th>
                 </tr>
               </thead>
@@ -762,6 +819,13 @@
                 <!-- JS에서 /api/inquiries 로 동적 주입 -->
               </tbody>
             </table>
+          </div>
+          <div id="admin-inquiries-pagination" class="flex items-center justify-between mt-2 px-1 text-slate-400 text-sm hidden">
+            <span id="admin-inquiries-page-info">1 / 1</span>
+            <div class="flex gap-2">
+              <button type="button" id="admin-inquiries-prev" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Prev</button>
+              <button type="button" id="admin-inquiries-next" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Next</button>
+            </div>
           </div>
         </div>
       </div>
@@ -814,6 +878,10 @@
             <input type="email" id="add-email" name="email" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="analyst@bkig.com">
           </div>
           <div>
+            <label for="add-school" class="block text-xs font-medium text-slate-400 mb-1">School</label>
+            <input type="text" id="add-school" name="school" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="학교명">
+          </div>
+          <div>
             <label for="add-password" class="block text-xs font-medium text-slate-400 mb-1">Password</label>
             <input type="password" id="add-password" name="password" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="••••••••">
           </div>
@@ -853,7 +921,7 @@
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" id="admin-edit-modal-backdrop">
       <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
         <h3 class="text-lg font-semibold text-white mb-1">Edit User</h3>
-        <p class="text-slate-400 text-sm mb-6">Update name, email, division, team, and role.</p>
+        <p class="text-slate-400 text-sm mb-6">Update name, email, school, division, team, and role.</p>
         <form id="admin-edit-form" class="space-y-4">
           <input type="hidden" id="edit-user-id" name="user_id" value="">
           <div>
@@ -863,6 +931,10 @@
           <div>
             <label for="edit-email" class="block text-xs font-medium text-slate-400 mb-1">Email</label>
             <input type="email" id="edit-email" name="email" required class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          </div>
+          <div>
+            <label for="edit-school" class="block text-xs font-medium text-slate-400 mb-1">School</label>
+            <input type="text" id="edit-school" name="school" class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" placeholder="학교명">
           </div>
           <div>
             <label for="edit-password" class="block text-xs font-medium text-slate-400 mb-1">Password (leave blank to keep current)</label>
