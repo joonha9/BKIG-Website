@@ -7,6 +7,9 @@
   <link rel="icon" href="{{ url_for('static', filename='images/boston_korea_ig_logo.jpeg') }}" type="image/jpeg">
   <title>BKIG Terminal | Boston Korea Investment Group</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='terminal.css') }}">
   <script type="application/json" id="terminal-user-json">{{ current_user | tojson }}</script>
   <script>
@@ -53,8 +56,18 @@
           </button>
         </li>
         <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-ranking">
+            Ranking
+          </button>
+        </li>
+        <li>
           <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-watchlist">
             Watchlist
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-calendar">
+            Earnings &amp; Macro Calendar
           </button>
         </li>
         <li>
@@ -378,6 +391,75 @@
       </div>
     </section>
 
+    <!-- view-ranking: HFT / Bloomberg-style Analyst Ranking leaderboard -->
+    <section id="view-ranking" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-6 px-6 pr-24 bg-slate-900 text-slate-200 hidden">
+      <div id="ranking-root" class="max-w-full">
+        <div class="rounded-lg border border-slate-700 bg-slate-800/30 overflow-hidden shadow-lg">
+          <!-- Card header -->
+          <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-700 bg-slate-800/50">
+            <div>
+              <h2 class="text-base font-semibold text-slate-100 tracking-tight">Analyst Ranking</h2>
+              <p class="text-xs font-medium tracking-wider text-slate-500 uppercase mt-0.5">Portfolio Total Value — FACCTing-connected analysts only</p>
+            </div>
+            <button type="button" id="ranking-refresh-btn" class="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 border border-slate-600 hover:border-slate-500 rounded bg-slate-800/80 transition-colors" title="Refresh">Refresh</button>
+          </div>
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="border-b border-slate-700 bg-slate-800/40">
+                  <th class="text-left text-xs font-semibold tracking-wider text-slate-500 uppercase py-2.5 px-4">Rank</th>
+                  <th class="text-left text-xs font-semibold tracking-wider text-slate-500 uppercase py-2.5 px-4">Name</th>
+                  <th class="text-right text-xs font-semibold tracking-wider text-slate-500 uppercase py-2.5 px-4">Total Value</th>
+                  <th class="text-right text-xs font-semibold tracking-wider text-slate-500 uppercase py-2.5 px-4 pr-6">Avg. Return</th>
+                  <th class="w-24"></th>
+                </tr>
+              </thead>
+              <tbody id="ranking-tbody" class="ranking-tbody">
+                <tr><td colspan="5" class="py-8 text-center text-sm text-slate-500">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="px-4 py-2.5 text-xs tracking-wider text-slate-500 uppercase border-t border-slate-800 bg-slate-800/30">Ranked by portfolio total value. Click a row to view that analyst’s portfolio in a modal.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ranking: Portfolio detail modal (해당 유저 포트폴리오) -->
+    <div id="ranking-portfolio-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+      <div id="ranking-portfolio-modal-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div id="ranking-portfolio-modal-content" class="ranking-portfolio-modal-content pointer-events-auto flex flex-col max-h-[85vh] w-full max-w-2xl overflow-hidden">
+          <div class="ranking-portfolio-modal-header">
+            <h3 id="ranking-portfolio-modal-title" class="ranking-portfolio-modal-title">Portfolio</h3>
+            <button type="button" id="ranking-portfolio-modal-close" class="ranking-portfolio-modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div id="ranking-portfolio-modal-body" class="ranking-portfolio-modal-body overflow-y-auto bkig-scroll flex-1 min-h-0">
+            <div id="ranking-portfolio-modal-loading" class="ranking-portfolio-modal-loading">Loading…</div>
+            <div id="ranking-portfolio-modal-data" class="ranking-portfolio-modal-data hidden">
+              <div id="ranking-portfolio-summary" class="ranking-portfolio-summary"></div>
+              <div class="ranking-portfolio-holdings-wrap">
+                <div class="ranking-portfolio-holdings-head">Holdings</div>
+                <table class="ranking-portfolio-table w-full">
+                  <thead>
+                    <tr class="ranking-portfolio-thead-row">
+                      <th class="ranking-portfolio-th">Symbol</th>
+                      <th class="ranking-portfolio-th ranking-portfolio-th-num">Shares</th>
+                      <th class="ranking-portfolio-th ranking-portfolio-th-num">Price</th>
+                      <th class="ranking-portfolio-th ranking-portfolio-th-num">Return %</th>
+                      <th class="ranking-portfolio-th ranking-portfolio-th-num">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ranking-portfolio-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="ranking-portfolio-modal-error" class="ranking-portfolio-modal-error hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- view-watchlist: 데이터 밀도 높은 테이블 (Bloomberg/Capital IQ 스타일), 로고와 겹치지 않도록 상·우 여백 -->
     <section id="view-watchlist" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-4 px-4 pr-24 bg-slate-900 text-slate-200 hidden">
       <div id="watchlist-widget" class="max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
@@ -423,6 +505,38 @@
         </div>
         <div id="kospi-heatmap-container" class="p-1.5 min-h-[240px]" style="display: flex; flex-wrap: wrap; gap: 2px;"></div>
         <div id="kospi-heatmap-tooltip" class="fixed z-50 hidden px-2 py-1.5 rounded text-xs font-medium bg-slate-800 border border-slate-600 text-slate-100 shadow-xl pointer-events-none" style="font-size: 11px; max-width: 220px;"></div>
+      </div>
+    </section>
+
+    <!-- view-calendar: Full-width monthly grid (Investing.com / wall calendar style), 모바일 반응형 -->
+    <section id="view-calendar" class="flex-1 overflow-y-auto bkig-scroll pt-4 pb-20 md:pt-6 md:pb-4 px-2 sm:px-3 md:px-4 md:pr-24 bg-slate-900 text-slate-200 hidden">
+      <div id="calendar-events-widget" class="w-full min-h-[480px] md:min-h-[800px] flex flex-col bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+        <div class="flex items-center justify-between gap-2 sm:gap-4 px-3 md:px-4 py-2 md:py-3 border-b border-slate-700/80 shrink-0">
+          <h2 class="text-sm md:text-base font-semibold text-slate-200 truncate">Upcoming Events</h2>
+          <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button type="button" id="calendar-prev-month" class="px-1.5 py-1 md:px-2 md:py-1.5 text-xs md:text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 rounded transition-colors" aria-label="Previous month">&lt; Prev</button>
+            <span id="calendar-month-label" class="text-xs md:text-sm font-semibold text-slate-200 min-w-[100px] sm:min-w-[120px] md:min-w-[140px] text-center">—</span>
+            <button type="button" id="calendar-next-month" class="px-1.5 py-1 md:px-2 md:py-1.5 text-xs md:text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 rounded transition-colors" aria-label="Next month">Next &gt;</button>
+          </div>
+        </div>
+        <div id="calendar-events-list" class="flex-1 min-h-0 flex flex-col p-2 md:p-3">
+          <div id="calendar-events-loading" class="flex-1 flex items-center justify-center py-12 text-slate-500 text-sm">Loading…</div>
+          <div id="calendar-events-empty" class="hidden flex-1 flex items-center justify-center py-12 text-slate-500 text-sm">No calendar data.</div>
+          <div id="calendar-events-content" class="hidden flex-1 min-h-0 flex flex-col overflow-auto"></div>
+        </div>
+      </div>
+      <!-- Calendar event detail modal -->
+      <div id="calendar-event-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+        <div id="calendar-event-modal-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+          <div id="calendar-event-modal-content" class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden pointer-events-auto flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+              <h3 id="calendar-event-modal-title" class="text-base font-semibold text-slate-200">Event</h3>
+              <button type="button" id="calendar-event-modal-close" class="p-1.5 text-slate-400 hover:text-slate-200 rounded transition-colors" aria-label="Close">&times;</button>
+            </div>
+            <div id="calendar-event-modal-body" class="flex-1 min-h-0 overflow-y-auto bkig-scroll p-4 text-sm text-slate-300"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -668,6 +782,10 @@
     <button type="button" class="bkig-bottom-nav-item" data-view="view-portfolio" aria-label="Portfolio">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002 2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
       <span>Portfolio</span>
+    </button>
+    <button type="button" class="bkig-bottom-nav-item" data-view="view-ranking" aria-label="Ranking">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002 2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+      <span>Ranking</span>
     </button>
     <button type="button" class="bkig-bottom-nav-item" data-view="view-watchlist" aria-label="Watchlist">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>

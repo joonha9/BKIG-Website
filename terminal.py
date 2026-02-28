@@ -65,6 +65,7 @@ class User(db.Model):
     role = db.Column(db.String(32), nullable=False, default="analyst")  # super_admin, division_lead, team_lead, analyst
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     watchlist = db.Column(db.String(120), nullable=True)  # 최대 3개 티커, 쉼표 구분 예: "AAPL,TSLA,MSFT"
+    faccting_token = db.Column(db.String(512), nullable=True)  # FACCTing API token for portfolio/ranking (연동 유저만 랭킹 노출)
     division_id = db.Column(db.Integer, db.ForeignKey("terminal_divisions.id"), nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey("terminal_teams.id"), nullable=True)
 
@@ -521,6 +522,140 @@ def api_market_data():
         return jsonify({"indices": []})
 
 
+def _build_calendar_events(from_date, to_date):
+    """Merge earnings (watchlist) + filtered US macro events for date range; group by date. Returns dict date -> list of events."""
+    from datetime import datetime
+    from fmp_api import get_earnings_calendar, get_economic_calendar
+
+    user_id = session.get(SESSION_USER_ID)
+    watchlist_symbols = _user_watchlist_symbols(user_id) or []
+    if isinstance(from_date, datetime):
+        from_date = from_date.strftime("%Y-%m-%d")
+    if isinstance(to_date, datetime):
+        to_date = to_date.strftime("%Y-%m-%d")
+
+    combined = []
+    earnings = get_earnings_calendar(from_date, to_date, symbols=watchlist_symbols)
+    for e in earnings:
+        combined.append({
+            "date": e.get("date", ""),
+            "time": e.get("time", ""),
+            "ticker": e.get("ticker", ""),
+            "name": e.get("name") or e.get("ticker", ""),
+            "type": "earnings",
+            "when": e.get("when", ""),
+            "marketTime": e.get("marketTime") or e.get("when", ""),
+            "impact": "",
+            "is_fed": False,
+        })
+    macro = get_economic_calendar(
+        from_date, to_date,
+        high_impact_only=True,
+        country_filter=["US", "USD"],
+    )
+    for m in macro:
+        combined.append({
+            "date": m.get("date", ""),
+            "time": m.get("time", ""),
+            "ticker": m.get("ticker", ""),
+            "name": m.get("name", ""),
+            "type": "macro",
+            "when": m.get("when", ""),
+            "marketTime": "",
+            "impact": m.get("impact", "medium"),
+            "is_fed": m.get("is_fed", False),
+        })
+    def _sort_key(item):
+        d = item.get("date") or ""
+        t = item.get("time") or ""
+        if isinstance(t, str) and "T" in t:
+            t = t.split("T")[-1][:5] if "T" in t else ""
+        if not t and item.get("type") == "earnings":
+            when = item.get("marketTime") or item.get("when", "")
+            t = "04:00" if when == "bmo" else "20:00"
+        return (d, t)
+
+    combined.sort(key=_sort_key)
+    events_by_date = {}
+    for ev in combined:
+        d = ev.get("date") or ""
+        if d not in events_by_date:
+            events_by_date[d] = []
+        events_by_date[d].append(ev)
+    return events_by_date
+
+
+def _build_calendar_grid(year, month):
+    """
+    Build a full month calendar grid (Sun–Sat, 6 weeks) with padding days from prev/next month.
+    Returns dict: year, month, monthLabel, weekDayLabels, weeks.
+    Each week is a list of 7 days; each day is { iso, dayNum, isCurrentMonth, isToday, events }.
+    """
+    from datetime import date, timedelta
+
+    today = date.today()
+    first = date(year, month, 1)
+    # Sunday = 0: (weekday + 1) % 7 gives 0 for Sunday, 1 Monday, ...
+    days_before = (first.weekday() + 1) % 7
+    start_date = first - timedelta(days=days_before)
+    num_days = 42  # 6 weeks
+    end_date = start_date + timedelta(days=num_days - 1)
+
+    from_date = start_date.strftime("%Y-%m-%d")
+    to_date = end_date.strftime("%Y-%m-%d")
+    events_by_date = _build_calendar_events(from_date, to_date)
+
+    months = ["January", "February", "March", "April", "May", "June",
+              "July", "August", "September", "October", "November", "December"]
+    month_label = "{} {}".format(months[month - 1], year)
+    week_day_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    weeks = []
+    for week_idx in range(6):
+        row = []
+        for day_idx in range(7):
+            d = start_date + timedelta(days=week_idx * 7 + day_idx)
+            iso = d.strftime("%Y-%m-%d")
+            is_current_month = (d.month == month)
+            is_today = (d == today)
+            events = events_by_date.get(iso, [])
+            row.append({
+                "iso": iso,
+                "dayNum": d.day,
+                "isCurrentMonth": is_current_month,
+                "isToday": is_today,
+                "events": events,
+            })
+        weeks.append(row)
+
+    return {
+        "year": year,
+        "month": month,
+        "monthLabel": month_label,
+        "weekDayLabels": week_day_labels,
+        "weeks": weeks,
+    }
+
+
+@terminal_bp.route("/api/calendar")
+@login_required_api
+def api_calendar():
+    """Calendar grid for given month. Query: year, month (default: current month). Returns grid with weeks and events."""
+    try:
+        from datetime import date
+        today = date.today()
+        year = request.args.get("year", type=int) or today.year
+        month = request.args.get("month", type=int) or today.month
+        if month < 1 or month > 12:
+            month = today.month
+        if year < 2000 or year > 2100:
+            year = today.year
+        grid = _build_calendar_grid(year, month)
+        return jsonify(grid)
+    except Exception:
+        return jsonify({"year": 0, "month": 0, "monthLabel": "", "weekDayLabels": [], "weeks": []})
+
+
 # ---------------------------------------------------------------------------
 # Financial Tools: 분리된 API (지연 로딩, limit=3)
 # ---------------------------------------------------------------------------
@@ -822,6 +957,118 @@ def api_v1_terminal_me():
         except Exception:
             pass
     return jsonify({"nickname": None})
+
+
+@terminal_bp.route("/api/v1/terminal/faccting-token", methods=["POST", "PUT"])
+@login_required_api
+def api_v1_terminal_faccting_token():
+    """Save FACCTing API token for current user so they appear in Analyst Ranking (FACCTing-connected only)."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    token = (data.get("token") or data.get("faccting_token") or "").strip()
+    user_obj = User.query.get(user["id"])
+    if not user_obj:
+        return jsonify({"error": "User not found"}), 404
+    user_obj.faccting_token = token if token else None
+    db.session.commit()
+    return jsonify({"ok": True, "message": "Token saved" if token else "Token cleared"})
+
+
+def _parse_portfolio_total_value(raw_json_str):
+    """Parse FACCTing portfolio response and return (total_value, cash, nickname, avg_return_pct)."""
+    if not raw_json_str:
+        return None, None, None, None
+    try:
+        data = json.loads(raw_json_str)
+        d = (data.get("status") == "success" and data.get("data")) or data
+        summary = d.get("account_summary") or d.get("summary") or {}
+        total = summary.get("total_asset_value") or summary.get("total_value") or summary.get("total")
+        cash = summary.get("cash_balance") or summary.get("cash") or summary.get("balance")
+        nick = d.get("nickname") or (d.get("user") or {}).get("nickname")
+        try:
+            tv = float(total) if total is not None else None
+        except (TypeError, ValueError):
+            tv = None
+        try:
+            c = float(cash) if cash is not None else None
+        except (TypeError, ValueError):
+            c = None
+        # Average return % from holdings (return_percent / return_percent_pct / returnPercent etc.)
+        holdings = d.get("holdings") or d.get("positions") or []
+        pcts = []
+        for h in holdings if isinstance(holdings, list) else []:
+            r = h.get("return_percent") or h.get("return_percent_pct") or h.get("returnPercent") or h.get("return_pct")
+            if r is not None:
+                try:
+                    pcts.append(float(r))
+                except (TypeError, ValueError):
+                    pass
+        avg_return = round(sum(pcts) / len(pcts), 2) if pcts else None
+        return tv, c, nick, avg_return
+    except Exception:
+        return None, None, None, None
+
+
+@terminal_bp.route("/api/v1/terminal/ranking", methods=["GET"])
+@login_required_api
+def api_v1_terminal_ranking():
+    """GET: Analyst ranking by Portfolio Total Value (FACCTing-connected users only). Sorted desc by total_value."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    users_with_token = User.query.filter(
+        User.faccting_token.isnot(None),
+        (User.faccting_token != ""),
+        User.is_active.is_(True),
+    ).all()
+    ranking = []
+    for u in users_with_token:
+        raw, err = _faccting_get("/api/v1/terminal/portfolio", u.faccting_token)
+        if err or not raw:
+            continue
+        total_value, cash, nickname, avg_return = _parse_portfolio_total_value(raw)
+        if total_value is None:
+            continue
+        ranking.append({
+            "user_id": u.id,
+            "name": u.name or u.email or "—",
+            "nickname": nickname or "—",
+            "total_value": round(float(total_value), 2),
+            "cash": round(float(cash), 2) if cash is not None else None,
+            "average_return_pct": avg_return,
+        })
+    ranking.sort(key=lambda x: x["total_value"], reverse=True)
+    for i, row in enumerate(ranking, start=1):
+        row["rank"] = i
+    return jsonify({"ranking": ranking})
+
+
+@terminal_bp.route("/api/v1/terminal/ranking/<int:user_id>/portfolio", methods=["GET"])
+@login_required_api
+def api_v1_terminal_ranking_user_portfolio(user_id):
+    """GET: Portfolio of a ranked user (FACCTing-connected). For modal display."""
+    get_current_user()
+    user_obj = User.query.filter_by(id=user_id, is_active=True).first()
+    if not user_obj or not (user_obj.faccting_token and user_obj.faccting_token.strip()):
+        return jsonify({"error": "Not found", "message": "User not in ranking"}), 404
+    raw, err = _faccting_get("/api/v1/terminal/portfolio", user_obj.faccting_token)
+    if err or not raw:
+        return jsonify({"error": "FACCTing API error", "message": err.get("message") if err else "No data"}), 502
+    try:
+        data = json.loads(raw)
+        # Normalize to same shape as main portfolio API for frontend
+        d = (data.get("status") == "success" and data.get("data")) or data
+        out = {
+            "account_summary": d.get("account_summary") or d.get("summary") or {},
+            "holdings": d.get("holdings") or d.get("positions") or [],
+            "nickname": d.get("nickname") or (d.get("user") or {}).get("nickname"),
+            "user": {"name": user_obj.name, "email": user_obj.email},
+        }
+        return jsonify(out)
+    except Exception:
+        return jsonify({"error": "Invalid response"}), 502
 
 
 @terminal_bp.route("/api/v1/terminal/portfolio", methods=["GET"])

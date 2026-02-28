@@ -18,7 +18,9 @@
     'view-comms': 'Comms',
     'view-financial-tools': 'Financial Tools',
     'view-portfolio': 'Portfolio',
+    'view-ranking': 'Ranking',
     'view-watchlist': 'Watchlist',
+    'view-calendar': 'Earnings & Macro',
     'view-internal-research': 'Research',
     'view-meeting-intelligence': 'Meeting Intel',
     'view-profile': 'Profile',
@@ -64,10 +66,14 @@
       loadDashboardMeetings();
     }
     if (viewId === 'view-portfolio') loadPortfolioView();
+    if (viewId === 'view-ranking') loadRankingView();
     if (viewId === 'view-watchlist') {
       if (typeof renderWatchlistWidget === 'function') renderWatchlistWidget();
       if (typeof renderSectorHeatmap === 'function') renderSectorHeatmap();
       if (typeof renderKospiSectorHeatmap === 'function') renderKospiSectorHeatmap();
+    }
+    if (viewId === 'view-calendar') {
+      if (typeof renderCalendarEventsWidget === 'function') renderCalendarEventsWidget();
     }
     if (viewId === 'view-internal-research') {
       if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
@@ -641,6 +647,228 @@
     });
   }
 
+  function escapeHtml(s) {
+    if (s == null || s === '') return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function truncateLabel(str, maxLen) {
+    if (str == null) return '';
+    var s = String(str).trim();
+    if (s.length <= maxLen) return s;
+    return s.substring(0, maxLen) + '\u2026';
+  }
+  var calendarCurrentYear = null;
+  var calendarCurrentMonth = null;
+  function getCalendarState() {
+    var now = new Date();
+    if (calendarCurrentYear == null) calendarCurrentYear = now.getFullYear();
+    if (calendarCurrentMonth == null) calendarCurrentMonth = now.getMonth() + 1;
+    return { year: calendarCurrentYear, month: calendarCurrentMonth };
+  }
+  var MAX_EVENTS_PER_DAY = 3;
+  function formatTimeForModal(str) {
+    if (!str || !String(str).trim()) return '—';
+    var s = String(str).trim();
+    if (s.indexOf('T') !== -1) s = s.split('T')[1].substring(0, 5);
+    var parts = s.match(/^(\d{1,2}):(\d{2})$/);
+    if (!parts) return s;
+    var h = parseInt(parts[1], 10);
+    var m = parts[2];
+    if (h === 0) return '12:' + m + ' AM';
+    if (h < 12) return h + ':' + m + ' AM';
+    if (h === 12) return '12:' + m + ' PM';
+    return (h - 12) + ':' + m + ' PM';
+  }
+  function formatDateForModal(iso) {
+    if (!iso || iso.length < 10) return iso || '—';
+    var d = new Date(iso + 'T12:00:00');
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  function eventDetailHtml(ev) {
+    var html = '<div class="py-2 border-b border-slate-700/50 last:border-b-0">';
+    if (ev.type === 'earnings') {
+      html += '<div class="font-medium text-violet-300">' + escapeHtml(ev.ticker || ev.name || '') + '</div>';
+      html += '<div class="text-slate-400 text-xs mt-0.5">Earnings</div>';
+      html += '<dl class="mt-2 space-y-1 text-xs">';
+      html += '<div><dt class="text-slate-500 inline">Date: </dt><dd class="inline text-slate-300">' + escapeHtml(formatDateForModal(ev.date)) + '</dd></div>';
+      var whenLabel = ev.marketTime === 'bmo' ? 'Before Market Open' : ev.marketTime === 'amc' ? 'After Market Close' : (ev.time ? formatTimeForModal(ev.time) : '—');
+      html += '<div><dt class="text-slate-500 inline">Time: </dt><dd class="inline text-slate-300">' + escapeHtml(whenLabel) + '</dd></div>';
+      html += '</dl>';
+    } else {
+      html += '<div class="font-medium text-slate-200">' + escapeHtml(ev.name || 'Event') + '</div>';
+      html += '<div class="text-slate-400 text-xs mt-0.5">Macro · ' + escapeHtml((ev.impact || 'medium') + (ev.is_fed ? ' · Fed' : '')) + '</div>';
+      html += '<dl class="mt-2 space-y-1 text-xs">';
+      html += '<div><dt class="text-slate-500 inline">Date: </dt><dd class="inline text-slate-300">' + escapeHtml(formatDateForModal(ev.date)) + '</dd></div>';
+      html += '<div><dt class="text-slate-500 inline">Time: </dt><dd class="inline text-slate-300">' + (ev.time ? escapeHtml(formatTimeForModal(ev.time)) : '—') + '</dd></div>';
+      html += '</dl>';
+    }
+    html += '</div>';
+    return html;
+  }
+  function openCalendarEventModal(title, bodyHtml) {
+    var modal = document.getElementById('calendar-event-modal');
+    var titleEl = document.getElementById('calendar-event-modal-title');
+    var bodyEl = document.getElementById('calendar-event-modal-body');
+    if (!modal || !bodyEl) return;
+    if (titleEl) titleEl.textContent = title;
+    bodyEl.innerHTML = bodyHtml;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+  function closeCalendarEventModal() {
+    var modal = document.getElementById('calendar-event-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  function renderCalendarEventPill(ev, dataEventAttr) {
+    var isHighImpact = ev.type === 'macro' && (ev.impact || '').toLowerCase() === 'high';
+    var wrap = '<span class="calendar-event-pill cursor-pointer hover:opacity-90 transition-opacity inline-flex items-center gap-0.5 max-w-full min-h-[20px] md:min-h-0" ' + dataEventAttr + '>';
+    var inner = '';
+    if (ev.type === 'earnings') {
+      var icon = ev.marketTime === 'bmo' ? '&#9728;' : ev.marketTime === 'amc' ? '&#9789;' : '';
+      var label = escapeHtml(ev.ticker || ev.name || '');
+      inner = '<span class="calendar-pill calendar-pill-earnings inline-flex items-center gap-0.5 px-1 md:px-1.5 py-0.5 rounded text-[10px] md:text-xs font-medium bg-violet-500/25 text-violet-300 border border-violet-500/50 truncate max-w-full">' + (icon ? '<span class="shrink-0 text-[8px] md:text-[10px]">' + icon + '</span>' : '') + ' <span class="truncate">' + label + '</span></span>';
+    } else if (ev.type === 'macro') {
+      var name = truncateLabel(ev.name || 'Event', 18);
+      if (ev.is_fed) {
+        inner = '<span class="calendar-pill calendar-pill-fed inline-block px-1 md:px-1.5 py-0.5 rounded text-[10px] md:text-xs font-semibold bg-rose-900/50 text-rose-300 border border-rose-600/50 truncate max-w-full">Fed</span>';
+      } else if (isHighImpact) {
+        inner = '<span class="calendar-pill calendar-pill-macro inline-block px-1 md:px-1.5 py-0.5 rounded text-[10px] md:text-xs font-medium bg-red-500/25 text-red-400 border border-red-500/50 truncate max-w-full">' + escapeHtml(name) + '</span>';
+      } else {
+        inner = '<span class="inline-block w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-slate-500 shrink-0"></span>';
+      }
+    }
+    return wrap + inner + '</span>';
+  }
+  async function renderCalendarEventsWidget() {
+    var loadingEl = document.getElementById('calendar-events-loading');
+    var emptyEl = document.getElementById('calendar-events-empty');
+    var contentEl = document.getElementById('calendar-events-content');
+    var monthLabelEl = document.getElementById('calendar-month-label');
+    if (!contentEl) return;
+    var state = getCalendarState();
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    if (emptyEl) emptyEl.classList.add('hidden');
+    contentEl.classList.add('hidden');
+    contentEl.innerHTML = '';
+    try {
+      var res = await fetch('/api/calendar?year=' + state.year + '&month=' + state.month);
+      var data = await res.json().catch(function () { return {}; });
+      if (loadingEl) loadingEl.classList.add('hidden');
+      var weekDayLabels = data.weekDayLabels || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var weeks = data.weeks || [];
+      var monthLabel = data.monthLabel || state.month + ' / ' + state.year;
+      if (monthLabelEl) monthLabelEl.textContent = monthLabel;
+      if (!weeks.length) {
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        return;
+      }
+      var html = '<div class="calendar-grid w-full flex-1 min-h-[420px] md:min-h-[680px] grid grid-cols-7 border border-slate-700 rounded-lg overflow-hidden bg-slate-900/50">';
+      html += '<div class="grid grid-cols-7 col-span-7 border-b border-slate-700 bg-slate-800/80 calendar-grid-header">';
+      weekDayLabels.forEach(function (label) {
+        html += '<div class="py-1 md:py-2 text-center text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider border-r border-slate-700 last:border-r-0">' + escapeHtml(label) + '</div>';
+      });
+      html += '</div>';
+      weeks.forEach(function (week) {
+        week.forEach(function (day) {
+          var isCurrentMonth = day.isCurrentMonth !== false;
+          var isToday = day.isToday === true;
+          var dayNum = day.dayNum != null ? day.dayNum : '';
+          var cellClass = 'border-r border-b border-slate-700 bg-slate-800/30 min-h-[64px] md:min-h-[100px] flex flex-col overflow-hidden calendar-cell ' + (isToday ? 'ring-1 ring-inset ring-cyan-500/50 bg-cyan-500/10' : '');
+          if (!isCurrentMonth) cellClass += ' opacity-60';
+          html += '<div class="' + cellClass + ' last:border-r-0">';
+          html += '<div class="shrink-0 flex justify-end px-0.5 md:px-1.5 py-0.5 md:py-1">';
+          html += '<span class="text-[10px] md:text-xs font-medium tabular-nums ' + (isCurrentMonth ? 'text-slate-300' : 'text-slate-500') + '">' + escapeHtml(String(dayNum)) + '</span>';
+          html += '</div>';
+          html += '<div class="flex-1 min-h-0 overflow-y-auto bkig-scroll px-0.5 md:px-1.5 pb-0.5 md:pb-1.5 space-y-0.5 md:space-y-1">';
+          var dayEvents = day.events || [];
+          var visible = dayEvents.slice(0, MAX_EVENTS_PER_DAY);
+          visible.forEach(function (ev) {
+            var dataJson = JSON.stringify(ev).replace(/"/g, '&quot;');
+            html += '<div class="flex items-center">' + renderCalendarEventPill(ev, 'data-event="' + dataJson + '"') + '</div>';
+          });
+          if (dayEvents.length > MAX_EVENTS_PER_DAY) {
+            var moreData = JSON.stringify({ iso: day.iso, dateLabel: formatDateForModal(day.iso), events: dayEvents }).replace(/"/g, '&quot;');
+            html += '<div class="flex items-center"><span class="calendar-event-more cursor-pointer px-1 md:px-1.5 py-0.5 min-h-[20px] md:min-h-0 inline-flex items-center text-slate-500 hover:text-slate-300 text-[10px] md:text-xs" data-more-events="' + moreData + '" title="' + escapeHtml(dayEvents.length - MAX_EVENTS_PER_DAY + ' more') + '">&#8230;</span></div>';
+          }
+          html += '</div></div>';
+        });
+      });
+      html += '</div>';
+      contentEl.innerHTML = html;
+      contentEl.classList.remove('hidden');
+    } catch (e) {
+      if (loadingEl) loadingEl.classList.add('hidden');
+      if (emptyEl) {
+        emptyEl.textContent = 'No calendar data.';
+        emptyEl.classList.remove('hidden');
+      }
+    }
+  }
+  function calendarGoPrevMonth() {
+    var state = getCalendarState();
+    calendarCurrentMonth = state.month - 1;
+    if (calendarCurrentMonth < 1) {
+      calendarCurrentMonth = 12;
+      calendarCurrentYear = state.year - 1;
+    } else {
+      calendarCurrentYear = state.year;
+    }
+    renderCalendarEventsWidget();
+  }
+  function calendarGoNextMonth() {
+    var state = getCalendarState();
+    calendarCurrentMonth = state.month + 1;
+    if (calendarCurrentMonth > 12) {
+      calendarCurrentMonth = 1;
+      calendarCurrentYear = state.year + 1;
+    } else {
+      calendarCurrentYear = state.year;
+    }
+    renderCalendarEventsWidget();
+  }
+  function initCalendarNav() {
+    var prevBtn = document.getElementById('calendar-prev-month');
+    var nextBtn = document.getElementById('calendar-next-month');
+    if (prevBtn) prevBtn.addEventListener('click', calendarGoPrevMonth);
+    if (nextBtn) nextBtn.addEventListener('click', calendarGoNextMonth);
+    var contentEl = document.getElementById('calendar-events-content');
+    if (contentEl) {
+      contentEl.addEventListener('click', function (e) {
+        var pill = e.target.closest('.calendar-event-pill');
+        var more = e.target.closest('.calendar-event-more');
+        if (pill && pill.getAttribute('data-event')) {
+          try {
+            var raw = pill.getAttribute('data-event');
+            var ev = JSON.parse(raw.replace(/&quot;/g, '"'));
+            var title = ev.type === 'earnings' ? (ev.ticker || ev.name || 'Earnings') : (ev.name || 'Event');
+            openCalendarEventModal(title, eventDetailHtml(ev));
+          } catch (err) {}
+        } else if (more && more.getAttribute('data-more-events')) {
+          try {
+            var rawMore = more.getAttribute('data-more-events');
+            var payload = JSON.parse(rawMore.replace(/&quot;/g, '"'));
+            var title = 'Events on ' + (payload.dateLabel || payload.iso || '');
+            var body = (payload.events || []).map(function (ev) { return eventDetailHtml(ev); }).join('');
+            openCalendarEventModal(title, body || '<p class="text-slate-500">No events.</p>');
+          } catch (err) {}
+        }
+      });
+    }
+    var modalClose = document.getElementById('calendar-event-modal-close');
+    var modalBackdrop = document.getElementById('calendar-event-modal-backdrop');
+    if (modalClose) modalClose.addEventListener('click', closeCalendarEventModal);
+    if (modalBackdrop) modalBackdrop.addEventListener('click', closeCalendarEventModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        var m = document.getElementById('calendar-event-modal');
+        if (m && !m.classList.contains('hidden')) closeCalendarEventModal();
+      }
+    });
+  }
+
   // -------------------------------------------------------------------------
   // S&P 500 Sector Heatmap (SPDR ETF 프록시, 트리맵 + 색상 코딩)
   // -------------------------------------------------------------------------
@@ -829,6 +1057,16 @@
     return h;
   }
 
+  /** Sync FACCTing token to server so user appears in Analyst Ranking (FACCTing-connected only). */
+  function syncFacctingTokenToServer(token) {
+    var payload = { token: token || '' };
+    fetch(PORTFOLIO_API + '/faccting-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function () {});
+  }
+
   /** Normalize FACCTing API response to internal shape. Handles { status, data } wrapper and field names. */
   function normalizePortfolioResponse(json) {
     if (!json) return null;
@@ -1011,6 +1249,7 @@
         if (!token) { alert('Enter a token.'); return; }
         setPortfolioToken(token);
         portfolioState.token = token;
+        syncFacctingTokenToServer(token);
         portfolioState.isConnected = false;
         loadPortfolioView();
       });
@@ -1349,6 +1588,7 @@
         var val = (input.value || '').trim();
         setPortfolioToken(val);
         portfolioState.token = val;
+        syncFacctingTokenToServer(val);
         saveBtn.textContent = 'Saved';
         setTimeout(function () { saveBtn.textContent = 'Save Token'; }, 1500);
       });
@@ -1371,6 +1611,156 @@
         if (nickEl && nick) nickEl.textContent = nick;
       });
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Ranking: Analyst ranking by Portfolio Total Value (FACCTing-connected only)
+  // -------------------------------------------------------------------------
+  async function loadRankingView() {
+    var tbody = document.getElementById('ranking-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-sm text-slate-500">Loading…</td></tr>';
+    var refreshBtn = document.getElementById('ranking-refresh-btn');
+    if (refreshBtn) refreshBtn.disabled = true;
+    try {
+      var res = await fetch(PORTFOLIO_API + '/ranking', { headers: { 'Content-Type': 'application/json' } });
+      var data = await res.json().catch(function () { return { ranking: [] }; });
+      if (!res.ok) {
+        tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-sm text-slate-500">Unable to load ranking.</td></tr>';
+        return;
+      }
+      var list = data.ranking || [];
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-sm text-slate-500">No FACCTing-connected analysts yet. Link your FACCTing API token in Profile to appear here.</td></tr>';
+        return;
+      }
+      var rows = list.map(function (row) {
+        var rankCellClass = 'py-2.5 px-4 text-left font-mono tabular-nums text-slate-400';
+        var rankIcon = '';
+        if (row.rank === 1) {
+          rankCellClass = 'py-2.5 px-4 text-left font-semibold font-mono tabular-nums text-yellow-400';
+          rankIcon = '<span class="inline-flex items-center justify-center w-4 h-4 mr-1.5 text-yellow-400" aria-hidden="true"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></span>';
+        } else if (row.rank === 2) {
+          rankCellClass = 'py-2.5 px-4 text-left font-semibold font-mono tabular-nums text-slate-300';
+          rankIcon = '<span class="inline-flex items-center justify-center w-4 h-4 mr-1.5 text-slate-300" aria-hidden="true"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></span>';
+        } else if (row.rank === 3) {
+          rankCellClass = 'py-2.5 px-4 text-left font-semibold font-mono tabular-nums text-amber-600';
+          rankIcon = '<span class="inline-flex items-center justify-center w-4 h-4 mr-1.5 text-amber-600" aria-hidden="true"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></span>';
+        }
+        var valueStr = '$' + Number(row.total_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var returnStr = row.average_return_pct != null
+          ? (row.average_return_pct >= 0 ? '+' : '') + Number(row.average_return_pct).toFixed(2) + '%'
+          : '—';
+        var returnCellClass = 'py-2.5 px-4 pr-6 text-right font-mono tabular-nums ';
+        if (row.average_return_pct != null) {
+          returnCellClass += row.average_return_pct >= 0
+            ? 'text-emerald-400 bg-emerald-500/10 rounded-r'
+            : 'text-rose-400 bg-rose-500/10 rounded-r';
+        } else {
+          returnCellClass += 'text-slate-500';
+        }
+        return '<tr class="group border-b border-slate-800 hover:bg-slate-800/50 cursor-pointer ranking-tr-clickable transition-colors" data-user-id="' + escapeHtml(String(row.user_id)) + '" data-user-name="' + escapeHtml(row.name || '') + '">' +
+          '<td class="' + rankCellClass + '">' + rankIcon + '<span>' + escapeHtml(String(row.rank)) + '</span></td>' +
+          '<td class="py-2.5 px-4 text-left font-sans text-slate-200">' + escapeHtml(row.name || '—') + '</td>' +
+          '<td class="py-2.5 px-4 text-right font-mono tabular-nums text-slate-200 font-medium">' + escapeHtml(valueStr) + '</td>' +
+          '<td class="' + returnCellClass + '">' + escapeHtml(returnStr) + '</td>' +
+          '<td class="py-2.5 px-4 text-right"><span class="text-xs text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">View Portfolio →</span></td></tr>';
+      }).join('');
+      tbody.innerHTML = rows;
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-sm text-slate-500">Failed to load ranking.</td></tr>';
+    }
+    if (refreshBtn) refreshBtn.disabled = false;
+  }
+
+  function openRankingPortfolioModal(userId, userName) {
+    var modal = document.getElementById('ranking-portfolio-modal');
+    var loading = document.getElementById('ranking-portfolio-modal-loading');
+    var dataEl = document.getElementById('ranking-portfolio-modal-data');
+    var errorEl = document.getElementById('ranking-portfolio-modal-error');
+    var titleEl = document.getElementById('ranking-portfolio-modal-title');
+    if (!modal || !loading || !dataEl || !errorEl) return;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    if (titleEl) titleEl.textContent = (userName || 'Analyst') + ' — Portfolio';
+    loading.classList.remove('hidden');
+    dataEl.classList.add('hidden');
+    errorEl.classList.add('hidden');
+    errorEl.textContent = '';
+    fetch(PORTFOLIO_API + '/ranking/' + encodeURIComponent(userId) + '/portfolio', { headers: { 'Content-Type': 'application/json' } })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        loading.classList.add('hidden');
+        if (!result.ok) {
+          errorEl.textContent = (result.data && result.data.message) || 'Failed to load portfolio.';
+          errorEl.classList.remove('hidden');
+          return;
+        }
+        var d = result.data;
+        var summary = d.account_summary || d.summary || {};
+        var cash = summary.cash_balance != null ? summary.cash_balance : summary.cash;
+        var total = summary.total_asset_value != null ? summary.total_asset_value : summary.total_value || summary.total;
+        if (cash == null) cash = summary.balance;
+        var cashStr = cash != null ? '$' + Number(cash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+        var totalStr = total != null ? '$' + Number(total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+        var summaryHtml = '<div class="ranking-portfolio-summary-grid">' +
+          '<span class="ranking-portfolio-summary-label">Cash</span><span class="ranking-portfolio-summary-val">' + escapeHtml(cashStr) + '</span>' +
+          '<span class="ranking-portfolio-summary-label">Total Value</span><span class="ranking-portfolio-summary-val">' + escapeHtml(totalStr) + '</span>' +
+          '</div>';
+        document.getElementById('ranking-portfolio-summary').innerHTML = summaryHtml;
+        var holdings = d.holdings || d.positions || [];
+        var tbody = document.getElementById('ranking-portfolio-tbody');
+        if (tbody) {
+          tbody.innerHTML = (holdings.length ? holdings.map(function (h) {
+            var sym = h.symbol || h.ticker || '—';
+            var qty = h.shares != null ? h.shares : (h.quantity != null ? h.quantity : '—');
+            var price = (h.current_price != null ? h.current_price : h.price) != null ? Number(h.current_price || h.price).toFixed(2) : '—';
+            var retPct = h.return_percent != null ? h.return_percent : (h.return_percent_pct != null ? h.return_percent_pct : (h.returnPercent != null ? h.returnPercent : null));
+            var retStr = retPct != null ? (Number(retPct) >= 0 ? '+' : '') + Number(retPct).toFixed(2) + '%' : '—';
+            var val = h.total_value != null ? h.total_value : (h.market_value != null ? h.market_value : (h.value != null ? h.value : null));
+            var valStr = val != null ? '$' + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+            var retColor = retPct != null ? (Number(retPct) >= 0 ? '#22c55e' : '#ef4444') : 'inherit';
+            return '<tr class="ranking-portfolio-tr">' +
+              '<td class="ranking-portfolio-td">' + escapeHtml(sym) + '</td>' +
+              '<td class="ranking-portfolio-td ranking-portfolio-td-num">' + qty + '</td>' +
+              '<td class="ranking-portfolio-td ranking-portfolio-td-num">' + price + '</td>' +
+              '<td class="ranking-portfolio-td ranking-portfolio-td-num" style="color:' + retColor + '">' + escapeHtml(retStr) + '</td>' +
+              '<td class="ranking-portfolio-td ranking-portfolio-td-num">' + escapeHtml(valStr) + '</td></tr>';
+          }).join('') : '<tr><td colspan="5" class="ranking-portfolio-empty">No positions</td></tr>');
+        }
+        dataEl.classList.remove('hidden');
+      })
+      .catch(function () {
+        loading.classList.add('hidden');
+        errorEl.textContent = 'Failed to load portfolio.';
+        errorEl.classList.remove('hidden');
+      });
+  }
+
+  function closeRankingPortfolioModal() {
+    var modal = document.getElementById('ranking-portfolio-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function initRankingRefresh() {
+    var btn = document.getElementById('ranking-refresh-btn');
+    if (btn) btn.addEventListener('click', loadRankingView);
+    var wrap = document.getElementById('ranking-root');
+    if (wrap) {
+      wrap.addEventListener('click', function (e) {
+        var tr = e.target && e.target.closest && e.target.closest('tr.ranking-tr-clickable');
+        if (tr && tr.dataset.userId) {
+          openRankingPortfolioModal(tr.dataset.userId, tr.dataset.userName || '');
+        }
+      });
+    }
+    var closeBtn = document.getElementById('ranking-portfolio-modal-close');
+    var backdrop = document.getElementById('ranking-portfolio-modal-backdrop');
+    if (closeBtn) closeBtn.addEventListener('click', closeRankingPortfolioModal);
+    if (backdrop) backdrop.addEventListener('click', closeRankingPortfolioModal);
   }
 
   // -------------------------------------------------------------------------
@@ -4237,7 +4627,9 @@
   function init() {
     initTabRouting();
     initMobileNav();
+    initCalendarNav();
     initProfileButton();
+    initRankingRefresh();
     initModal();
     initAddForm();
     initActionsDelegation();

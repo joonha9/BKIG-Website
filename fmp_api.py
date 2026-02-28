@@ -771,3 +771,186 @@ def get_stock_news(symbol, limit=20):
         url = item.get("url") or item.get("link") or "#"
         out.append({"publishedDate": pub, "source": source, "title": title, "url": url})
     return out
+
+
+# ---------------------------------------------------------------------------
+# EARNINGS & ECONOMIC CALENDAR (dashboard widget)
+# ---------------------------------------------------------------------------
+def get_earnings_calendar(from_date, to_date, symbols=None):
+    """
+    Upcoming earnings for optional symbol list. from_date/to_date as "YYYY-MM-DD".
+    Returns list of { date, time, ticker, type: "earnings", when: "bmo"|"amc"|"" }.
+    Uses FMP v3 earning_calendar then stable earnings-calendar fallback.
+    """
+    from datetime import datetime
+    if isinstance(from_date, datetime):
+        from_date = from_date.strftime("%Y-%m-%d")
+    if isinstance(to_date, datetime):
+        to_date = to_date.strftime("%Y-%m-%d")
+    want = set((s or "").strip().upper() for s in (symbols or []) if (s or "").strip())
+    out = []
+    # v3: /earning_calendar (from, to)
+    data = _fmp_v3_get("/earning_calendar", {"from": from_date, "to": to_date})
+    if not isinstance(data, list):
+        data = _fmp_unwrap(data) if data else None
+    if not isinstance(data, list):
+        data = _fmp_stable_get("/earnings-calendar", {"from": from_date, "to": to_date})
+        data = _fmp_unwrap(data) if data else None
+    if not isinstance(data, list):
+        return []
+    for row in data:
+        if not isinstance(row, dict):
+            continue
+        sym = (row.get("symbol") or row.get("ticker") or "").strip().upper()
+        if want and sym not in want:
+            continue
+        d = row.get("date") or row.get("reportDate") or row.get("fiscalDateEnding") or ""
+        if isinstance(d, str) and len(d) >= 10:
+            d = d[:10]
+        else:
+            d = str(d)[:10] if d else ""
+        time_str = row.get("time") or row.get("hour") or ""
+        if time_str is None:
+            time_str = ""
+        time_str = str(time_str).strip().lower()
+        when = ""
+        if "bmo" in time_str or "before" in time_str or time_str == "bmo":
+            when = "bmo"
+        elif "amc" in time_str or "after" in time_str or time_str == "amc":
+            when = "amc"
+        out.append({
+            "date": d,
+            "time": time_str or (row.get("hour") or ""),
+            "ticker": sym,
+            "name": sym,
+            "type": "earnings",
+            "when": when,
+            "marketTime": when,  # bmo | amc for display
+        })
+    return out
+
+
+# High-impact US macro event keywords (for filtering economic calendar)
+_MACRO_HIGH_IMPACT_KEYWORDS = (
+    "fomc", "fed ", " federal reserve", "interest rate", "rate decision",
+    "cpi", "consumer price", "inflation", "pce", "core pce",
+    "gdp", "non-farm", "nonfarm", "payroll", "employment", "nfp",
+    "retail sales", "ism ", "pmi ", "jobless", "unemployment",
+    "housing start", "consumer confidence", "ppi ", "producer price",
+)
+# ISM/PMI sub-component keywords: hide these unless High Impact (keep headline PMI only)
+_MACRO_ISM_SUBCOMPONENT_KEYWORDS = (
+    "prices", "employment", "new orders", "backlog", "inventories",
+    "supplier deliveries", "export", "import", "order backlog",
+)
+# Fed-related: distinct styling
+_FED_KEYWORDS = ("fomc", "fed ", "federal reserve", "fed speech", "fed chair")
+
+
+def _parse_event_time(row):
+    """Extract and normalize event time to HH:MM (24h). Returns e.g. '08:30' or '14:00'."""
+    time_val = row.get("time") or row.get("releaseTime") or row.get("releaseDate") or ""
+    if not time_val:
+        return ""
+    s = str(time_val).strip()
+    if "T" in s:
+        try:
+            part = s.split("T")[1]
+            if ":" in part:
+                h, m = part.split(":")[:2]
+                return "{:02d}:{:02d}".format(int(h), int(m) if m.isdigit() else 0)
+        except (ValueError, IndexError):
+            pass
+        return ""
+    if ":" in s:
+        s_lower = s.lower()
+        parts = s.replace("AM", "").replace("PM", "").replace("am", "").replace("pm", "").strip().split(":")
+        try:
+            h = int(parts[0].strip())
+            m = int(parts[1].strip()) if len(parts) > 1 and parts[1].strip().isdigit() else 0
+            if "pm" in s_lower and h < 12:
+                h += 12
+            if "am" in s_lower and h == 12:
+                h = 0
+            return "{:02d}:{:02d}".format(h, m)
+        except (ValueError, TypeError):
+            pass
+    return s[:5] if len(s) >= 5 else s
+
+
+def _is_ism_pmi_subcomponent(event_name_lower, impact):
+    """True if this looks like ISM/PMI sub-component (e.g. Prices, Employment) and not High Impact."""
+    if not event_name_lower or ("ism" not in event_name_lower and "pmi" not in event_name_lower):
+        return False
+    if impact == "high":
+        return False
+    return any(kw in event_name_lower for kw in _MACRO_ISM_SUBCOMPONENT_KEYWORDS)
+
+
+def _is_fed_event(event_name):
+    """True if event is Fed-related (FOMC, Fed speech, etc.)."""
+    if not event_name:
+        return False
+    n = event_name.lower()
+    return any(kw in n for kw in _FED_KEYWORDS)
+
+
+def get_economic_calendar(from_date, to_date, high_impact_only=True, country_filter=None):
+    """
+    Economic calendar events with noise filtering and time parsing.
+    - Filters out ISM/PMI sub-components (Prices, Employment, etc.) unless High Impact.
+    - Parses time to normalized HH:MM (24h).
+    - Sets is_fed for Fed/FOMC events.
+    Returns list of { date, time, name, country, type: "macro", impact, is_fed }.
+    """
+    from datetime import datetime
+    if isinstance(from_date, datetime):
+        from_date = from_date.strftime("%Y-%m-%d")
+    if isinstance(to_date, datetime):
+        to_date = to_date.strftime("%Y-%m-%d")
+    data = _fmp_v3_get("/economic_calendar", {"from": from_date, "to": to_date})
+    if not isinstance(data, list):
+        data = _fmp_unwrap(data) if data else None
+    if not isinstance(data, list):
+        data = _fmp_stable_get("/economic-calendar", {"from": from_date, "to": to_date})
+        data = _fmp_unwrap(data) if data else None
+    if not isinstance(data, list):
+        return []
+    allowed_countries = None
+    if country_filter is not None:
+        allowed_countries = set((c or "").strip().upper() for c in country_filter if (c or "").strip())
+    out = []
+    for row in data:
+        if not isinstance(row, dict):
+            continue
+        country = (row.get("country") or row.get("currency") or "").strip().upper()
+        if allowed_countries and (not country or country not in allowed_countries):
+            continue
+        event_name = (row.get("event") or row.get("name") or row.get("title") or "").strip()
+        name_lower = event_name.lower()
+        if high_impact_only:
+            if not any(kw in name_lower for kw in _MACRO_HIGH_IMPACT_KEYWORDS):
+                continue
+        impact = (row.get("impact") or row.get("importance") or "").strip().lower() or "medium"
+        if _is_ism_pmi_subcomponent(name_lower, impact):
+            continue
+        d = row.get("date") or row.get("releaseDate") or row.get("time") or ""
+        if isinstance(d, str) and "T" in d:
+            d = d.split("T")[0][:10]
+        elif isinstance(d, str) and len(d) >= 10:
+            d = d[:10]
+        else:
+            d = str(d)[:10] if d else ""
+        time_str = _parse_event_time(row)
+        out.append({
+            "date": d,
+            "time": time_str,
+            "ticker": "",
+            "name": event_name or "Economic release",
+            "type": "macro",
+            "when": "",
+            "country": country,
+            "impact": impact,
+            "is_fed": _is_fed_event(event_name),
+        })
+    return out

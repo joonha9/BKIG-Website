@@ -277,6 +277,280 @@
   vertical-align: top;
 }
 
+/* ---------------------------------------------------------------------------
+   Ranking: HFT / Bloomberg-style leaderboard (Tailwind in HTML/JS; name column = Inter)
+--------------------------------------------------------------------------- */
+.bkig-terminal #ranking-root table tbody td:nth-child(2) {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Ranking: Legacy classes (kept for any remaining refs; new UI uses Tailwind)
+--------------------------------------------------------------------------- */
+.bkig-terminal .ranking-dashboard {
+  background: rgba(15, 23, 42, 0.97);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.bkig-terminal .ranking-dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.125rem 1.5rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.35);
+  background: rgba(30, 41, 59, 0.4);
+}
+.bkig-terminal .ranking-dashboard-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+.bkig-terminal .ranking-dashboard-subtitle {
+  font-size: 0.6875rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0.25rem 0 0 0;
+}
+.bkig-terminal .ranking-refresh-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.bkig-terminal .ranking-refresh-btn:hover {
+  color: #22d3ee;
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.08);
+}
+.bkig-terminal .ranking-table-wrap {
+  overflow-x: auto;
+  padding: 0 1rem 1rem;
+}
+.bkig-terminal .ranking-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+}
+.bkig-terminal .ranking-thead-row {
+  background: rgba(30, 41, 59, 0.6);
+}
+.bkig-terminal .ranking-thead-row .ranking-th {
+  border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+  padding: 0.875rem 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+}
+.bkig-terminal .ranking-th-rank { width: 4.5rem; min-width: 4.5rem; text-align: center; }
+.bkig-terminal .ranking-th-name { padding-left: 1.25rem; }
+.bkig-terminal .ranking-th-value,
+.bkig-terminal .ranking-th-return {
+  text-align: right;
+  padding-right: 1.25rem;
+  padding-left: 1rem;
+}
+.bkig-terminal .ranking-tr-clickable { cursor: pointer; }
+.bkig-terminal .ranking-tr-clickable:active { opacity: 0.92; }
+.bkig-terminal .ranking-td-return {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  padding-right: 1.25rem;
+  min-width: 5rem;
+}
+.bkig-terminal .ranking-tbody .ranking-tr {
+  border-bottom: 1px solid rgba(71, 85, 105, 0.18);
+  transition: background 0.12s ease;
+}
+.bkig-terminal .ranking-tbody .ranking-tr:last-child {
+  border-bottom: none;
+}
+.bkig-terminal .ranking-tbody .ranking-tr:hover {
+  background: rgba(51, 65, 85, 0.35);
+}
+.bkig-terminal .ranking-tbody .ranking-tr.ranking-tr-top {
+  background: rgba(34, 197, 94, 0.05);
+}
+.bkig-terminal .ranking-tbody .ranking-tr.ranking-tr-top:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+.bkig-terminal .ranking-td {
+  padding: 0.875rem 1.25rem;
+  font-size: 0.8125rem;
+  color: #e2e8f0;
+  vertical-align: middle;
+}
+.bkig-terminal .ranking-td:first-child { padding-left: 1.25rem; }
+.bkig-terminal .ranking-td-rank {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+.bkig-terminal .ranking-td-rank.ranking-td-gold { color: #fbbf24; }
+.bkig-terminal .ranking-td-rank.ranking-td-silver { color: #94a3b8; }
+.bkig-terminal .ranking-td-rank.ranking-td-bronze { color: #d97706; }
+.bkig-terminal .ranking-td-name { font-weight: 500; color: #f1f5f9; text-align: left; }
+.bkig-terminal .ranking-td-nickname { color: #94a3b8; font-size: 0.75rem; }
+.bkig-terminal .ranking-td-value {
+  text-align: right;
+  font-weight: 600;
+  color: #22c55e;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  padding-right: 1.25rem;
+  min-width: 6.5rem;
+}
+.bkig-terminal .ranking-td-cash {
+  text-align: right;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+.bkig-terminal .ranking-loading,
+.bkig-terminal .ranking-empty {
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.8125rem;
+}
+.bkig-terminal .ranking-footer-note {
+  padding: 0.875rem 1.25rem;
+  margin: 0;
+  font-size: 0.6875rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-top: 1px solid rgba(71, 85, 105, 0.2);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+/* Ranking: Portfolio detail modal */
+.bkig-terminal .ranking-portfolio-modal-content {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 14, 23, 0.99) 100%);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 0;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+.bkig-terminal .ranking-portfolio-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+  background: rgba(15, 23, 42, 0.7);
+  flex-shrink: 0;
+}
+.bkig-terminal .ranking-portfolio-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+}
+.bkig-terminal .ranking-portfolio-modal-close {
+  padding: 0.25rem 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.bkig-terminal .ranking-portfolio-modal-close:hover {
+  color: #f1f5f9;
+}
+.bkig-terminal .ranking-portfolio-modal-body {
+  padding: 1rem 1.25rem;
+}
+.bkig-terminal .ranking-portfolio-modal-loading,
+.bkig-terminal .ranking-portfolio-modal-error {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+.bkig-terminal .ranking-portfolio-modal-error { color: #f87171; }
+.bkig-terminal .ranking-portfolio-summary-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+}
+.bkig-terminal .ranking-portfolio-summary-label {
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bkig-terminal .ranking-portfolio-summary-val {
+  font-weight: 600;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+.bkig-terminal .ranking-portfolio-holdings-wrap {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+}
+.bkig-terminal .ranking-portfolio-holdings-head {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+.bkig-terminal .ranking-portfolio-table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+}
+.bkig-terminal .ranking-portfolio-thead-row {
+  border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+}
+.bkig-terminal .ranking-portfolio-th {
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bkig-terminal .ranking-portfolio-th-num { text-align: right; }
+.bkig-terminal .ranking-portfolio-tr { border-bottom: 1px solid rgba(71, 85, 105, 0.2); }
+.bkig-terminal .ranking-portfolio-td {
+  padding: 0.5rem 0.75rem;
+  color: #e2e8f0;
+}
+.bkig-terminal .ranking-portfolio-td-num { text-align: right; }
+.bkig-terminal .ranking-portfolio-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.8125rem;
+}
+
 .bkig-terminal .portfolio-label-block {
   display: block;
   font-size: 0.7rem;
@@ -907,6 +1181,42 @@
 @media (max-width: 768px) {
   .upload-drawer-panel {
     max-width: 100% !important;
+  }
+}
+
+/* 모바일: 캘린더 그리드·필 컴팩트하게 (768px 이하) */
+@media (max-width: 768px) {
+  #view-calendar {
+    -webkit-overflow-scrolling: touch;
+  }
+  #calendar-events-widget {
+    border-radius: 0.5rem;
+  }
+  .calendar-grid {
+    min-width: 0;
+  }
+  .calendar-grid .calendar-cell {
+    min-height: 64px;
+  }
+  .calendar-grid-header > div {
+    font-size: 9px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .calendar-event-pill,
+  .calendar-event-more {
+    min-height: 22px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .calendar-pill {
+    font-size: 9px;
+    line-height: 1.2;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  #calendar-event-modal-content {
+    max-height: 80vh;
+    margin: 0.5rem;
   }
 }
 
