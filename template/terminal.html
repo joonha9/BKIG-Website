@@ -746,47 +746,136 @@
           </div>
         </div>
 
-        <!-- Job Board -->
+        <!-- Job Board — Financial Terminal aesthetic (Bloomberg/FactSet) -->
         <div id="network-jobs-panel" class="network-tab-panel hidden">
-          <div class="flex gap-2 p-1 rounded-xl bg-slate-800/60 border border-slate-700/60 mb-4 w-full sm:w-auto" role="tablist">
-            <button type="button" class="network-job-view flex-1 sm:flex-none py-2.5 sm:py-2 px-4 text-sm font-medium rounded-lg transition-all data-active:bg-slate-700 data-active:text-white text-slate-400 hover:text-slate-200 touch-manipulation" data-job-view="list">List</button>
-            <button type="button" class="network-job-view flex-1 sm:flex-none py-2.5 sm:py-2 px-4 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-slate-200 touch-manipulation" data-job-view="calendar">Calendar</button>
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <div class="flex gap-1 rounded-sm border border-slate-800 bg-slate-900 p-0.5 w-full sm:w-auto" role="tablist">
+              <button type="button" class="network-job-view flex-1 sm:flex-none py-2 px-3 text-xs font-medium uppercase tracking-wider data-active:bg-slate-800 data-active:text-slate-200 text-slate-500 hover:text-slate-300 transition-colors touch-manipulation rounded-sm" data-job-view="list">List</button>
+              <button type="button" class="network-job-view flex-1 sm:flex-none py-2 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors touch-manipulation rounded-sm" data-job-view="calendar">Calendar</button>
+            </div>
+            {% if current_user.role == 'super_admin' or current_user.division == 'PD/PR' %}
+            <button type="button" id="network-add-jobs-btn" class="network-add-jobs-btn py-2 px-3 text-xs font-medium uppercase tracking-wider rounded-sm border border-slate-600 text-slate-400 hover:text-slate-200 hover:border-slate-500 hover:bg-slate-800/50 transition-colors">Add Jobs</button>
+            {% endif %}
           </div>
-          <!-- List View: table on desktop, cards on mobile -->
-          <div id="network-jobs-list-wrap" class="network-jobs-list rounded-xl border border-slate-700/60 overflow-hidden bg-slate-800/30">
-            <div class="network-jobs-table-wrap hidden md:block overflow-x-auto -webkit-overflow-scrolling-touch">
-              <table class="network-jobs-table w-full border-collapse text-xs sm:text-sm" style="min-width: 560px;">
-                <thead>
-                  <tr class="text-slate-400 border-b border-slate-700/80 bg-slate-800/50">
-                    <th class="text-left font-medium py-3 px-3 whitespace-nowrap">Role</th>
-                    <th class="text-left font-medium py-3 px-3 whitespace-nowrap">Company</th>
-                    <th class="text-left font-medium py-3 px-3 hidden sm:table-cell">Type</th>
-                    <th class="text-left font-medium py-3 px-3 whitespace-nowrap">Deadline</th>
-                    <th class="text-left font-medium py-3 px-3 hidden md:table-cell">Contact</th>
-                    <th class="w-28 sm:w-24 font-medium py-3 px-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="network-jobs-tbody">
-                  <tr><td colspan="6" class="py-8 text-center text-slate-500 text-sm">Loading…</td></tr>
-                </tbody>
-              </table>
+          <!-- List View: 2-column grid — 75% table, 25% intelligence sidebar -->
+          <div id="network-jobs-list-wrap" class="network-jobs-list grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-0">
+            <div class="lg:col-span-3 border border-slate-800 overflow-hidden bg-slate-900">
+              <div class="network-jobs-table-wrap hidden md:block overflow-x-auto -webkit-overflow-scrolling-touch">
+                <table class="network-jobs-table w-full border-collapse text-xs" style="min-width: 640px;">
+                  <thead>
+                    <tr class="text-slate-500 border-b border-slate-800 bg-slate-900">
+                      <th class="text-left font-normal py-2 px-2.5 whitespace-nowrap uppercase tracking-wider text-xs">Company</th>
+                      <th class="text-left font-normal py-2 px-2.5 whitespace-nowrap uppercase tracking-wider text-xs">Role</th>
+                      <th class="text-left font-normal py-2 px-2.5 hidden sm:table-cell uppercase tracking-wider text-xs">Type</th>
+                      <th class="text-left font-normal py-2 px-2.5 whitespace-nowrap uppercase tracking-wider text-xs">Deadline</th>
+                      <th class="text-left font-normal py-2 px-2.5 hidden md:table-cell uppercase tracking-wider text-xs">Contact</th>
+                      <th class="text-center font-normal py-2 px-1.5 w-10 uppercase tracking-wider text-xs" title="Visa sponsorship"><span class="sr-only">Visa</span><span class="inline-block w-3.5 h-3.5 text-slate-500" aria-hidden="true">&#x1F6C2;</span></th>
+                      <th class="text-right font-normal py-2 px-2.5 w-20 uppercase tracking-wider text-xs">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="network-jobs-tbody">
+                    <tr><td colspan="7" class="py-6 text-center text-slate-500 text-xs font-mono">Loading…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="network-jobs-cards" class="network-jobs-cards divide-y divide-slate-800 md:hidden">
+                <!-- Mobile cards injected by JS -->
+              </div>
             </div>
-            <div id="network-jobs-cards" class="network-jobs-cards divide-y divide-slate-700/50 md:hidden">
-              <!-- Mobile cards injected by JS -->
-            </div>
+            <!-- Right: Intelligence sidebar — data column, border-left separator -->
+            <aside id="network-jobs-sidebar" class="lg:col-span-1 flex flex-col border-l border-slate-800 bg-slate-950 order-first lg:order-none min-h-0">
+              <div class="network-sidebar-block border-b border-slate-800 flex-1 min-h-0 flex flex-col">
+                <div class="px-2.5 py-2 border-b border-slate-800">
+                  <h3 class="text-xs uppercase tracking-wider text-slate-500 font-normal">Recruiting Calendar</h3>
+                </div>
+                <ul id="network-upcoming-sessions" class="p-2 space-y-0 text-xs overflow-y-auto flex-1 min-h-0">
+                  <li class="py-3 text-center text-slate-600 text-xs font-mono">Loading…</li>
+                </ul>
+              </div>
+              <div class="network-sidebar-block flex-1 min-h-0 flex flex-col">
+                <div class="px-2.5 py-2 border-b border-slate-800">
+                  <h3 class="text-xs uppercase tracking-wider text-slate-500 font-normal">Partners</h3>
+                </div>
+                <ul id="network-partner-links" class="p-2 space-y-0 text-xs overflow-y-auto flex-1 min-h-0">
+                  <li class="py-3 text-center text-slate-600 text-xs font-mono">Loading…</li>
+                </ul>
+              </div>
+            </aside>
           </div>
           <!-- Calendar View -->
-          <div id="network-jobs-calendar-wrap" class="hidden network-calendar rounded-xl border border-slate-700/60 overflow-hidden p-4 bg-slate-800/30">
-            <div class="flex items-center justify-between gap-2 mb-4">
-              <button type="button" id="network-calendar-prev" class="network-calendar-btn min-h-[44px] min-w-[44px] flex items-center justify-center px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 active:scale-95 transition-all touch-manipulation" aria-label="Previous month">&larr;</button>
-              <span id="network-calendar-month-label" class="text-sm font-semibold text-slate-200 tabular-nums"></span>
-              <button type="button" id="network-calendar-next" class="network-calendar-btn min-h-[44px] min-w-[44px] flex items-center justify-center px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 active:scale-95 transition-all touch-manipulation" aria-label="Next month">&rarr;</button>
+          <div id="network-jobs-calendar-wrap" class="hidden network-calendar border border-slate-800 overflow-hidden p-3 bg-slate-900">
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <button type="button" id="network-calendar-prev" class="network-calendar-btn min-h-9 min-w-9 flex items-center justify-center px-2 py-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors touch-manipulation rounded-sm border border-slate-800" aria-label="Previous month">&larr;</button>
+              <span id="network-calendar-month-label" class="text-xs font-mono text-slate-300 tabular-nums uppercase tracking-wider"></span>
+              <button type="button" id="network-calendar-next" class="network-calendar-btn min-h-9 min-w-9 flex items-center justify-center px-2 py-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors touch-manipulation rounded-sm border border-slate-800" aria-label="Next month">&rarr;</button>
             </div>
-            <div id="network-calendar-grid" class="grid grid-cols-7 gap-1 sm:gap-1.5 text-xs text-slate-400 min-h-[280px] sm:min-h-[320px]"></div>
-            <div class="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500/80 shrink-0"></span> Bulge Bracket</span>
-              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500/80 shrink-0"></span> Big 4</span>
-              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500/80 shrink-0"></span> Other</span>
+            <div id="network-calendar-grid" class="grid grid-cols-7 gap-px text-xs text-slate-400 min-h-[280px] sm:min-h-[320px]"></div>
+            <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 font-mono uppercase tracking-wider">
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-blue-600/80 shrink-0"></span> Bulge Bracket</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-amber-600/80 shrink-0"></span> Big 4</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 bg-slate-500 shrink-0"></span> Other</span>
+            </div>
+          </div>
+
+          <!-- Add Jobs modal: Job Postings, Recruiting Calendar, Partners (PD/PR + Super Admin only) -->
+          <div id="network-add-jobs-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+            <div id="network-add-jobs-modal-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+            <div class="fixed inset-0 flex items-center justify-center p-6 pointer-events-none">
+              <div class="bg-slate-900 border border-slate-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col pointer-events-auto">
+                <div class="flex items-center justify-between px-5 py-3 border-b border-slate-700">
+                  <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Manage Jobs &amp; Recruiting</h3>
+                  <button type="button" id="network-add-jobs-modal-close" class="p-2 text-slate-400 hover:text-slate-200 rounded" aria-label="Close">&times;</button>
+                </div>
+                <div class="flex border-b border-slate-700">
+                  <button type="button" class="network-manage-tab px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-slate-500 hover:text-slate-200 border-b-2 border-transparent data-active:border-cyan-500 data-active:text-cyan-400" data-manage-tab="jobs">Job Postings</button>
+                  <button type="button" class="network-manage-tab px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-slate-500 hover:text-slate-200 border-b-2 border-transparent data-active:border-cyan-500 data-active:text-cyan-400" data-manage-tab="sessions">Recruiting Calendar</button>
+                  <button type="button" class="network-manage-tab px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-slate-500 hover:text-slate-200 border-b-2 border-transparent data-active:border-cyan-500 data-active:text-cyan-400" data-manage-tab="partners">Partners</button>
+                </div>
+                <div class="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
+                  <div id="network-manage-jobs-panel" class="network-manage-panel hidden space-y-4">
+                    <div class="space-y-3">
+                      <div class="flex flex-wrap gap-3 items-end">
+                        <input type="text" id="manage-job-title" placeholder="Title" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-52 min-w-0">
+                        <input type="text" id="manage-job-company" placeholder="Company" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-44 min-w-0">
+                        <select id="manage-job-type" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-32 min-w-0">
+                          <option value="Intern">Intern</option>
+                          <option value="Full-time">Full-time</option>
+                        </select>
+                        <input type="text" id="manage-job-deadline" placeholder="Deadline (YYYY-MM-DD)" class="px-3 py-2 text-sm font-mono bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-40 min-w-0">
+                        <input type="text" id="manage-job-contact" placeholder="Contact (e.g. referral name)" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-40 min-w-0" title="Referral or contact person name">
+                        <label class="flex items-center gap-2 text-sm text-slate-400"><input type="checkbox" id="manage-job-partner" class="rounded border-slate-600"> Partner</label>
+                        <label class="flex items-center gap-2 text-sm text-slate-400"><input type="checkbox" id="manage-job-visa" class="rounded border-slate-600"> Visa</label>
+                        <button type="button" id="manage-job-add-btn" class="px-4 py-2 text-sm font-medium rounded-sm bg-slate-700 text-slate-200 hover:bg-slate-600">Add</button>
+                      </div>
+                      <div>
+                        <label for="manage-job-link" class="block text-xs font-medium text-slate-500 mb-1">Apply / Website URL</label>
+                        <input type="url" id="manage-job-link" placeholder="https://..." class="w-full px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm placeholder-slate-500" autocomplete="off">
+                      </div>
+                    </div>
+                    <ul id="network-manage-jobs-list" class="space-y-1 text-sm border border-slate-700 rounded-sm divide-y divide-slate-700 max-h-64 overflow-y-auto"></ul>
+                  </div>
+                  <div id="network-manage-sessions-panel" class="network-manage-panel hidden">
+                    <div class="mb-3 flex flex-wrap gap-3 items-end">
+                      <input type="text" id="manage-session-date" placeholder="Date (e.g. Mar 04)" class="px-3 py-2 text-sm font-mono bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-28 min-w-0">
+                      <input type="text" id="manage-session-company" placeholder="Company" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-44 min-w-0">
+                      <input type="text" id="manage-session-event" placeholder="Event Type" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-36 min-w-0">
+                      <button type="button" id="manage-session-add-btn" class="px-4 py-2 text-sm font-medium rounded-sm bg-slate-700 text-slate-200 hover:bg-slate-600">Add</button>
+                    </div>
+                    <ul id="network-manage-sessions-list" class="space-y-1 text-sm border border-slate-700 rounded-sm divide-y divide-slate-700 max-h-64 overflow-y-auto"></ul>
+                  </div>
+                  <div id="network-manage-partners-panel" class="network-manage-panel hidden">
+                    <div class="mb-3 flex flex-wrap gap-3 items-end">
+                      <input type="text" id="manage-partner-name" placeholder="Name" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm w-52 min-w-0">
+                      <input type="url" id="manage-partner-url" placeholder="Careers / Website URL (https://...)" class="px-3 py-2 text-sm bg-slate-800 border border-slate-600 text-slate-200 rounded-sm flex-1 min-w-[240px]">
+                      <button type="button" id="manage-partner-add-btn" class="px-4 py-2 text-sm font-medium rounded-sm bg-slate-700 text-slate-200 hover:bg-slate-600">Add</button>
+                    </div>
+                    <ul id="network-manage-partners-list" class="space-y-1 text-sm border border-slate-700 rounded-sm divide-y divide-slate-700 max-h-64 overflow-y-auto"></ul>
+                  </div>
+                </div>
+                <div class="px-5 py-3 border-t border-slate-700 flex justify-end">
+                  <button type="button" id="network-add-jobs-modal-done" class="px-5 py-2 text-sm font-medium rounded-sm bg-slate-700 text-slate-200 hover:bg-slate-600">Done</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

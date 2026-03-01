@@ -34,169 +34,25 @@ TypeScript interfaces (for frontend / API contract):
   }
 """
 
-from datetime import date, timedelta
-
+# ---------------------------------------------------------------------------
+# Alumni profiles (empty until populated from DB or API)
+# ---------------------------------------------------------------------------
+MOCK_ALUMNI = []
 
 # ---------------------------------------------------------------------------
-# Mock: Alumni profiles
+# Job postings (empty until populated from DB or API)
 # ---------------------------------------------------------------------------
-MOCK_ALUMNI = [
-    {
-        "id": 1,
-        "name": "Jane Park",
-        "company": "Goldman Sachs",
-        "role": "Analyst, Investment Banking",
-        "industry": "IB",
-        "location": "NYC",
-        "status": "open_for_coffee",
-        "tags": ["M&A", "TMT"],
-        "contactInfo": {"email": "jane.park@example.com", "linkedin": "https://linkedin.com/in/janepark"},
-        "graduationYear": 2022,
-        "avatarUrl": None,
-        "companyLogoUrl": None,
-    },
-    {
-        "id": 2,
-        "name": "David Kim",
-        "company": "KKR",
-        "role": "Associate, Private Equity",
-        "industry": "PE",
-        "location": "NYC",
-        "status": "email_me",
-        "tags": ["LBO", "Due Diligence"],
-        "contactInfo": {"email": "david.kim@example.com", "linkedin": "https://linkedin.com/in/davidkim"},
-        "graduationYear": 2020,
-        "avatarUrl": None,
-        "companyLogoUrl": None,
-    },
-    {
-        "id": 3,
-        "name": "Sarah Lee",
-        "company": "Citadel",
-        "role": "Quantitative Researcher",
-        "industry": "HF",
-        "location": "NYC",
-        "status": "busy",
-        "tags": ["Quant", "Python"],
-        "contactInfo": {"email": "sarah.lee@example.com"},
-        "graduationYear": 2021,
-        "avatarUrl": None,
-        "companyLogoUrl": None,
-    },
-    {
-        "id": 4,
-        "name": "Michael Cho",
-        "company": "Deloitte",
-        "role": "Senior Consultant, Audit",
-        "industry": "Audit",
-        "location": "Seoul",
-        "status": "open_for_coffee",
-        "tags": ["CPA", "IFRS"],
-        "contactInfo": {"email": "michael.cho@example.com", "linkedin": "https://linkedin.com/in/michaelcho"},
-        "graduationYear": 2019,
-        "avatarUrl": None,
-        "companyLogoUrl": None,
-    },
-    {
-        "id": 5,
-        "name": "Emily Zhang",
-        "company": "Google",
-        "role": "Product Manager",
-        "industry": "Tech",
-        "location": "NYC",
-        "status": "email_me",
-        "tags": ["Product", "Growth"],
-        "contactInfo": {"email": "emily.zhang@example.com"},
-        "graduationYear": 2023,
-        "avatarUrl": None,
-        "companyLogoUrl": None,
-    },
-    {
-        "id": 6,
-        "name": "James Hong",
-        "company": "Morgan Stanley",
-        "role": "VP, Equity Research",
-        "industry": "IB",
-        "location": "HK",
-        "status": "open_for_coffee",
-        "tags": ["Equity Research", "Asia"],
-        "contactInfo": {"email": "james.hong@example.com", "linkedin": "https://linkedin.com/in/jameshong"},
-        "graduationYear": 2018,
-        "avatarUrl": None,
-        "companyLogoUrl": None,
-    },
-]
-
+MOCK_JOBS = []
 
 # ---------------------------------------------------------------------------
-# Mock: Job postings (with deadlines and referral flag)
+# Upcoming info sessions / recruiting events (Jobs sidebar)
 # ---------------------------------------------------------------------------
-def _job_date(offset_days):
-    d = date.today() + timedelta(days=offset_days)
-    return d.isoformat()
+MOCK_UPCOMING_SESSIONS = []
 
-
-MOCK_JOBS = [
-    {
-        "id": 1,
-        "title": "Investment Banking Summer Analyst",
-        "company": "Goldman Sachs",
-        "type": "Intern",
-        "deadline": _job_date(14),
-        "isReferral": True,
-        "referralAlumniId": 1,
-        "referralAlumniName": "Jane Park",
-        "link": "https://example.com/apply/gs",
-        "firmType": "bulge_bracket",
-        "eventType": "Resume Drop",
-    },
-    {
-        "id": 2,
-        "title": "Private Equity Associate",
-        "company": "KKR",
-        "type": "Full-time",
-        "deadline": _job_date(21),
-        "isReferral": False,
-        "link": "https://example.com/apply/kkr",
-        "firmType": "bulge_bracket",
-        "eventType": "Online Test",
-    },
-    {
-        "id": 3,
-        "title": "Audit Intern",
-        "company": "Deloitte",
-        "type": "Intern",
-        "deadline": _job_date(7),
-        "isReferral": True,
-        "referralAlumniId": 4,
-        "referralAlumniName": "Michael Cho",
-        "link": "https://example.com/apply/deloitte",
-        "firmType": "big_4",
-        "eventType": "Resume Drop",
-    },
-    {
-        "id": 4,
-        "title": "Quantitative Researcher",
-        "company": "Citadel",
-        "type": "Full-time",
-        "deadline": _job_date(30),
-        "isReferral": False,
-        "link": "https://example.com/apply/citadel",
-        "firmType": "other",
-        "eventType": "Online Test",
-    },
-    {
-        "id": 5,
-        "title": "Consulting Summer Analyst",
-        "company": "McKinsey",
-        "type": "Intern",
-        "deadline": _job_date(10),
-        "isReferral": False,
-        "link": "https://example.com/apply/mck",
-        "firmType": "other",
-        "eventType": "Resume Drop",
-    },
-]
+# ---------------------------------------------------------------------------
+# Corporate partners — careers page links (Jobs sidebar)
+# ---------------------------------------------------------------------------
+MOCK_PARTNER_LINKS = []
 
 
 def get_alumni_list():
@@ -207,3 +63,13 @@ def get_alumni_list():
 def get_job_list():
     """Return list of job postings (mock)."""
     return list(MOCK_JOBS)
+
+
+def get_upcoming_sessions():
+    """Return list of upcoming recruiting events (mock)."""
+    return list(MOCK_UPCOMING_SESSIONS)
+
+
+def get_partner_links():
+    """Return list of corporate partner career page links (mock)."""
+    return list(MOCK_PARTNER_LINKS)

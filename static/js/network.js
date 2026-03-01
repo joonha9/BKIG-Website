@@ -33,6 +33,8 @@
 
   var alumniData = [];
   var jobsData = [];
+  var upcomingSessionsData = [];
+  var partnerLinksData = [];
   var networkCalendarCurrent = new Date();
 
   function escapeHtml(s) {
@@ -261,29 +263,71 @@
     return 'bg-emerald-500/80';
   }
 
+  function jobRowClasses(job) {
+    var c = 'network-job-row border-b border-slate-800 hover:bg-slate-800/50 transition-colors';
+    if (job.is_partner || job.is_featured) {
+      c += ' network-job-row-highlight border-l-2 border-yellow-600 bg-[#1e1b15]';
+    } else if (job.isReferral) {
+      c += ' border-l-2 border-slate-600 bg-slate-900/80';
+    }
+    return c;
+  }
+
+  /** Terminal-style code label: [PARTNER] / [SPONSOR] / [FEATURED] — monospace, muted gold */
+  function jobCodeLabel(job) {
+    if (job.is_partner) return '<span class="font-mono text-[10px] text-amber-600/90 tracking-wide">[PARTNER]</span>';
+    if (job.is_featured) return '<span class="font-mono text-[10px] text-amber-600/80 tracking-wide">[SPONSOR]</span>';
+    if (job.isReferral) return '<span class="font-mono text-[10px] text-slate-500 tracking-wide">[REF]</span>';
+    return '';
+  }
+
+  function visaIcon(job) {
+    if (!job.visa_sponsorship) return '<span class="text-slate-700 font-mono">—</span>';
+    return '<span class="inline-flex items-center justify-center text-slate-400" title="Visa sponsorship">&#x1F6C2;</span>';
+  }
+
+  function companyLogoPlaceholder(job) {
+    var initial = (job.company || '?').charAt(0).toUpperCase();
+    return '<span class="network-job-logo w-6 h-6 shrink-0 inline-flex items-center justify-center bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-500">' + escapeHtml(initial) + '</span>';
+  }
+
   function renderJobRow(job) {
-    var referralClass = job.isReferral ? ' network-job-row-referral border-l-4 border-amber-500' : '';
-    var referralBadge = job.isReferral
-      ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/40">Verified Referral</span>'
-      : '';
     var contact = job.referralAlumniName ? escapeHtml(job.referralAlumniName) : '—';
-    var saveBtn = '<button type="button" class="network-save-calendar px-3 py-2 text-xs font-medium rounded-lg border border-slate-600 text-slate-400 hover:bg-slate-700/60 hover:text-slate-200 transition-colors touch-manipulation" data-deadline="' + escapeHtml(job.deadline || '') + '" data-title="' + escapeHtml((job.title || '') + ' @ ' + (job.company || '')) + '">Save</button>';
+    var codeLabel = jobCodeLabel(job);
+    var companyName = escapeHtml(job.company || '');
+    var roleTitle = escapeHtml(job.title || '');
+    var deadline = escapeHtml(job.deadline || '');
+    var applyLink = (job.link)
+      ? '<a href="' + escapeHtml(job.link) + '" target="_blank" rel="noopener noreferrer" class="network-job-apply font-mono text-[10px] text-slate-500 hover:text-slate-300 border border-slate-700 hover:border-slate-600 px-1.5 py-0.5 transition-colors rounded-sm">[APPLY]</a>'
+      : '<span class="font-mono text-[10px] text-slate-600">—</span>';
+    var saveBtn = '<button type="button" class="network-save-calendar font-mono text-[10px] text-slate-500 hover:text-slate-300 border border-slate-700 hover:border-slate-600 px-1.5 py-0.5 transition-colors rounded-sm ml-0.5" data-deadline="' + escapeHtml(job.deadline || '') + '" data-title="' + escapeHtml((job.title || '') + ' @ ' + (job.company || '')) + '" title="Add to calendar">[SAVE]</button>';
     return (
-      '<tr class="network-job-row border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors' + referralClass + '">' +
-        '<td class="py-3 px-3 text-slate-200 font-medium">' + (referralBadge ? referralBadge + ' ' : '') + escapeHtml(job.title || '') + '</td>' +
-        '<td class="py-3 px-3 text-slate-400">' + escapeHtml(job.company || '') + '</td>' +
-        '<td class="py-3 px-3 text-slate-400 hidden sm:table-cell">' + escapeHtml(job.type || '') + '</td>' +
-        '<td class="py-3 px-3 text-slate-400 tabular-nums">' + escapeHtml(job.deadline || '') + '</td>' +
-        '<td class="py-3 px-3 text-slate-400 hidden md:table-cell">' + contact + '</td>' +
-        '<td class="py-3 px-3 text-right">' + saveBtn + '</td>' +
+      '<tr class="' + jobRowClasses(job) + '">' +
+        '<td class="py-2.5 px-2.5 text-slate-300">' +
+          '<span class="inline-flex items-center gap-2">' + companyLogoPlaceholder(job) + '<span>' + companyName + '</span></span>' +
+        '</td>' +
+        '<td class="py-2.5 px-2.5">' +
+          (codeLabel ? codeLabel + ' ' : '') +
+          '<span class="text-white hover:underline cursor-default">' + roleTitle + '</span>' +
+        '</td>' +
+        '<td class="py-2.5 px-2.5 text-slate-500 hidden sm:table-cell">' + escapeHtml(job.type || '') + '</td>' +
+        '<td class="py-2.5 px-2.5 font-mono text-slate-500 tabular-nums text-[11px]">' + deadline + '</td>' +
+        '<td class="py-2.5 px-2.5 text-slate-500 hidden md:table-cell text-xs">' + contact + '</td>' +
+        '<td class="py-2.5 px-1.5 text-center">' + visaIcon(job) + '</td>' +
+        '<td class="py-2.5 px-2.5 text-right">' + applyLink + saveBtn + '</td>' +
       '</tr>'
     );
   }
 
+  function jobCardClasses(job) {
+    var c = 'network-job-card py-2.5 px-2.5 border-b border-slate-800';
+    if (job.is_partner || job.is_featured) c += ' border-l-2 border-yellow-600 bg-[#1e1b15]';
+    else if (job.isReferral) c += ' border-l-2 border-slate-600 bg-slate-900/80';
+    return c;
+  }
+
   function renderJobCard(job) {
-    var referralBadge = job.isReferral
-      ? '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/40">Referral</span>'
-      : '';
+    var codeLabel = jobCodeLabel(job);
     var contact = job.referralAlumniName ? escapeHtml(job.referralAlumniName) : '—';
     var title = escapeHtml(job.title || '');
     var company = escapeHtml(job.company || '');
@@ -291,18 +335,19 @@
     var type = escapeHtml(job.type || '');
     var dataTitle = escapeHtml((job.title || '') + ' @ ' + (job.company || ''));
     var dataDeadline = escapeHtml(job.deadline || '');
+    var visaMark = job.visa_sponsorship ? '<span class="text-slate-500" title="Visa">&#x1F6C2;</span>' : '';
+    var applyLink = job.link
+      ? '<a href="' + escapeHtml(job.link) + '" target="_blank" rel="noopener noreferrer" class="font-mono text-[10px] text-slate-500 hover:text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded-sm">[APPLY]</a>'
+      : '';
+    var saveBtn = '<button type="button" class="network-save-calendar font-mono text-[10px] text-slate-500 hover:text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded-sm ml-1" data-deadline="' + dataDeadline + '" data-title="' + dataTitle + '">[SAVE]</button>';
     return (
-      '<div class="network-job-card py-4 px-4 ' + (job.isReferral ? 'border-l-4 border-amber-500 bg-amber-500/5' : '') + '">' +
-        '<div class="flex flex-wrap items-start justify-between gap-2">' +
-          '<div class="min-w-0 flex-1">' +
-            (referralBadge ? '<div class="mb-1">' + referralBadge + '</div>' : '') +
-            '<p class="font-medium text-slate-100">' + title + '</p>' +
-            '<p class="text-sm text-slate-400">' + company + ' · ' + type + '</p>' +
-            '<p class="text-xs text-slate-500 mt-1 tabular-nums">Due ' + deadline + '</p>' +
-            (contact !== '—' ? '<p class="text-xs text-slate-400 mt-0.5">Contact: ' + contact + '</p>' : '') +
-          '</div>' +
-          '<button type="button" class="network-save-calendar shrink-0 min-h-[44px] px-4 py-2 rounded-xl text-xs font-medium border border-slate-600 text-slate-400 hover:bg-slate-700/60 hover:text-slate-200 transition-colors touch-manipulation" data-deadline="' + dataDeadline + '" data-title="' + dataTitle + '">Save</button>' +
-        '</div>' +
+      '<div class="' + jobCardClasses(job) + '">' +
+        (codeLabel ? '<div class="mb-1">' + codeLabel + '</div>' : '') +
+        '<p class="text-white text-xs">' + title + '</p>' +
+        '<p class="text-slate-500 text-xs mt-0.5">' + company + ' · <span class="font-mono">' + deadline + '</span></p>' +
+        (visaMark ? '<p class="mt-0.5">' + visaMark + '</p>' : '') +
+        (contact !== '—' ? '<p class="text-slate-500 text-[10px] mt-0.5">' + contact + '</p>' : '') +
+        '<div class="mt-2 flex gap-1">' + applyLink + saveBtn + '</div>' +
       '</div>'
     );
   }
@@ -320,11 +365,44 @@
     });
   }
 
+  function renderUpcomingSessions() {
+    var ul = document.getElementById('network-upcoming-sessions');
+    if (!ul) return;
+    if (!upcomingSessionsData.length) {
+      ul.innerHTML = '<li class="py-2 px-2 text-slate-600 text-xs font-mono">No sessions.</li>';
+      return;
+    }
+    ul.innerHTML = upcomingSessionsData.map(function (s) {
+      var date = escapeHtml(s.date || '');
+      var line = escapeHtml((s.company || '') + ' ' + (s.eventType || ''));
+      return '<li class="py-1.5 px-2 border-b border-slate-800/80 text-slate-400 text-xs hover:bg-slate-800/30 transition-colors">' +
+        '<span class="font-mono text-slate-500 tabular-nums">' + date + '</span>' +
+        '  <span class="text-slate-300">' + line + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
+  function renderPartnerLinks() {
+    var ul = document.getElementById('network-partner-links');
+    if (!ul) return;
+    if (!partnerLinksData.length) {
+      ul.innerHTML = '<li class="py-2 px-2 text-slate-600 text-xs font-mono">No partners.</li>';
+      return;
+    }
+    ul.innerHTML = partnerLinksData.map(function (p) {
+      return '<li class="border-b border-slate-800/80">' +
+        '<a href="' + escapeHtml(p.url || '#') + '" target="_blank" rel="noopener noreferrer" class="network-partner-link flex items-center justify-between gap-2 py-1.5 px-2 text-slate-400 hover:text-slate-200 text-xs transition-colors">' +
+          '<span class="truncate">' + escapeHtml(p.name || '') + '</span>' +
+          '<svg class="w-3 h-3 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>' +
+        '</a></li>';
+    }).join('');
+  }
+
   function loadJobsList() {
     var tbody = document.getElementById('network-jobs-tbody');
     var cardsEl = document.getElementById('network-jobs-cards');
     if (jobsData.length === 0) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500 text-sm">No job postings.</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500 text-sm">No job postings.</td></tr>';
       if (cardsEl) cardsEl.innerHTML = '<div class="py-8 text-center text-slate-500 text-sm">No job postings.</div>';
       return;
     }
@@ -382,17 +460,27 @@
   }
 
   function loadJobs() {
-    fetch('/api/network/jobs', { credentials: 'same-origin' })
+    return fetch('/api/network/jobs', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
       .then(function (data) {
         jobsData = data.jobs || [];
+        upcomingSessionsData = data.upcomingSessions || [];
+        partnerLinksData = data.partnerLinks || [];
         loadJobsList();
+        renderUpcomingSessions();
+        renderPartnerLinks();
         renderCalendar();
+        return data;
       })
       .catch(function () {
         jobsData = [];
+        upcomingSessionsData = [];
+        partnerLinksData = [];
         loadJobsList();
+        renderUpcomingSessions();
+        renderPartnerLinks();
         renderCalendar();
+        return {};
       });
   }
 
@@ -441,6 +529,116 @@
       if (calWrap) calWrap.classList.remove('hidden');
       renderCalendar();
     }
+  }
+
+  function openAddJobsModal() {
+    var modal = document.getElementById('network-add-jobs-modal');
+    if (!modal) return;
+    loadJobs().then(function () {
+      renderManageJobsList();
+      renderManageSessionsList();
+      renderManagePartnersList();
+    });
+    switchManageTab('jobs');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeAddJobsModal() {
+    var modal = document.getElementById('network-add-jobs-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function switchManageTab(tab) {
+    document.querySelectorAll('.network-manage-tab').forEach(function (btn) {
+      if (btn.getAttribute('data-manage-tab') === tab) {
+        btn.classList.add('border-cyan-500', 'text-cyan-400');
+        btn.classList.remove('border-transparent', 'text-slate-500');
+        btn.setAttribute('data-active', 'true');
+      } else {
+        btn.classList.remove('border-cyan-500', 'text-cyan-400');
+        btn.classList.add('border-transparent', 'text-slate-500');
+        btn.removeAttribute('data-active');
+      }
+    });
+    ['jobs', 'sessions', 'partners'].forEach(function (name) {
+      var panel = document.getElementById('network-manage-' + name + '-panel');
+      if (panel) panel.classList.toggle('hidden', name !== tab);
+    });
+  }
+
+  function renderManageJobsList() {
+    var ul = document.getElementById('network-manage-jobs-list');
+    if (!ul) return;
+    if (!jobsData.length) {
+      ul.innerHTML = '<li class="py-2 px-2 text-slate-500">No jobs. Add one above.</li>';
+      return;
+    }
+    ul.innerHTML = jobsData.map(function (j) {
+      var typeLabel = (j.type || 'Intern') === 'Full-time' ? 'FT' : 'Intern';
+      var contactLabel = (j.referralAlumniName || '').trim() ? ' · ' + escapeHtml(j.referralAlumniName) : '';
+      return '<li class="flex items-center justify-between gap-2 py-2 px-2 hover:bg-slate-800/50">' +
+        '<span class="truncate">' + escapeHtml(j.company || '') + ' — ' + escapeHtml(j.title || '') + ' <span class="text-slate-500 font-mono">' + escapeHtml(j.deadline || '') + '</span> <span class="text-slate-500">' + typeLabel + '</span>' + contactLabel + '</span>' +
+        '<button type="button" class="network-manage-delete shrink-0 text-slate-500 hover:text-red-400 text-xs" data-type="job" data-id="' + escapeHtml(String(j.id)) + '">Delete</button>' +
+      '</li>';
+    }).join('');
+    ul.querySelectorAll('.network-manage-delete[data-type="job"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-id');
+        if (!id) return;
+        fetch('/api/network/jobs/' + id, { method: 'DELETE', credentials: 'same-origin' })
+          .then(function (r) { if (r.ok) { loadJobs(); renderManageJobsList(); } });
+      });
+    });
+  }
+
+  function renderManageSessionsList() {
+    var ul = document.getElementById('network-manage-sessions-list');
+    if (!ul) return;
+    if (!upcomingSessionsData.length) {
+      ul.innerHTML = '<li class="py-2 px-2 text-slate-500">No sessions. Add one above.</li>';
+      return;
+    }
+    ul.innerHTML = upcomingSessionsData.map(function (s) {
+      return '<li class="flex items-center justify-between gap-2 py-2 px-2 hover:bg-slate-800/50">' +
+        '<span class="font-mono text-slate-500">' + escapeHtml(s.date || '') + '</span> <span>' + escapeHtml(s.company || '') + ' ' + escapeHtml(s.eventType || '') + '</span>' +
+        '<button type="button" class="network-manage-delete shrink-0 text-slate-500 hover:text-red-400 text-xs" data-type="session" data-id="' + escapeHtml(String(s.id)) + '">Delete</button>' +
+      '</li>';
+    }).join('');
+    ul.querySelectorAll('.network-manage-delete[data-type="session"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-id');
+        if (!id) return;
+        fetch('/api/network/upcoming-sessions/' + id, { method: 'DELETE', credentials: 'same-origin' })
+          .then(function (r) { if (r.ok) { loadJobs(); renderManageSessionsList(); } });
+      });
+    });
+  }
+
+  function renderManagePartnersList() {
+    var ul = document.getElementById('network-manage-partners-list');
+    if (!ul) return;
+    if (!partnerLinksData.length) {
+      ul.innerHTML = '<li class="py-2 px-2 text-slate-500">No partners. Add one above.</li>';
+      return;
+    }
+    ul.innerHTML = partnerLinksData.map(function (p) {
+      return '<li class="flex items-center justify-between gap-2 py-2 px-2 hover:bg-slate-800/50">' +
+        '<span class="truncate">' + escapeHtml(p.name || '') + '</span>' +
+        '<button type="button" class="network-manage-delete shrink-0 text-slate-500 hover:text-red-400 text-xs" data-type="partner" data-id="' + escapeHtml(String(p.id)) + '">Delete</button>' +
+      '</li>';
+    }).join('');
+    ul.querySelectorAll('.network-manage-delete[data-type="partner"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-id');
+        if (!id) return;
+        fetch('/api/network/partner-links/' + id, { method: 'DELETE', credentials: 'same-origin' })
+          .then(function (r) { if (r.ok) { loadJobs(); renderManagePartnersList(); } });
+      });
+    });
   }
 
   function initNetworkView() {
@@ -496,6 +694,80 @@
     if (calNext) calNext.addEventListener('click', function () {
       networkCalendarCurrent.setMonth(networkCalendarCurrent.getMonth() + 1);
       renderCalendar();
+    });
+
+    var addJobsBtn = document.getElementById('network-add-jobs-btn');
+    if (addJobsBtn) addJobsBtn.addEventListener('click', openAddJobsModal);
+    var addJobsModal = document.getElementById('network-add-jobs-modal');
+    var addJobsBackdrop = document.getElementById('network-add-jobs-modal-backdrop');
+    var addJobsClose = document.getElementById('network-add-jobs-modal-close');
+    var addJobsDone = document.getElementById('network-add-jobs-modal-done');
+    if (addJobsBackdrop) addJobsBackdrop.addEventListener('click', closeAddJobsModal);
+    if (addJobsClose) addJobsClose.addEventListener('click', closeAddJobsModal);
+    if (addJobsDone) addJobsDone.addEventListener('click', closeAddJobsModal);
+
+    document.querySelectorAll('.network-manage-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () { switchManageTab(btn.getAttribute('data-manage-tab')); });
+    });
+
+    var manageJobAdd = document.getElementById('manage-job-add-btn');
+    if (manageJobAdd) manageJobAdd.addEventListener('click', function () {
+      var title = (document.getElementById('manage-job-title') && document.getElementById('manage-job-title').value) || '';
+      var company = (document.getElementById('manage-job-company') && document.getElementById('manage-job-company').value) || '';
+      var typeEl = document.getElementById('manage-job-type');
+      var type = (typeEl && typeEl.value) ? typeEl.value.trim() : 'Intern';
+      var deadline = (document.getElementById('manage-job-deadline') && document.getElementById('manage-job-deadline').value) || '';
+      var contact = (document.getElementById('manage-job-contact') && document.getElementById('manage-job-contact').value) || '';
+      var link = (document.getElementById('manage-job-link') && document.getElementById('manage-job-link').value) || '';
+      var isPartner = document.getElementById('manage-job-partner') && document.getElementById('manage-job-partner').checked;
+      var visa = document.getElementById('manage-job-visa') && document.getElementById('manage-job-visa').checked;
+      if (!title.trim() || !company.trim()) return;
+      fetch('/api/network/jobs', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim(), company: company.trim(), type: type, deadline: deadline.trim() || null, referralAlumniName: contact.trim() || null, link: link.trim() || null, is_partner: isPartner, visa_sponsorship: visa })
+      }).then(function (r) {
+        if (r.ok) {
+          loadJobs();
+          renderManageJobsList();
+          var t = document.getElementById('manage-job-title'); if (t) t.value = '';
+          var c = document.getElementById('manage-job-company'); if (c) c.value = '';
+          var typ = document.getElementById('manage-job-type'); if (typ) typ.value = 'Intern';
+          var d = document.getElementById('manage-job-deadline'); if (d) d.value = '';
+          var cont = document.getElementById('manage-job-contact'); if (cont) cont.value = '';
+          var l = document.getElementById('manage-job-link'); if (l) l.value = '';
+          if (document.getElementById('manage-job-partner')) document.getElementById('manage-job-partner').checked = false;
+          if (document.getElementById('manage-job-visa')) document.getElementById('manage-job-visa').checked = false;
+        }
+      });
+    });
+
+    var manageSessionAdd = document.getElementById('manage-session-add-btn');
+    if (manageSessionAdd) manageSessionAdd.addEventListener('click', function () {
+      var date = (document.getElementById('manage-session-date') && document.getElementById('manage-session-date').value) || '';
+      var company = (document.getElementById('manage-session-company') && document.getElementById('manage-session-company').value) || '';
+      var eventType = (document.getElementById('manage-session-event') && document.getElementById('manage-session-event').value) || '';
+      if (!date.trim() || !company.trim()) return;
+      fetch('/api/network/upcoming-sessions', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: date.trim(), company: company.trim(), eventType: eventType.trim() || null })
+      }).then(function (r) { if (r.ok) { loadJobs(); renderManageSessionsList(); document.getElementById('manage-session-date').value = ''; document.getElementById('manage-session-company').value = ''; document.getElementById('manage-session-event').value = ''; } });
+    });
+
+    var managePartnerAdd = document.getElementById('manage-partner-add-btn');
+    if (managePartnerAdd) managePartnerAdd.addEventListener('click', function () {
+      var name = (document.getElementById('manage-partner-name') && document.getElementById('manage-partner-name').value) || '';
+      var url = (document.getElementById('manage-partner-url') && document.getElementById('manage-partner-url').value) || '';
+      if (!name.trim() || !url.trim()) return;
+      fetch('/api/network/partner-links', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), url: url.trim() })
+      }).then(function (r) { if (r.ok) { loadJobs(); renderManagePartnersList(); document.getElementById('manage-partner-name').value = ''; document.getElementById('manage-partner-url').value = ''; } });
     });
   }
 

@@ -212,6 +212,80 @@ class UserAlumniProfile(db.Model):
     user = db.relationship("User", backref=db.backref("alumni_profile", uselist=False))
 
 
+class NetworkJob(db.Model):
+    """Network & Career: Job posting. Editable by PD/PR and super_admin."""
+    __tablename__ = "terminal_network_jobs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(300), nullable=False)
+    company = db.Column(db.String(200), nullable=False)
+    type = db.Column(db.String(32), nullable=False, default="Intern")  # Intern, Full-time
+    deadline = db.Column(db.Date, nullable=True)
+    is_referral = db.Column(db.Boolean, nullable=False, default=False)
+    referral_alumni_id = db.Column(db.Integer, nullable=True)
+    referral_alumni_name = db.Column(db.String(120), nullable=True)
+    link = db.Column(db.String(500), nullable=True)
+    firm_type = db.Column(db.String(32), nullable=True)  # bulge_bracket, big_4, other
+    event_type = db.Column(db.String(64), nullable=True)
+    is_featured = db.Column(db.Boolean, nullable=False, default=False)
+    is_partner = db.Column(db.Boolean, nullable=False, default=False)
+    visa_sponsorship = db.Column(db.Boolean, nullable=False, default=False)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "company": self.company,
+            "type": self.type,
+            "deadline": self.deadline.isoformat() if self.deadline else "",
+            "isReferral": self.is_referral,
+            "referralAlumniId": self.referral_alumni_id,
+            "referralAlumniName": self.referral_alumni_name or "",
+            "link": self.link or "",
+            "firmType": self.firm_type or "other",
+            "eventType": self.event_type or "",
+            "is_featured": self.is_featured,
+            "is_partner": self.is_partner,
+            "visa_sponsorship": self.visa_sponsorship,
+        }
+
+
+class NetworkUpcomingSession(db.Model):
+    """Network & Career: Recruiting calendar event. Editable by PD/PR and super_admin."""
+    __tablename__ = "terminal_network_upcoming_sessions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(32), nullable=False)  # e.g. Mar 04
+    company = db.Column(db.String(200), nullable=False)
+    event_type = db.Column(db.String(64), nullable=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "date": self.date,
+            "company": self.company,
+            "eventType": self.event_type or "",
+        }
+
+
+class NetworkPartnerLink(db.Model):
+    """Network & Career: Corporate partner careers link. Editable by PD/PR and super_admin."""
+    __tablename__ = "terminal_network_partner_links"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def to_dict(self):
+        return {"id": self.id, "name": self.name, "url": self.url}
+
+
 class MeetingNote(db.Model):
     """Meeting Intelligence: Call Report 스타일 노트. 사용자별 목록·저장·편집."""
     __tablename__ = "terminal_meeting_notes"
@@ -1743,9 +1817,9 @@ def _meeting_note_to_dict(note):
 # Network & Career: Alumni Directory + Job Board (data from network.py + UserAlumniProfile)
 # ---------------------------------------------------------------------------
 try:
-    from network import get_alumni_list, get_job_list
+    from network import get_alumni_list, get_job_list, get_upcoming_sessions, get_partner_links
 except ImportError:
-    get_alumni_list = get_job_list = None
+    get_alumni_list = get_job_list = get_upcoming_sessions = get_partner_links = None
 
 
 def _user_alumni_to_directory_item(user, profile):
@@ -1865,13 +1939,196 @@ def api_network_my_alumni_update():
     })
 
 
+def _can_manage_network_jobs():
+    """True if current user is super_admin or PD/PR division. Else None (caller returns 403)."""
+    user = get_current_user()
+    if not user:
+        return False
+    role = (user.get("role") or "").strip()
+    division = (user.get("division") or "").strip()
+    return role == "super_admin" or division == "PD/PR"
+
+
+@terminal_bp.route("/api/network/jobs/can-manage", methods=["GET"])
+@login_required_api
+def api_network_jobs_can_manage():
+    """GET: Whether current user can add/edit jobs (PD/PR or super_admin)."""
+    return jsonify({"canManage": _can_manage_network_jobs()})
+
+
 @terminal_bp.route("/api/network/jobs", methods=["GET"])
 @login_required_api
 def api_network_jobs():
-    """GET: Job board postings (mock data from network.py)."""
-    if get_job_list is None:
-        return jsonify({"jobs": []})
-    return jsonify({"jobs": get_job_list()})
+    """GET: Job board postings + upcoming sessions + partner links (from DB, fallback to network.py)."""
+    jobs = [j.to_dict() for j in NetworkJob.query.order_by(NetworkJob.sort_order, NetworkJob.deadline).all()]
+    upcoming = [s.to_dict() for s in NetworkUpcomingSession.query.order_by(NetworkUpcomingSession.sort_order, NetworkUpcomingSession.date).all()]
+    partners = [p.to_dict() for p in NetworkPartnerLink.query.order_by(NetworkPartnerLink.sort_order).all()]
+    if not jobs and get_job_list:
+        jobs = get_job_list()
+    if not upcoming and get_upcoming_sessions:
+        upcoming = get_upcoming_sessions()
+    if not partners and get_partner_links:
+        partners = get_partner_links()
+    return jsonify({"jobs": jobs, "upcomingSessions": upcoming, "partnerLinks": partners})
+
+
+@terminal_bp.route("/api/network/jobs", methods=["POST"])
+@login_required_api
+def api_network_job_create():
+    """POST: Create job. PD/PR or super_admin only."""
+    if not _can_manage_network_jobs():
+        return jsonify({"error": "Forbidden", "message": "PD/PR or Super Admin only."}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        deadline = None
+        if data.get("deadline"):
+            deadline = date.fromisoformat(str(data["deadline"]).strip()[:10])
+    except Exception:
+        deadline = None
+    job = NetworkJob(
+        title=(data.get("title") or "").strip() or "Untitled",
+        company=(data.get("company") or "").strip() or "",
+        type=(data.get("type") or "Intern").strip() or "Intern",
+        deadline=deadline,
+        is_referral=bool(data.get("isReferral")),
+        referral_alumni_id=data.get("referralAlumniId"),
+        referral_alumni_name=(data.get("referralAlumniName") or "").strip() or None,
+        link=(data.get("link") or "").strip() or None,
+        firm_type=(data.get("firmType") or "").strip() or None,
+        event_type=(data.get("eventType") or "").strip() or None,
+        is_featured=bool(data.get("is_featured")),
+        is_partner=bool(data.get("is_partner")),
+        visa_sponsorship=bool(data.get("visa_sponsorship")),
+    )
+    db.session.add(job)
+    db.session.commit()
+    return jsonify(job.to_dict()), 201
+
+
+@terminal_bp.route("/api/network/jobs/<int:job_id>", methods=["PATCH", "DELETE"])
+@login_required_api
+def api_network_job_update_or_delete(job_id):
+    """PATCH: Update job. DELETE: Remove job. PD/PR or super_admin only."""
+    if not _can_manage_network_jobs():
+        return jsonify({"error": "Forbidden", "message": "PD/PR or Super Admin only."}), 403
+    job = NetworkJob.query.get(job_id)
+    if not job:
+        return jsonify({"error": "Not found"}), 404
+    if request.method == "DELETE":
+        db.session.delete(job)
+        db.session.commit()
+        return jsonify({"ok": True}), 200
+    data = request.get_json(force=True, silent=True) or {}
+    if "title" in data:
+        job.title = (data.get("title") or "").strip() or job.title
+    if "company" in data:
+        job.company = (data.get("company") or "").strip() or job.company
+    if "type" in data:
+        job.type = (data.get("type") or "Intern").strip() or "Intern"
+    if "deadline" in data:
+        try:
+            job.deadline = date.fromisoformat(str(data["deadline"]).strip()[:10]) if data.get("deadline") else None
+        except Exception:
+            pass
+    if "isReferral" in data:
+        job.is_referral = bool(data["isReferral"])
+    if "referralAlumniId" in data:
+        job.referral_alumni_id = data.get("referralAlumniId")
+    if "referralAlumniName" in data:
+        job.referral_alumni_name = (data.get("referralAlumniName") or "").strip() or None
+    if "link" in data:
+        job.link = (data.get("link") or "").strip() or None
+    if "firmType" in data:
+        job.firm_type = (data.get("firmType") or "").strip() or None
+    if "eventType" in data:
+        job.event_type = (data.get("eventType") or "").strip() or None
+    if "is_featured" in data:
+        job.is_featured = bool(data["is_featured"])
+    if "is_partner" in data:
+        job.is_partner = bool(data["is_partner"])
+    if "visa_sponsorship" in data:
+        job.visa_sponsorship = bool(data["visa_sponsorship"])
+    db.session.commit()
+    return jsonify(job.to_dict())
+
+
+@terminal_bp.route("/api/network/upcoming-sessions", methods=["POST"])
+@login_required_api
+def api_network_session_create():
+    """POST: Create upcoming session. PD/PR or super_admin only."""
+    if not _can_manage_network_jobs():
+        return jsonify({"error": "Forbidden", "message": "PD/PR or Super Admin only."}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    s = NetworkUpcomingSession(
+        date=(data.get("date") or "").strip() or "",
+        company=(data.get("company") or "").strip() or "",
+        event_type=(data.get("eventType") or "").strip() or None,
+    )
+    db.session.add(s)
+    db.session.commit()
+    return jsonify(s.to_dict()), 201
+
+
+@terminal_bp.route("/api/network/upcoming-sessions/<int:session_id>", methods=["PATCH", "DELETE"])
+@login_required_api
+def api_network_session_update_or_delete(session_id):
+    """PATCH/DELETE: Update or delete upcoming session. PD/PR or super_admin only."""
+    if not _can_manage_network_jobs():
+        return jsonify({"error": "Forbidden", "message": "PD/PR or Super Admin only."}), 403
+    s = NetworkUpcomingSession.query.get(session_id)
+    if not s:
+        return jsonify({"error": "Not found"}), 404
+    if request.method == "DELETE":
+        db.session.delete(s)
+        db.session.commit()
+        return jsonify({"ok": True}), 200
+    data = request.get_json(force=True, silent=True) or {}
+    if "date" in data:
+        s.date = (data.get("date") or "").strip() or s.date
+    if "company" in data:
+        s.company = (data.get("company") or "").strip() or s.company
+    if "eventType" in data:
+        s.event_type = (data.get("eventType") or "").strip() or None
+    db.session.commit()
+    return jsonify(s.to_dict())
+
+
+@terminal_bp.route("/api/network/partner-links", methods=["POST"])
+@login_required_api
+def api_network_partner_create():
+    """POST: Create partner link. PD/PR or super_admin only."""
+    if not _can_manage_network_jobs():
+        return jsonify({"error": "Forbidden", "message": "PD/PR or Super Admin only."}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    p = NetworkPartnerLink(
+        name=(data.get("name") or "").strip() or "",
+        url=(data.get("url") or "").strip() or "",
+    )
+    db.session.add(p)
+    db.session.commit()
+    return jsonify(p.to_dict()), 201
+
+
+@terminal_bp.route("/api/network/partner-links/<int:link_id>", methods=["PATCH", "DELETE"])
+@login_required_api
+def api_network_partner_update_or_delete(link_id):
+    """PATCH/DELETE: Update or delete partner link. PD/PR or super_admin only."""
+    if not _can_manage_network_jobs():
+        return jsonify({"error": "Forbidden", "message": "PD/PR or Super Admin only."}), 403
+    p = NetworkPartnerLink.query.get(link_id)
+    if not p:
+        return jsonify({"error": "Not found"}), 404
+    if request.method == "DELETE":
+        db.session.delete(p)
+        db.session.commit()
+        return jsonify({"ok": True}), 200
+    data = request.get_json(force=True, silent=True) or {}
+    if "name" in data:
+        p.name = (data.get("name") or "").strip() or p.name
+    if "url" in data:
+        p.url = (data.get("url") or "").strip() or p.url
+    db.session.commit()
+    return jsonify(p.to_dict())
 
 
 def sync_room_memberships():

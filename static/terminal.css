@@ -1085,7 +1085,31 @@
     -webkit-tap-highlight-color: transparent;
   }
   #view-network .network-job-card {
-    min-height: 44px;
+    min-height: 36px;
+  }
+  /* Jobs: Terminal aesthetic — subtle highlight row, sharp borders */
+  #view-network .network-job-row-highlight {
+    border-left-width: 2px;
+    border-left-color: rgb(202, 138, 4);
+  }
+  #view-network .network-job-logo {
+    border-radius: 0;
+  }
+  #view-network .network-job-apply:focus-visible,
+  #view-network .network-partner-link:focus-visible {
+    outline: 1px solid rgba(148, 163, 184, 0.5);
+    outline-offset: 1px;
+  }
+  #view-network .network-sidebar-block {
+    border-color: rgb(30, 41, 59);
+  }
+  #view-network .network-job-view[data-active="true"] {
+    background-color: rgb(30, 41, 59);
+    color: rgb(226, 232, 240);
+  }
+  .network-manage-tab[data-active="true"] {
+    border-bottom-color: rgb(6, 182, 212);
+    color: rgb(34, 211, 238);
   }
   #view-network .network-calendar-grid > div {
     min-height: 36px;
