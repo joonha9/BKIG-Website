@@ -1631,6 +1631,7 @@
       '<div><label class="block text-slate-500 text-xs mb-1">LinkedIn URL</label><input type="url" id="profile-alumni-linkedin" placeholder="https://linkedin.com/in/..." class="' + inputCls + '" style="border-radius:0;"></div>' +
       '<div><label class="block text-slate-500 text-xs mb-1">Email</label><input type="email" id="profile-alumni-email" placeholder="alumni@example.com" class="' + inputCls + '" style="border-radius:0;"></div>' +
       '<div><label class="block text-slate-500 text-xs mb-1">Graduation Year</label><input type="number" id="profile-alumni-year" placeholder="e.g. 2023" min="1990" max="2030" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">자기소개</label><textarea id="profile-alumni-bio" placeholder="Alumni 디렉토리와 Network &amp; Career에 표시됩니다." rows="3" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 resize-y min-h-[72px]" style="border-radius:0;"></textarea></div>' +
       '<label class="flex items-center gap-2 cursor-pointer pt-2">' +
       '<input type="checkbox" id="profile-alumni-show" class="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50">' +
       '<span class="text-slate-400 text-sm">Alumni 디렉토리에 표시</span></label>' +
@@ -1764,6 +1765,7 @@
         set('profile-alumni-linkedin', a.linkedin);
         set('profile-alumni-email', a.email);
         set('profile-alumni-year', a.graduation_year);
+        set('profile-alumni-bio', a.bio || '');
         setCheck('profile-alumni-show', a.show_in_directory);
       })
       .catch(function () {});
@@ -1799,6 +1801,7 @@
           linkedin: (document.getElementById('profile-alumni-linkedin') && document.getElementById('profile-alumni-linkedin').value) ? document.getElementById('profile-alumni-linkedin').value.trim() : '',
           email: (document.getElementById('profile-alumni-email') && document.getElementById('profile-alumni-email').value) ? document.getElementById('profile-alumni-email').value.trim() : '',
           graduation_year: (document.getElementById('profile-alumni-year') && document.getElementById('profile-alumni-year').value) ? parseInt(document.getElementById('profile-alumni-year').value, 10) : null,
+          bio: (document.getElementById('profile-alumni-bio') && document.getElementById('profile-alumni-bio').value) ? document.getElementById('profile-alumni-bio').value.trim() : '',
           show_in_directory: !!(document.getElementById('profile-alumni-show') && document.getElementById('profile-alumni-show').checked)
         };
         if (alumniSaveMsg) alumniSaveMsg.textContent = '저장 중…';
@@ -2712,6 +2715,8 @@
   var ADMIN_PAGE_SIZE = 5;
   var adminRoleChart = null;
   var adminDivisionChart = null;
+  var adminSchoolChart = null;
+  var adminGraduatedChart = null;
   var adminUsageSearchChart = null;
   var adminUsageSectionsChart = null;
 
@@ -2830,7 +2835,16 @@
     var divisionOrder = ['Research', 'Investment', 'Case Study', 'PD/PR', 'Admin'];
     var divisionCounts = {};
     divisionOrder.forEach(function (d) { divisionCounts[d] = 0; });
+    var schoolCounts = {};
+    var graduatedCount = 0;
+    var nonGraduatedCount = 0;
     (users || []).forEach(function (u) {
+      var school = (u.school || '').trim();
+      if (school) {
+        schoolCounts[school] = (schoolCounts[school] || 0) + 1;
+      }
+      if (u.graduated === true) graduatedCount++; else nonGraduatedCount++;
+      if (u.graduated === true) return; // graduated는 Role/Division 인원에서 제외
       var r = normalizeRoleKey(u.role);
       roleCounts[r]++;
       var div = (u.division || '').trim();
@@ -2839,6 +2853,8 @@
         else { divisionOrder.push(div); divisionCounts[div] = 1; }
       }
     });
+    var schoolOrder = Object.keys(schoolCounts).sort();
+    var schoolDataArr = schoolOrder.map(function (s) { return schoolCounts[s] || 0; });
     var roleLabelsArr = roleOrder.map(function (k) { return roleLabels[k]; });
     var roleDataArr = roleOrder.map(function (k) { return roleCounts[k] || 0; });
     var divisionDataArr = divisionOrder.map(function (d) { return divisionCounts[d] || 0; });
@@ -2909,9 +2925,83 @@
       });
     }
 
+    var schoolCanvas = document.getElementById('admin-school-chart');
+    if (schoolCanvas) {
+      if (adminSchoolChart) { adminSchoolChart.destroy(); adminSchoolChart = null; }
+      var schoolColors = ['#334155', '#475569', '#64748b', '#94a3b8', '#0ea5e9', '#f59e0b', '#10b981'];
+      var sc = schoolOrder.map(function (_, i) { return schoolColors[i % schoolColors.length]; });
+      adminSchoolChart = new Chart(schoolCanvas, {
+        type: 'bar',
+        data: {
+          labels: schoolOrder.length ? schoolOrder : ['(없음)'],
+          datasets: [{
+            data: schoolOrder.length ? schoolDataArr : [0],
+            backgroundColor: sc,
+            borderSkipped: false,
+            borderRadius: 4,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 8 },
+          scales: {
+            x: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
+            y: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function (context) { return (context.parsed.x || 0) + '명'; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    var graduatedCanvas = document.getElementById('admin-graduated-chart');
+    if (graduatedCanvas) {
+      if (adminGraduatedChart) { adminGraduatedChart.destroy(); adminGraduatedChart = null; }
+      var gradLabels = ['졸업하지 않은 사람', '졸업한 사람'];
+      var gradData = [nonGraduatedCount, graduatedCount];
+      var gradColors = ['#0ea5e9', '#64748b'];
+      adminGraduatedChart = new Chart(graduatedCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: gradLabels,
+          datasets: [{ data: gradData, backgroundColor: gradColors, borderColor: '#0f172a', borderWidth: 2 }]
+        },
+        options: {
+          cutout: '60%',
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          layout: { padding: 8 },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  var total = gradData[0] + gradData[1];
+                  var pct = total ? ((context.parsed / total) * 100).toFixed(1) : '0';
+                  return context.label + ': ' + context.parsed + '명 (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
     requestAnimationFrame(function () {
       if (adminRoleChart) adminRoleChart.resize();
       if (adminDivisionChart) adminDivisionChart.resize();
+      if (adminSchoolChart) adminSchoolChart.resize();
+      if (adminGraduatedChart) adminGraduatedChart.resize();
     });
   }
 

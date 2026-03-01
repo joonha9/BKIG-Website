@@ -74,6 +74,8 @@
       ? '<button type="button" class="network-connect-email inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-slate-600/80 hover:bg-slate-500/80 text-slate-200 transition-colors" data-email="' + escapeHtml(email) + '" title="Copy email">Email</button>'
       : '';
     var connectActions = [linkedinBtn, emailBtn].filter(Boolean).join('');
+    var bio = (profile.bio || '').trim();
+    var bioHtml = bio ? '<p class="mt-2 text-xs text-slate-400 break-words">' + escapeHtml(bio) + '</p>' : '';
     return (
       '<div class="network-alumni-card bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-slate-600/80 active:border-slate-500/80 transition-colors flex flex-col touch-manipulation">' +
         '<div class="flex items-start gap-3">' +
@@ -83,6 +85,7 @@
             '<p class="text-xs text-slate-400 truncate">' + escapeHtml(profile.role) + '</p>' +
             '<p class="text-xs text-slate-500 truncate">' + escapeHtml(profile.company) + '</p>' +
             '<div class="mt-2">' + statusBadge(profile.status) + '</div>' +
+            bioHtml +
           '</div>' +
         '</div>' +
         (tagsHtml ? '<div class="mt-3 flex flex-wrap gap-1.5">' + tagsHtml + '</div>' : '') +

@@ -206,6 +206,7 @@ class UserAlumniProfile(db.Model):
     linkedin = db.Column(db.String(500), nullable=True)
     email = db.Column(db.String(255), nullable=True)     # alumni contact email; if null, directory uses User.email
     graduation_year = db.Column(db.Integer, nullable=True)
+    bio = db.Column(db.Text, nullable=True)  # 자기소개 (Network & Career에 표시)
     show_in_directory = db.Column(db.Boolean, nullable=False, default=False)
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.now(), onupdate=db.func.now())
 
@@ -1837,6 +1838,7 @@ def _user_alumni_to_directory_item(user, profile):
         "tags": tags,
         "contactInfo": {"email": (profile.email or user.email) or "", "linkedin": profile.linkedin or ""},
         "graduationYear": profile.graduation_year,
+        "bio": (profile.bio or "").strip() or None,
         "avatarUrl": None,
         "companyLogoUrl": None,
     }
@@ -1879,6 +1881,7 @@ def api_network_my_alumni_get():
             "linkedin": profile.linkedin or "",
             "email": getattr(profile, "email", None) or "",
             "graduation_year": profile.graduation_year,
+            "bio": (profile.bio or "").strip() or "",
             "show_in_directory": profile.show_in_directory,
         }
     })
@@ -1918,6 +1921,8 @@ def api_network_my_alumni_update():
     if "graduation_year" in data:
         y = data.get("graduation_year")
         profile.graduation_year = int(y) if y is not None and str(y).strip() else None
+    if "bio" in data:
+        profile.bio = (data.get("bio") or "").strip() or None
     if "show_in_directory" in data:
         profile.show_in_directory = bool(data["show_in_directory"])
     db.session.commit()
@@ -1934,6 +1939,7 @@ def api_network_my_alumni_update():
             "linkedin": profile.linkedin or "",
             "email": getattr(profile, "email", None) or "",
             "graduation_year": profile.graduation_year,
+            "bio": (profile.bio or "").strip() or "",
             "show_in_directory": profile.show_in_directory,
         }
     })
