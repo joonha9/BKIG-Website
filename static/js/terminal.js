@@ -24,13 +24,19 @@
     'view-calendar': 'Earnings & Macro',
     'view-internal-research': 'Research',
     'view-meeting-intelligence': 'Meeting Intel',
+    'view-network': 'Network & Career',
     'view-profile': 'Profile',
     'view-admin': 'Admin'
   };
 
+  var GRADUATED_ALLOWED_VIEWS = ['view-profile', 'view-network'];
+
   function showView(viewId) {
+    var user = window.TERMINAL_CURRENT_USER;
+    if (user && user.graduated === true && GRADUATED_ALLOWED_VIEWS.indexOf(viewId) === -1) {
+      viewId = 'view-profile';
+    }
     if (viewId === 'view-dart') {
-      var user = window.TERMINAL_CURRENT_USER;
       if (!user || user.role !== 'super_admin') {
         if (typeof alert === 'function') alert('DART 공시는 Super Admin만 이용할 수 있습니다.');
         return;
@@ -92,6 +98,9 @@
     if (viewId === 'view-meeting-intelligence') {
       if (typeof window.loadMeetingNotesList === 'function') window.loadMeetingNotesList();
     }
+    if (viewId === 'view-network') {
+      if (typeof window.initNetworkView === 'function') window.initNetworkView();
+    }
     if (viewId === 'view-profile') loadProfileView();
     if (viewId === 'view-comms') {
       if (typeof loadCommsRooms === 'function') loadCommsRooms();
@@ -99,13 +108,26 @@
   }
 
   function initTabRouting() {
+    var user = window.TERMINAL_CURRENT_USER;
+    if (user && user.graduated === true) {
+      document.querySelectorAll('.bkig-lnb nav ul li').forEach(function (li) {
+        if (li.getAttribute('data-allowed-when-graduated') !== 'true') {
+          li.style.display = 'none';
+        }
+      });
+      var visibleSection = document.querySelector('main section[id^="view-"]:not(.hidden)');
+      var visibleId = visibleSection ? visibleSection.id : null;
+      if (visibleId && GRADUATED_ALLOWED_VIEWS.indexOf(visibleId) === -1) {
+        showView('view-profile');
+      }
+    }
     document.querySelectorAll('.bkig-nav-item').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const viewId = btn.getAttribute(VIEW_ATTR);
         if (!viewId) return;
         if (btn.getAttribute('data-requires-super-admin') === 'true') {
-          var user = window.TERMINAL_CURRENT_USER;
-          if (!user || user.role !== 'super_admin') {
+          var u = window.TERMINAL_CURRENT_USER;
+          if (!u || u.role !== 'super_admin') {
             if (typeof alert === 'function') alert('DART 공시는 Super Admin만 이용할 수 있습니다.');
             return;
           }
@@ -113,9 +135,9 @@
         showView(viewId);
       });
     });
-    // 초기: Dashboard 활성
+    // 초기: Dashboard 활성 (graduated면 showView('view-profile')가 이미 호출됐을 수 있음)
     var firstNav = document.querySelector('.bkig-nav-item');
-    if (firstNav) {
+    if (firstNav && (!user || !user.graduated)) {
       firstNav.classList.add.apply(firstNav.classList, ACTIVE_NAV_CLASSES);
     }
     // 최초 로드 시 Dashboard가 보이면 데이터 로드 (Loading 해제)
@@ -1547,6 +1569,26 @@
       '<div class="flex gap-2 pt-2">' +
       '<button type="button" id="profile-save-btn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-sm transition-colors" style="border-radius:0;">프로필 저장</button>' +
       '<span id="profile-save-message" class="py-2 text-slate-400 text-xs"></span></div>' +
+      '<div id="profile-alumni-section" class="pt-4 mt-4 border-t border-slate-700">' +
+      '<div class="text-slate-500 text-xs uppercase tracking-wider mb-3">My Alumni Info (Network &amp; Career)</div>' +
+      '<p class="text-slate-400 text-xs mb-3">Alumni 디렉토리에 표시할 정보를 입력하세요. &quot;Alumni 디렉토리에 표시&quot;를 켜면 다른 멤버가 검색할 수 있습니다.</p>' +
+      '<div class="space-y-3">' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Company</label><input type="text" id="profile-alumni-company" placeholder="e.g. Goldman Sachs" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Role</label><input type="text" id="profile-alumni-role" placeholder="e.g. Analyst, IB" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Industry</label><select id="profile-alumni-industry" class="' + inputCls + '" style="border-radius:0;"><option value="">—</option><option value="IB">IB</option><option value="PE">PE</option><option value="HF">HF</option><option value="Audit">Audit</option><option value="Tech">Tech</option><option value="__other__">Other (type below)</option></select><input type="text" id="profile-alumni-industry-other" placeholder="Industry" class="' + inputCls + ' mt-1 hidden" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Location</label><select id="profile-alumni-location" class="' + inputCls + '" style="border-radius:0;"><option value="">—</option><option value="NYC">NYC</option><option value="Seoul">Seoul</option><option value="HK">HK</option><option value="__other__">Other (type below)</option></select><input type="text" id="profile-alumni-location-other" placeholder="Location" class="' + inputCls + ' mt-1 hidden" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Status</label><select id="profile-alumni-status" class="' + inputCls + '" style="border-radius:0;"><option value="email_me">Email Me</option><option value="open_for_coffee">Open for Coffee Chat</option><option value="busy">Busy</option></select></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Tags (comma-separated)</label><input type="text" id="profile-alumni-tags" placeholder="e.g. M&amp;A, Quant, CPA" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">LinkedIn URL</label><input type="url" id="profile-alumni-linkedin" placeholder="https://linkedin.com/in/..." class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Email</label><input type="email" id="profile-alumni-email" placeholder="alumni@example.com" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<div><label class="block text-slate-500 text-xs mb-1">Graduation Year</label><input type="number" id="profile-alumni-year" placeholder="e.g. 2023" min="1990" max="2030" class="' + inputCls + '" style="border-radius:0;"></div>' +
+      '<label class="flex items-center gap-2 cursor-pointer pt-2">' +
+      '<input type="checkbox" id="profile-alumni-show" class="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50">' +
+      '<span class="text-slate-400 text-sm">Alumni 디렉토리에 표시</span></label>' +
+      '<div class="flex gap-2 pt-2">' +
+      '<button type="button" id="profile-alumni-save-btn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-sm transition-colors" style="border-radius:0;">Alumni 정보 저장</button>' +
+      '<span id="profile-alumni-save-message" class="py-2 text-slate-400 text-xs"></span></div>' +
+      '</div></div>' +
       '<div id="profile-faccting-nickname-row" class="pt-4 mt-4 border-t border-slate-700"><label class="block text-slate-500 text-xs mb-1">FACCTing Nickname</label><p id="profile-faccting-nickname" class="text-slate-200">' + (nickname ? escapeHtml(nickname) : '—') + '</p></div>' +
       '<div class="mt-4"><label class="block text-slate-500 text-xs mb-1">FACCTing API Token</label>' +
       '<input type="password" id="profile-token-input" value="' + escapeHtml(token) + '" placeholder="Paste token (stored in browser only)" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 text-slate-200 font-mono text-sm mt-1" style="border-radius:0;">' +
@@ -1628,6 +1670,104 @@
         updateSidebarFacctingNickname();
         var nickEl = document.getElementById('profile-faccting-nickname');
         if (nickEl && nick) nickEl.textContent = nick;
+      });
+    }
+    // My Alumni: load and save
+    fetch('/api/network/my-alumni', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (data) {
+        var a = data.alumni;
+        if (!a) return;
+        var set = function (id, val) {
+          var el = document.getElementById(id);
+          if (el && val != null && val !== '') el.value = val;
+        };
+        var setCheck = function (id, val) {
+          var el = document.getElementById(id);
+          if (el) el.checked = !!val;
+        };
+        set('profile-alumni-company', a.company);
+        set('profile-alumni-role', a.role);
+        var industryOpts = ['', 'IB', 'PE', 'HF', 'Audit', 'Tech'];
+        if (a.industry && industryOpts.indexOf(a.industry) >= 0) {
+          set('profile-alumni-industry', a.industry);
+          var io = document.getElementById('profile-alumni-industry-other');
+          if (io) { io.classList.add('hidden'); io.value = ''; }
+        } else if (a.industry) {
+          set('profile-alumni-industry', '__other__');
+          set('profile-alumni-industry-other', a.industry);
+          var io = document.getElementById('profile-alumni-industry-other');
+          if (io) io.classList.remove('hidden');
+        }
+        var locationOpts = ['', 'NYC', 'Seoul', 'HK'];
+        if (a.location && locationOpts.indexOf(a.location) >= 0) {
+          set('profile-alumni-location', a.location);
+          var lo = document.getElementById('profile-alumni-location-other');
+          if (lo) { lo.classList.add('hidden'); lo.value = ''; }
+        } else if (a.location) {
+          set('profile-alumni-location', '__other__');
+          set('profile-alumni-location-other', a.location);
+          var lo = document.getElementById('profile-alumni-location-other');
+          if (lo) lo.classList.remove('hidden');
+        }
+        set('profile-alumni-status', a.status || 'email_me');
+        set('profile-alumni-tags', Array.isArray(a.tags) ? a.tags.join(', ') : (a.tags || ''));
+        set('profile-alumni-linkedin', a.linkedin);
+        set('profile-alumni-email', a.email);
+        set('profile-alumni-year', a.graduation_year);
+        setCheck('profile-alumni-show', a.show_in_directory);
+      })
+      .catch(function () {});
+    function toggleIndustryOther(show) {
+      var el = document.getElementById('profile-alumni-industry-other');
+      if (el) { el.classList.toggle('hidden', !show); if (!show) el.value = ''; }
+    }
+    function toggleLocationOther(show) {
+      var el = document.getElementById('profile-alumni-location-other');
+      if (el) { el.classList.toggle('hidden', !show); if (!show) el.value = ''; }
+    }
+    var industrySelect = document.getElementById('profile-alumni-industry');
+    if (industrySelect) industrySelect.addEventListener('change', function () { toggleIndustryOther(industrySelect.value === '__other__'); });
+    var locationSelect = document.getElementById('profile-alumni-location');
+    if (locationSelect) locationSelect.addEventListener('change', function () { toggleLocationOther(locationSelect.value === '__other__'); });
+    var alumniSaveBtn = document.getElementById('profile-alumni-save-btn');
+    var alumniSaveMsg = document.getElementById('profile-alumni-save-message');
+    if (alumniSaveBtn) {
+      alumniSaveBtn.addEventListener('click', function () {
+        var industrySel = document.getElementById('profile-alumni-industry');
+        var industryOther = document.getElementById('profile-alumni-industry-other');
+        var industryVal = industrySel && industrySel.value === '__other__' && industryOther ? (industryOther.value || '').trim() : (industrySel && industrySel.value && industrySel.value !== '__other__' ? industrySel.value.trim() : '');
+        var locationSel = document.getElementById('profile-alumni-location');
+        var locationOther = document.getElementById('profile-alumni-location-other');
+        var locationVal = locationSel && locationSel.value === '__other__' && locationOther ? (locationOther.value || '').trim() : (locationSel && locationSel.value && locationSel.value !== '__other__' ? locationSel.value.trim() : '');
+        var payload = {
+          company: (document.getElementById('profile-alumni-company') && document.getElementById('profile-alumni-company').value) ? document.getElementById('profile-alumni-company').value.trim() : '',
+          role: (document.getElementById('profile-alumni-role') && document.getElementById('profile-alumni-role').value) ? document.getElementById('profile-alumni-role').value.trim() : '',
+          industry: industryVal,
+          location: locationVal,
+          status: (document.getElementById('profile-alumni-status') && document.getElementById('profile-alumni-status').value) ? document.getElementById('profile-alumni-status').value : 'email_me',
+          tags: (document.getElementById('profile-alumni-tags') && document.getElementById('profile-alumni-tags').value) ? document.getElementById('profile-alumni-tags').value.trim().split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [],
+          linkedin: (document.getElementById('profile-alumni-linkedin') && document.getElementById('profile-alumni-linkedin').value) ? document.getElementById('profile-alumni-linkedin').value.trim() : '',
+          email: (document.getElementById('profile-alumni-email') && document.getElementById('profile-alumni-email').value) ? document.getElementById('profile-alumni-email').value.trim() : '',
+          graduation_year: (document.getElementById('profile-alumni-year') && document.getElementById('profile-alumni-year').value) ? parseInt(document.getElementById('profile-alumni-year').value, 10) : null,
+          show_in_directory: !!(document.getElementById('profile-alumni-show') && document.getElementById('profile-alumni-show').checked)
+        };
+        if (alumniSaveMsg) alumniSaveMsg.textContent = '저장 중…';
+        fetch('/api/network/my-alumni', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'same-origin'
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            if (res.ok) {
+              if (alumniSaveMsg) alumniSaveMsg.textContent = '저장되었습니다.';
+              setTimeout(function () { if (alumniSaveMsg) alumniSaveMsg.textContent = ''; }, 2500);
+            } else {
+              if (alumniSaveMsg) alumniSaveMsg.textContent = (data && data.message) ? data.message : '저장 실패';
+            }
+          }).catch(function () { if (alumniSaveMsg) alumniSaveMsg.textContent = '저장 실패'; });
+        }).catch(function () { if (alumniSaveMsg) alumniSaveMsg.textContent = '네트워크 오류'; });
       });
     }
   }
@@ -2326,16 +2466,26 @@
     const tbody = document.getElementById('user-table-body');
     if (!tbody) return;
     const active = u => u.is_active !== false;
+    const graduated = u => u.graduated === true;
     tbody.innerHTML = users.length
       ? users
           .map(function (u) {
-            const statusHtml = active(u)
-              ? '<span class="text-emerald-400/90 text-xs font-medium">Active</span>'
-              : '<span class="text-amber-400/90 text-xs font-medium">Paused</span>';
+            var statusHtml;
+            if (graduated(u)) {
+              statusHtml = '<span class="text-slate-400 text-xs font-medium">Graduated</span>';
+            } else {
+              statusHtml = active(u)
+                ? '<span class="text-emerald-400/90 text-xs font-medium">Active</span>'
+                : '<span class="text-amber-400/90 text-xs font-medium">Paused</span>';
+            }
             const pauseLabel = active(u) ? 'Pause Account' : 'Resume Account';
             const pauseClass = active(u)
               ? 'admin-btn-pause text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
               : 'admin-btn-resume text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10';
+            const gradLabel = graduated(u) ? 'Unset Graduated' : 'Graduated';
+            const gradClass = graduated(u)
+              ? 'admin-btn-graduated text-slate-400 hover:text-slate-300 hover:bg-slate-600/50'
+              : 'admin-btn-graduated text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10';
             var teamDisplay = (u.team != null && u.team !== '') ? escapeHtml(String(u.team)) : '—';
             var schoolDisplay = (u.school || '').trim() ? escapeHtml(u.school) : '—';
             return (
@@ -2350,6 +2500,7 @@
               '<td class="px-4 py-3">' +
               '<button type="button" class="admin-btn-edit mr-2 px-2 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-600 transition-colors" data-user-id="' + escapeHtml(String(u.id)) + '">Edit</button>' +
               '<button type="button" class="admin-btn-pause-resume mr-2 px-2 py-1 rounded text-xs font-medium transition-colors ' + pauseClass + '" data-user-id="' + escapeHtml(String(u.id)) + '" data-active="' + (active(u) ? '1' : '0') + '">' + escapeHtml(pauseLabel) + '</button>' +
+              '<button type="button" class="' + gradClass + ' mr-2 px-2 py-1 rounded text-xs font-medium transition-colors" data-user-id="' + escapeHtml(String(u.id)) + '" data-graduated="' + (graduated(u) ? '1' : '0') + '">' + escapeHtml(gradLabel) + '</button>' +
               '<button type="button" class="admin-btn-terminate px-2 py-1 rounded text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors" data-user-id="' + escapeHtml(String(u.id)) + '">Terminate Account</button>' +
               '</td>' +
               '</tr>'
@@ -2365,6 +2516,24 @@
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: setActive }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(function () { return {}; });
+        alert(d.message || d.error || 'Request failed');
+        return;
+      }
+      await loadAdminUsers();
+    } catch (e) {
+      alert('Network error.');
+    }
+  }
+
+  async function toggleGraduatedUser(userId, setGraduated) {
+    try {
+      const res = await fetch('/api/users/' + userId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ graduated: setGraduated }),
       });
       if (!res.ok) {
         const d = await res.json().catch(function () { return {}; });
@@ -2444,6 +2613,14 @@
         const id = btn.getAttribute('data-user-id');
         const active = btn.getAttribute('data-active') === '1';
         if (id) pauseResumeUser(id, !active);
+        return;
+      }
+      const gradBtn = e.target.closest('.admin-btn-graduated');
+      if (gradBtn) {
+        e.preventDefault();
+        const id = gradBtn.getAttribute('data-user-id');
+        const graduated = gradBtn.getAttribute('data-graduated') === '1';
+        if (id) toggleGraduatedUser(id, !graduated);
         return;
       }
       const termBtn = e.target.closest('.admin-btn-terminate');

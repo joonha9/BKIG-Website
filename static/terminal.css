@@ -43,6 +43,24 @@
   transform: scale(0.98);
 }
 
+/* Network & Career: expandable filters panel (all breakpoints) */
+#view-network .network-filters-panel {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+}
+#view-network .network-filters-panel.is-open {
+  max-height: 380px;
+  opacity: 1;
+}
+#view-network .network-filters-chevron {
+  transition: transform 0.2s ease;
+}
+#view-network .network-filters-bar:has(.network-filters-panel.is-open) .network-filters-chevron {
+  transform: rotate(180deg);
+}
+
 /* 모달: Glassmorphism 배경 */
 .glass-overlay {
   background: rgba(2, 6, 23, 0.72);
@@ -1027,6 +1045,7 @@
   #view-watchlist,
   #view-internal-research,
   #view-meeting-intelligence,
+  #view-network,
   #view-financial-tools,
   #view-profile,
   #view-admin {
@@ -1045,6 +1064,44 @@
   /* 대시보드 그리드: 첫 화면에 바로 보이도록 */
   #view-dashboard .grid {
     min-height: min-content;
+  }
+
+  /* Network & Career: 모바일 필터 상단, 터치 친화, safe area */
+  #view-network.network-view {
+    padding-left: max(0.75rem, env(safe-area-inset-left)) !important;
+    padding-right: max(0.75rem, env(safe-area-inset-right)) !important;
+    padding-top: max(0.5rem, env(safe-area-inset-top)) !important;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom)) !important;
+  }
+  #view-network .network-filters-bar {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  #view-network .network-filter-chip {
+    -webkit-tap-highlight-color: transparent;
+  }
+  #view-network .network-alumni-card {
+    min-height: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #view-network .network-job-card {
+    min-height: 44px;
+  }
+  #view-network .network-calendar-grid > div {
+    min-height: 36px;
+  }
+  /* Filter chip selected state (when checkbox inside is checked) */
+  #view-network .network-filter-chip:has(input:checked) {
+    border-color: rgba(6, 182, 212, 0.6);
+    background-color: rgba(6, 182, 212, 0.2);
+    color: rgb(103, 232, 249);
+  }
+  #view-network .network-tabs,
+  #view-network .network-filters-bar {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   /* 메인 영역 우상단 로고: 모바일에서는 헤더에만 표시 */

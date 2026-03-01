@@ -67,6 +67,7 @@ class User(db.Model):
     team = db.Column(db.Integer, nullable=True)  # 팀 번호 (숫자) — legacy/display
     role = db.Column(db.String(32), nullable=False, default="analyst")  # super_admin, division_lead, team_lead, analyst
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    graduated = db.Column(db.Boolean, default=False, nullable=False)  # True = Profile & Network & Career only
     watchlist = db.Column(db.String(120), nullable=True)  # 최대 3개 티커, 쉼표 구분 예: "AAPL,TSLA,MSFT"
     faccting_token = db.Column(db.String(512), nullable=True)  # FACCTing API token for portfolio/ranking (연동 유저만 랭킹 노출)
     division_id = db.Column(db.Integer, db.ForeignKey("terminal_divisions.id"), nullable=True)
@@ -85,6 +86,7 @@ class User(db.Model):
             "team": getattr(self, "team", None),
             "role": self.role,
             "is_active": getattr(self, "is_active", True),
+            "graduated": getattr(self, "graduated", False),
             "division_id": getattr(self, "division_id", None),
             "team_id": getattr(self, "team_id", None),
         }
@@ -187,6 +189,27 @@ class InternalResearchDocument(db.Model):
     uploaded_by_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=True)
 
     uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])
+
+
+class UserAlumniProfile(db.Model):
+    """Network & Career: 사용자별 Alumni 디렉토리 정보. 프로필에서 입력·표시 여부 선택."""
+    __tablename__ = "terminal_user_alumni_profiles"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=False, unique=True)
+    company = db.Column(db.String(200), nullable=True)
+    role = db.Column(db.String(200), nullable=True)
+    industry = db.Column(db.String(64), nullable=True)  # IB, PE, HF, Audit, Tech
+    location = db.Column(db.String(64), nullable=True)   # NYC, Seoul, HK
+    status = db.Column(db.String(32), nullable=True, default="email_me")  # open_for_coffee, busy, email_me
+    tags = db.Column(db.String(500), nullable=True)     # comma-separated e.g. M&A, Quant, CPA
+    linkedin = db.Column(db.String(500), nullable=True)
+    email = db.Column(db.String(255), nullable=True)     # alumni contact email; if null, directory uses User.email
+    graduation_year = db.Column(db.Integer, nullable=True)
+    show_in_directory = db.Column(db.Boolean, nullable=False, default=False)
+    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.now(), onupdate=db.func.now())
+
+    user = db.relationship("User", backref=db.backref("alumni_profile", uselist=False))
 
 
 class MeetingNote(db.Model):
@@ -393,6 +416,32 @@ def login_required_api(f):
     return inner
 
 
+# Graduated users: only Profile & Network & Career (these paths allowed)
+GRADUATED_ALLOWED_PATHS = (
+    "/api/me",
+    "/api/logout",
+    "/api/network/alumni",
+    "/api/network/jobs",
+    "/api/network/my-alumni",
+)
+
+
+@terminal_bp.before_request
+def restrict_graduated_access():
+    """Graduated users may only access Profile and Network & Career (and logout)."""
+    if not session.get(SESSION_USER_ID):
+        return None
+    user = get_current_user()
+    if not user or not user.get("graduated"):
+        return None
+    path = request.path
+    if path.startswith("/api/"):
+        base = path.split("?")[0].rstrip("/")
+        if not any(base == p or base.startswith(p + "/") for p in GRADUATED_ALLOWED_PATHS):
+            return jsonify({"error": "Forbidden", "message": "Graduated accounts have access only to Profile and Network & Career."}), 403
+    return None
+
+
 def get_current_user():
     """현재 로그인 사용자. 세션의 user_id로 DB 조회 후 dict 반환. 없으면 None."""
     user_id = session.get(SESSION_USER_ID)
@@ -408,6 +457,8 @@ def get_current_user():
         "school": getattr(user, "school", None) or "",
         "division": user.division,
         "role": user.role,
+        "is_active": getattr(user, "is_active", True),
+        "graduated": getattr(user, "graduated", False),
         "division_id": getattr(user, "division_id", None),
         "team_id": getattr(user, "team_id", None),
     }
@@ -1677,6 +1728,141 @@ def _meeting_note_to_dict(note):
     }
 
 
+# ---------------------------------------------------------------------------
+# Network & Career: Alumni Directory + Job Board (data from network.py + UserAlumniProfile)
+# ---------------------------------------------------------------------------
+try:
+    from network import get_alumni_list, get_job_list
+except ImportError:
+    get_alumni_list = get_job_list = None
+
+
+def _user_alumni_to_directory_item(user, profile):
+    """User + UserAlumniProfile -> directory item (same shape as mock AlumniProfile)."""
+    tags_str = profile.tags or ""
+    tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+    return {
+        "id": 10000 + user.id,  # avoid clash with mock ids
+        "name": user.name,
+        "company": profile.company or "",
+        "role": profile.role or "",
+        "industry": profile.industry or "",
+        "location": profile.location or "",
+        "status": profile.status or "email_me",
+        "tags": tags,
+        "contactInfo": {"email": (profile.email or user.email) or "", "linkedin": profile.linkedin or ""},
+        "graduationYear": profile.graduation_year,
+        "avatarUrl": None,
+        "companyLogoUrl": None,
+    }
+
+
+@terminal_bp.route("/api/network/alumni", methods=["GET"])
+@login_required_api
+def api_network_alumni():
+    """GET: Alumni directory = mock data + user profiles with show_in_directory=True."""
+    alumni = []
+    if get_alumni_list is not None:
+        alumni = list(get_alumni_list())
+    for profile in UserAlumniProfile.query.filter_by(show_in_directory=True).all():
+        user = profile.user
+        if user and user.is_active:
+            alumni.append(_user_alumni_to_directory_item(user, profile))
+    return jsonify({"alumni": alumni})
+
+
+@terminal_bp.route("/api/network/my-alumni", methods=["GET"])
+@login_required_api
+def api_network_my_alumni_get():
+    """GET: 현재 사용자의 Alumni 프로필 (프로필 페이지 입력용)."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    profile = UserAlumniProfile.query.filter_by(user_id=user["id"]).first()
+    if not profile:
+        return jsonify({"alumni": None})
+    tags_str = profile.tags or ""
+    tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+    return jsonify({
+        "alumni": {
+            "company": profile.company or "",
+            "role": profile.role or "",
+            "industry": profile.industry or "",
+            "location": profile.location or "",
+            "status": profile.status or "email_me",
+            "tags": tags,
+            "linkedin": profile.linkedin or "",
+            "email": getattr(profile, "email", None) or "",
+            "graduation_year": profile.graduation_year,
+            "show_in_directory": profile.show_in_directory,
+        }
+    })
+
+
+@terminal_bp.route("/api/network/my-alumni", methods=["PATCH", "PUT"])
+@login_required_api
+def api_network_my_alumni_update():
+    """PATCH/PUT: 현재 사용자의 Alumni 프로필 저장 (표시 여부 포함)."""
+    user_dict = get_current_user()
+    if not user_dict:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    profile = UserAlumniProfile.query.filter_by(user_id=user_dict["id"]).first()
+    if not profile:
+        profile = UserAlumniProfile(user_id=user_dict["id"])
+        db.session.add(profile)
+    if "company" in data:
+        profile.company = (data.get("company") or "").strip() or None
+    if "role" in data:
+        profile.role = (data.get("role") or "").strip() or None
+    if "industry" in data:
+        profile.industry = (data.get("industry") or "").strip() or None
+    if "location" in data:
+        profile.location = (data.get("location") or "").strip() or None
+    if "status" in data:
+        profile.status = (data.get("status") or "email_me").strip() or "email_me"
+    if "tags" in data:
+        if isinstance(data["tags"], list):
+            profile.tags = ",".join(str(t).strip() for t in data["tags"] if str(t).strip())
+        else:
+            profile.tags = (data.get("tags") or "").strip() or None
+    if "linkedin" in data:
+        profile.linkedin = (data.get("linkedin") or "").strip() or None
+    if "email" in data:
+        profile.email = (data.get("email") or "").strip() or None
+    if "graduation_year" in data:
+        y = data.get("graduation_year")
+        profile.graduation_year = int(y) if y is not None and str(y).strip() else None
+    if "show_in_directory" in data:
+        profile.show_in_directory = bool(data["show_in_directory"])
+    db.session.commit()
+    tags_str = profile.tags or ""
+    tags_list = [t.strip() for t in tags_str.split(",") if t.strip()]
+    return jsonify({
+        "alumni": {
+            "company": profile.company or "",
+            "role": profile.role or "",
+            "industry": profile.industry or "",
+            "location": profile.location or "",
+            "status": profile.status or "email_me",
+            "tags": tags_list,
+            "linkedin": profile.linkedin or "",
+            "email": getattr(profile, "email", None) or "",
+            "graduation_year": profile.graduation_year,
+            "show_in_directory": profile.show_in_directory,
+        }
+    })
+
+
+@terminal_bp.route("/api/network/jobs", methods=["GET"])
+@login_required_api
+def api_network_jobs():
+    """GET: Job board postings (mock data from network.py)."""
+    if get_job_list is None:
+        return jsonify({"jobs": []})
+    return jsonify({"jobs": get_job_list()})
+
+
 def sync_room_memberships():
     """
     Ensure room memberships by role:
@@ -2449,9 +2635,12 @@ def api_user_by_id(user_id):
                 user.password_hash = generate_password_hash(data.get("password"))
             db.session.commit()
             return jsonify({"user": user.to_dict()})
-        if is_active is None:
-            return jsonify({"error": "Bad request", "message": "is_active or edit fields required"}), 400
-        user.is_active = bool(is_active)
+        if is_active is None and data.get("graduated") is None:
+            return jsonify({"error": "Bad request", "message": "is_active, graduated, or edit fields required"}), 400
+        if is_active is not None:
+            user.is_active = bool(is_active)
+        if data.get("graduated") is not None:
+            user.graduated = bool(data["graduated"])
         db.session.commit()
         return jsonify({"user": user.to_dict()})
 

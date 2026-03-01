@@ -87,6 +87,11 @@
             Meeting Intelligence
           </button>
         </li>
+        <li data-allowed-when-graduated="true">
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-network">
+            Network &amp; Career
+          </button>
+        </li>
         {% if current_user.role == 'super_admin' %}
         <li>
           <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-amber-400/90 hover:bg-amber-500/10 hover:text-amber-300 transition-all duration-200" data-view="view-admin">
@@ -686,6 +691,108 @@
       <div id="meeting-intel-pdf-source" class="hidden meeting-intel-pdf-source" aria-hidden="true"></div>
     </section>
 
+    <!-- view-network: Network & Career — Alumni Directory + Job Board (mobile-first, filters on top) -->
+    <section id="view-network" class="network-view flex-1 overflow-y-auto bkig-scroll pt-4 sm:pt-6 pb-6 px-3 sm:px-4 md:pr-24 bg-slate-900 text-slate-200 hidden">
+      <div class="network-view-inner max-w-full">
+        <header class="network-header mb-4">
+          <h2 class="text-lg sm:text-xl font-semibold text-slate-200 mb-0.5">Network &amp; Career</h2>
+          <p class="text-slate-500 text-xs sm:text-sm">Alumni directory and recruiting deadlines.</p>
+        </header>
+
+        <!-- Sub-nav: pill style, full-width on mobile -->
+        <div class="network-tabs flex gap-1 p-1 rounded-xl bg-slate-800/60 border border-slate-700/60 mb-4" role="tablist">
+          <button type="button" class="network-subtab flex-1 min-w-0 py-2.5 sm:py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200 data-active:bg-slate-700 data-active:text-white text-slate-400 hover:text-slate-200" data-network-tab="alumni">Alumni</button>
+          <button type="button" class="network-subtab flex-1 min-w-0 py-2.5 sm:py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200" data-network-tab="jobs">Jobs</button>
+        </div>
+
+        <!-- Alumni Directory: compact filter row + expandable filters -->
+        <div id="network-alumni-panel" class="network-tab-panel">
+          <div class="network-filters-bar sticky top-0 z-10 -mx-3 px-3 py-2 sm:-mx-4 sm:px-4 sm:py-2 mb-3 rounded-lg bg-slate-900/95 backdrop-blur-sm border border-slate-700/50">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="relative flex-1 min-w-[120px] max-w-full">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </span>
+                <input type="text" id="network-alumni-search" placeholder="Name or Company" class="network-alumni-search w-full pl-8 pr-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50" autocomplete="off">
+              </div>
+              <button type="button" id="network-alumni-filters-toggle" class="network-filters-toggle inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-slate-600 bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-500 text-xs font-medium transition-colors touch-manipulation" aria-expanded="false" aria-controls="network-alumni-filters-panel">
+                <svg class="network-filters-chevron w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                <span>Filters</span>
+                <span id="network-alumni-filters-badge" class="network-filters-badge hidden min-w-[18px] h-[18px] rounded-full bg-cyan-500/30 text-cyan-300 text-[10px] font-semibold flex items-center justify-center px-1"></span>
+              </button>
+            </div>
+            <div id="network-alumni-filters-panel" class="network-filters-panel overflow-hidden" aria-hidden="true" role="region" aria-label="Filter options">
+              <div class="pt-3 mt-2 border-t border-slate-700/60 space-y-2.5">
+                <div>
+                  <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">Industry</p>
+                  <div class="network-filter-chips flex flex-wrap gap-1.5" id="network-filter-industry"></div>
+                </div>
+                <div>
+                  <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">Location</p>
+                  <div class="network-filter-chips flex flex-wrap gap-1.5" id="network-filter-location"></div>
+                </div>
+                <div>
+                  <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">Class Year</p>
+                  <div class="network-filter-chips flex flex-wrap gap-1.5" id="network-filter-year"></div>
+                </div>
+                <button type="button" id="network-alumni-reset-filters" class="w-full py-2 px-3 text-[11px] font-medium rounded-lg border border-slate-600 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 transition-colors">Reset filters</button>
+              </div>
+            </div>
+          </div>
+          <!-- Results grid -->
+          <div id="network-alumni-grid" class="network-alumni-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+            <div class="col-span-full py-10 text-center text-slate-500 text-sm" id="network-alumni-loading">Loading…</div>
+            <div class="col-span-full py-10 text-center text-slate-500 text-sm hidden" id="network-alumni-empty">No alumni match your filters.</div>
+          </div>
+        </div>
+
+        <!-- Job Board -->
+        <div id="network-jobs-panel" class="network-tab-panel hidden">
+          <div class="flex gap-2 p-1 rounded-xl bg-slate-800/60 border border-slate-700/60 mb-4 w-full sm:w-auto" role="tablist">
+            <button type="button" class="network-job-view flex-1 sm:flex-none py-2.5 sm:py-2 px-4 text-sm font-medium rounded-lg transition-all data-active:bg-slate-700 data-active:text-white text-slate-400 hover:text-slate-200 touch-manipulation" data-job-view="list">List</button>
+            <button type="button" class="network-job-view flex-1 sm:flex-none py-2.5 sm:py-2 px-4 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-slate-200 touch-manipulation" data-job-view="calendar">Calendar</button>
+          </div>
+          <!-- List View: table on desktop, cards on mobile -->
+          <div id="network-jobs-list-wrap" class="network-jobs-list rounded-xl border border-slate-700/60 overflow-hidden bg-slate-800/30">
+            <div class="network-jobs-table-wrap hidden md:block overflow-x-auto -webkit-overflow-scrolling-touch">
+              <table class="network-jobs-table w-full border-collapse text-xs sm:text-sm" style="min-width: 560px;">
+                <thead>
+                  <tr class="text-slate-400 border-b border-slate-700/80 bg-slate-800/50">
+                    <th class="text-left font-medium py-3 px-3 whitespace-nowrap">Role</th>
+                    <th class="text-left font-medium py-3 px-3 whitespace-nowrap">Company</th>
+                    <th class="text-left font-medium py-3 px-3 hidden sm:table-cell">Type</th>
+                    <th class="text-left font-medium py-3 px-3 whitespace-nowrap">Deadline</th>
+                    <th class="text-left font-medium py-3 px-3 hidden md:table-cell">Contact</th>
+                    <th class="w-28 sm:w-24 font-medium py-3 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="network-jobs-tbody">
+                  <tr><td colspan="6" class="py-8 text-center text-slate-500 text-sm">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="network-jobs-cards" class="network-jobs-cards divide-y divide-slate-700/50 md:hidden">
+              <!-- Mobile cards injected by JS -->
+            </div>
+          </div>
+          <!-- Calendar View -->
+          <div id="network-jobs-calendar-wrap" class="hidden network-calendar rounded-xl border border-slate-700/60 overflow-hidden p-4 bg-slate-800/30">
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <button type="button" id="network-calendar-prev" class="network-calendar-btn min-h-[44px] min-w-[44px] flex items-center justify-center px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 active:scale-95 transition-all touch-manipulation" aria-label="Previous month">&larr;</button>
+              <span id="network-calendar-month-label" class="text-sm font-semibold text-slate-200 tabular-nums"></span>
+              <button type="button" id="network-calendar-next" class="network-calendar-btn min-h-[44px] min-w-[44px] flex items-center justify-center px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 active:scale-95 transition-all touch-manipulation" aria-label="Next month">&rarr;</button>
+            </div>
+            <div id="network-calendar-grid" class="grid grid-cols-7 gap-1 sm:gap-1.5 text-xs text-slate-400 min-h-[280px] sm:min-h-[320px]"></div>
+            <div class="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
+              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500/80 shrink-0"></span> Bulge Bracket</span>
+              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500/80 shrink-0"></span> Big 4</span>
+              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500/80 shrink-0"></span> Other</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- view-internal-research: 내부 리서치 자료실 (Bloomberg/Capital IQ 스타일) -->
     <section id="view-internal-research" class="flex-1 overflow-y-auto bkig-scroll pt-10 pb-4 px-4 pr-24 bg-slate-900 text-slate-200 hidden">
       <div id="internal-research-widget" class="max-w-full bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
@@ -1235,6 +1342,7 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/network.js') }}"></script>
   <script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
 </body>
 </html>
