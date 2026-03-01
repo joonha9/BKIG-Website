@@ -618,9 +618,17 @@ def api_watchlist():
     if request.method == "GET":
         raw = getattr(user_obj, "watchlist", None) or ""
         symbols = [s.strip().upper() for s in raw.split(",") if s.strip()][:6]
-        return jsonify({"symbols": symbols})
+        faccting_token = getattr(user_obj, "faccting_token", None) or ""
+        has_faccting_token = bool(faccting_token and faccting_token.strip())
+        return jsonify({"symbols": symbols, "has_faccting_token": has_faccting_token})
 
     if request.method == "PATCH":
+        faccting_token = getattr(user_obj, "faccting_token", None) or ""
+        if not (faccting_token and faccting_token.strip()):
+            return jsonify({
+                "error": "FACCTing required",
+                "message": "FACCTing에 가입 후 이용 가능합니다.",
+            }), 403
         data = request.get_json(force=True, silent=True) or {}
         symbols = data.get("symbols")
         if not isinstance(symbols, list):
@@ -778,9 +786,12 @@ def api_calendar():
         if year < 2000 or year > 2100:
             year = today.year
         grid = _build_calendar_grid(year, month)
+        user_obj = User.query.get(session.get(SESSION_USER_ID))
+        faccting_token = getattr(user_obj, "faccting_token", None) or "" if user_obj else ""
+        grid["has_faccting_token"] = bool(faccting_token and faccting_token.strip())
         return jsonify(grid)
     except Exception:
-        return jsonify({"year": 0, "month": 0, "monthLabel": "", "weekDayLabels": [], "weeks": []})
+        return jsonify({"year": 0, "month": 0, "monthLabel": "", "weekDayLabels": [], "weeks": [], "has_faccting_token": False})
 
 
 # ---------------------------------------------------------------------------

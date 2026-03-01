@@ -539,12 +539,40 @@
     }
   }
 
-  function openWatchlistModal() {
-    var modal = document.getElementById('watchlist-modal');
+  async function openWatchlistModal() {
+    try {
+      var res = await fetch('/api/watchlist');
+      var data = await res.json().catch(function () { return {}; });
+      if (data && data.has_faccting_token === true) {
+        var modal = document.getElementById('watchlist-modal');
+        if (modal) {
+          var sym = (data && data.symbols) ? data.symbols : [];
+          var inputs = [1, 2, 3, 4, 5, 6].map(function (i) { return document.getElementById('watchlist-symbol-' + i); });
+          inputs.forEach(function (el, i) { if (el) el.value = sym[i] || ''; });
+          modal.classList.remove('hidden');
+          modal.setAttribute('aria-hidden', 'false');
+        }
+      } else {
+        showFacctingRequiredModal();
+      }
+    } catch (e) {
+      showFacctingRequiredModal();
+    }
+  }
+
+  function showFacctingRequiredModal() {
+    var modal = document.getElementById('faccting-required-modal');
     if (modal) {
-      loadWatchlist();
       modal.classList.remove('hidden');
       modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function hideFacctingRequiredModal() {
+    var modal = document.getElementById('faccting-required-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
     }
   }
 
@@ -572,7 +600,12 @@
         loadMarketData();
         if (typeof renderWatchlistWidget === 'function') renderWatchlistWidget();
       } else {
-        alert(data.message || data.error || '저장에 실패했습니다.');
+        if (res.status === 403 && (data.error === 'FACCTing required' || (data.message && data.message.indexOf('FACCTing') !== -1))) {
+          closeWatchlistModal();
+          showFacctingRequiredModal();
+        } else {
+          alert(data.message || data.error || '저장에 실패했습니다.');
+        }
       }
     } catch (e) {
       alert('네트워크 오류. 다시 시도해 주세요.');
@@ -801,6 +834,7 @@
       var weekDayLabels = data.weekDayLabels || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       var weeks = data.weeks || [];
       var monthLabel = data.monthLabel || state.month + ' / ' + state.year;
+      var hasFacctingToken = data.has_faccting_token === true;
       if (monthLabelEl) monthLabelEl.textContent = monthLabel;
       if (!weeks.length) {
         if (emptyEl) emptyEl.classList.remove('hidden');
@@ -838,8 +872,19 @@
         });
       });
       html += '</div>';
+      if (!hasFacctingToken) {
+        html = '<div class="calendar-faccting-wrap">' + html +
+          '<div class="calendar-faccting-overlay" role="button" tabindex="0" title="FACCTing 연결 필요">' +
+          '<div class="calendar-faccting-overlay-inner">' +
+          '<p class="calendar-faccting-overlay-text">FACCTing 연결이 필요합니다</p>' +
+          '<p class="calendar-faccting-overlay-sub">캘린더를 보려면 FACCTing에 가입 후 프로필에서 API 토큰을 연동해 주세요.</p>' +
+          '</div></div></div>';
+      }
       contentEl.innerHTML = html;
       contentEl.classList.remove('hidden');
+      if (!hasFacctingToken && contentEl.querySelector('.calendar-faccting-overlay')) {
+        contentEl.querySelector('.calendar-faccting-overlay').addEventListener('click', function () { showFacctingRequiredModal(); });
+      }
     } catch (e) {
       if (loadingEl) loadingEl.classList.add('hidden');
       if (emptyEl) {
@@ -878,6 +923,10 @@
     var contentEl = document.getElementById('calendar-events-content');
     if (contentEl) {
       contentEl.addEventListener('click', function (e) {
+        if (e.target.closest('.calendar-faccting-overlay')) {
+          showFacctingRequiredModal();
+          return;
+        }
         var pill = e.target.closest('.calendar-event-pill');
         var more = e.target.closest('.calendar-event-more');
         if (pill && pill.getAttribute('data-event')) {
@@ -2084,6 +2133,11 @@
     if (watchlistBackdrop) watchlistBackdrop.addEventListener('click', closeWatchlistModal);
     if (watchlistCancel) watchlistCancel.addEventListener('click', closeWatchlistModal);
     if (watchlistSave) watchlistSave.addEventListener('click', saveWatchlist);
+
+    var facctingRequiredClose = document.getElementById('faccting-required-modal-close');
+    var facctingRequiredBackdrop = document.getElementById('faccting-required-modal-backdrop');
+    if (facctingRequiredClose) facctingRequiredClose.addEventListener('click', hideFacctingRequiredModal);
+    if (facctingRequiredBackdrop) facctingRequiredBackdrop.addEventListener('click', hideFacctingRequiredModal);
 
     // -------------------------------------------------------------------------
     // Internal Research: Upload Document — 슬라이드 오버 열기/닫기, 카테고리, 티커 pill, 드롭존
