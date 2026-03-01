@@ -8,15 +8,36 @@ try:
     load_dotenv()
 except ImportError:
     pass
-from flask import Flask, render_template, send_file, abort, redirect, url_for
+from flask import Flask, render_template, send_file, abort, redirect, url_for, Response
 
 app = Flask(__name__, template_folder="template", static_folder="static", static_url_path="/static")
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "bkig-dev-secret-change-in-production")
+
+# Secret key: production에서는 반드시 환경변수로 설정 (랜덤 32자 이상 권장)
+_default_secret = "bkig-dev-secret-change-in-production"
+_secret = os.environ.get("SECRET_KEY", _default_secret)
+if _secret == _default_secret and os.environ.get("FLASK_ENV") == "production":
+    raise RuntimeError("SECRET_KEY must be set in production. Use a long random string (e.g. openssl rand -hex 32).")
+app.config["SECRET_KEY"] = _secret
+
+# 세션 쿠키 보안 (프로덕션/HTTPS에서 적용 권장)
+if os.environ.get("FLASK_ENV") == "production" or os.environ.get("SESSION_SECURE_COOKIE", "").lower() in ("1", "true", "yes"):
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # BKIG Terminal (SPA 인트라넷)
-from terminal import terminal_bp, init_terminal_db
+from terminal import terminal_bp, init_terminal_db, login_required_api, require_super_admin
 init_terminal_db(app)
 app.register_blueprint(terminal_bp)
+
+# DART Analysis (Korean market — separate module, super_admin only)
+from dart import create_dart_blueprint, preload_dart_corp_cache
+dart_bp = create_dart_blueprint(login_required_api, require_super_admin)
+app.register_blueprint(dart_bp)
+# Preload DART corp DataFrame in background so first /api/dart/search is sub-100ms
+import threading
+_thread = threading.Thread(target=preload_dart_corp_cache, daemon=True)
+_thread.start()
 
 # Research PDF: URL 파일명 → 실제 파일명 (파일은 static/pdf/ 에 있음)
 RESEARCH_PDF_MAP = {
@@ -28,6 +49,12 @@ RESEARCH_PDF_MAP = {
     "dave_busters_research_en.pdf": "Dave & Buster's Sell Side Pitch.pdf",
     "lemonade_research_ko.pdf": "BKIG_Lemonade_JK.pdf",
 }
+
+
+# Chrome DevTools가 요청하는 설정 파일 — 404 방지
+@app.route("/.well-known/appspecific/com.chrome.devtools.json")
+def chrome_devtools_well_known():
+    return Response("{}", mimetype="application/json")
 
 
 @app.route("/")

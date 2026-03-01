@@ -97,6 +97,20 @@
   }
 }
 
+/* DART Financial Statements — Bloomberg/FactSet-style terminal table */
+.dart-financials { background: #0a0e17; }
+.dart-financials .dart-fs-subnav { border-bottom: 1px solid rgba(51, 65, 85, 0.6); }
+.dart-financials .dart-fs-subnav button.active { border-bottom: 2px solid #0ea5e9; color: #f1f5f9; }
+.dart-financials .dart-fs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dart-financials .dart-fs-table th { text-align: left; padding: 10px 14px; font-weight: 600; color: #94a3b8; background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(51, 65, 85, 0.7); }
+.dart-financials .dart-fs-table th.num { text-align: right; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; }
+.dart-financials .dart-fs-table td { padding: 8px 14px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); color: #e2e8f0; }
+.dart-financials .dart-fs-table td.account { text-align: left; }
+.dart-financials .dart-fs-table td.num { text-align: right; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-variant-numeric: tabular-nums; }
+.dart-financials .dart-fs-table td.num.current { font-weight: 600; color: #f1f5f9; }
+.dart-financials .dart-fs-table td.num.prev { color: #64748b; }
+.dart-financials .dart-fs-table tbody tr:hover { background: rgba(30, 58, 95, 0.25); }
+
 /* ---------------------------------------------------------------------------
    FACCTing Portal (Valuation / Accounting) — Terminal directory style
    border-radius: 0, thin #333 border, neon hover, monospace

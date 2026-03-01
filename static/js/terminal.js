@@ -17,6 +17,7 @@
     'view-dashboard': 'Dashboard',
     'view-comms': 'Comms',
     'view-financial-tools': 'Financial Tools',
+    'view-dart': 'DART 공시',
     'view-portfolio': 'Portfolio',
     'view-ranking': 'Ranking',
     'view-watchlist': 'Watchlist',
@@ -28,6 +29,13 @@
   };
 
   function showView(viewId) {
+    if (viewId === 'view-dart') {
+      var user = window.TERMINAL_CURRENT_USER;
+      if (!user || user.role !== 'super_admin') {
+        if (typeof alert === 'function') alert('DART 공시는 Super Admin만 이용할 수 있습니다.');
+        return;
+      }
+    }
     const sections = document.querySelectorAll('main section[id^="view-"]');
     sections.forEach(function (section) {
       section.classList.add('hidden');
@@ -78,6 +86,9 @@
     if (viewId === 'view-internal-research') {
       if (typeof loadInternalResearchList === 'function') loadInternalResearchList();
     }
+    if (viewId === 'view-dart') {
+      if (typeof initDartView === 'function') initDartView();
+    }
     if (viewId === 'view-meeting-intelligence') {
       if (typeof window.loadMeetingNotesList === 'function') window.loadMeetingNotesList();
     }
@@ -91,7 +102,15 @@
     document.querySelectorAll('.bkig-nav-item').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const viewId = btn.getAttribute(VIEW_ATTR);
-        if (viewId) showView(viewId);
+        if (!viewId) return;
+        if (btn.getAttribute('data-requires-super-admin') === 'true') {
+          var user = window.TERMINAL_CURRENT_USER;
+          if (!user || user.role !== 'super_admin') {
+            if (typeof alert === 'function') alert('DART 공시는 Super Admin만 이용할 수 있습니다.');
+            return;
+          }
+        }
+        showView(viewId);
       });
     });
     // 초기: Dashboard 활성
@@ -2462,6 +2481,8 @@
   var ADMIN_PAGE_SIZE = 5;
   var adminRoleChart = null;
   var adminDivisionChart = null;
+  var adminUsageSearchChart = null;
+  var adminUsageSectionsChart = null;
 
   function sortList(list, getValue, key, dir) {
     if (!list || !list.length) return list;
@@ -2663,6 +2684,67 @@
     });
   }
 
+  var USAGE_SECTION_LABELS = { search: 'Search', overview: 'Overview', chart: 'Chart', income: 'Income Statement', balance: 'Balance Sheet', cashflow: 'Cash Flow', ratios: 'Key Ratios', trend: 'Trend', comps: 'COMPS', ownership: 'OWNERSHIP', estimates: 'ESTIMATES', news: 'NEWS' };
+
+  function renderAdminUsageCharts(usageStats) {
+    if (typeof Chart === 'undefined' || !usageStats) return;
+    var byUser = usageStats.by_user || [];
+    var byAction = usageStats.by_action || {};
+    var searchCanvas = document.getElementById('admin-usage-search-chart');
+    if (searchCanvas) {
+      if (adminUsageSearchChart) { adminUsageSearchChart.destroy(); adminUsageSearchChart = null; }
+      var sorted = byUser.slice().sort(function (a, b) { return (b.search || 0) - (a.search || 0); });
+      var names = sorted.map(function (u) { return u.name || u.email || 'User #' + u.user_id; });
+      var counts = sorted.map(function (u) { return u.search || 0; });
+      adminUsageSearchChart = new Chart(searchCanvas, {
+        type: 'bar',
+        data: {
+          labels: names.length ? names : ['No data'],
+          datasets: [{ label: 'Search count', data: counts.length ? counts : [0], backgroundColor: '#475569', borderRadius: 4 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 8 },
+          scales: {
+            x: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
+            y: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 0 } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+    var sectionsCanvas = document.getElementById('admin-usage-sections-chart');
+    if (sectionsCanvas) {
+      if (adminUsageSectionsChart) { adminUsageSectionsChart.destroy(); adminUsageSectionsChart = null; }
+      var order = ['overview', 'chart', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates', 'news'];
+      var sectionLabels = order.map(function (k) { return USAGE_SECTION_LABELS[k] || k; });
+      var sectionData = order.map(function (k) { return byAction[k] || 0; });
+      adminUsageSectionsChart = new Chart(sectionsCanvas, {
+        type: 'bar',
+        data: {
+          labels: sectionLabels,
+          datasets: [{ label: 'Clicks', data: sectionData, backgroundColor: ['#334155', '#475569', '#64748b', '#94a3b8', '#0ea5e9', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#14b8a6'], borderRadius: 4 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 8 },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', maxRotation: 45 } },
+            y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, ticks: { color: '#94a3b8', stepSize: 1 } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+    requestAnimationFrame(function () {
+      if (adminUsageSearchChart) adminUsageSearchChart.resize();
+      if (adminUsageSectionsChart) adminUsageSectionsChart.resize();
+    });
+  }
+
   async function loadAdminUsers() {
     const tbody = document.getElementById('user-table-body');
     if (!tbody) return;
@@ -2677,6 +2759,13 @@
           renderAdminCharts(list);
         });
       });
+      try {
+        var usageRes = await fetch('/api/admin/usage-stats', { credentials: 'same-origin' });
+        if (usageRes.ok) {
+          var usageData = await usageRes.json();
+          renderAdminUsageCharts(usageData);
+        }
+      } catch (err) {}
     } catch (e) {
       adminUsersList = [];
       tbody.innerHTML =
@@ -3283,6 +3372,18 @@
     if (el) el.classList.add('hidden');
   }
 
+  var FINANCIAL_USAGE_ACTIONS = ['search', 'overview', 'chart', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates', 'news'];
+
+  function recordFinancialToolUsage(action) {
+    if (!action || FINANCIAL_USAGE_ACTIONS.indexOf(action) === -1) return;
+    fetch('/api/terminal/usage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ action: action })
+    }).catch(function () {});
+  }
+
   function setActiveFinancialTab(tabName) {
     document.querySelectorAll('.financial-tool-nav').forEach(function (btn) {
       btn.classList.remove('bg-slate-700/80', 'text-white');
@@ -3316,6 +3417,82 @@
       ' <span class="text-slate-400">|</span> ' +
       '<span class="text-slate-300">Price: ' + price + '</span>' +
       ' <span class="' + pctClass + '">(' + (pct !== '—' ? (Number(pct) >= 0 ? '+' : '') + pct + '%' : '—') + ')</span>';
+  }
+
+  function renderOverviewPanel(profile) {
+    var content = document.getElementById('tool-content');
+    if (!content) return;
+    if (!profile || !profile.companyName) {
+      content.innerHTML = '<p class="text-slate-500 text-sm">No profile data. Enter a ticker and Search.</p>';
+      return;
+    }
+    var esc = escapeHtml;
+    var companyName = profile.companyName || profile.company_name || profile.name || profile.symbol || '—';
+    var symbol = (profile.symbol || currentTicker || '').toUpperCase();
+    var image = profile.image || profile.logo || '';
+    var ceo = profile.ceo || profile.CEO || '—';
+    var price = profile.price != null ? Number(profile.price).toFixed(2) : (profile.Price != null ? Number(profile.Price).toFixed(2) : '—');
+    var chg = profile.changesPercentage != null ? Number(profile.changesPercentage).toFixed(2) : (profile.changesPercent != null ? Number(profile.changesPercent).toFixed(2) : null);
+    var chgStr = chg != null ? (chg >= 0 ? '+' : '') + chg + '%' : '—';
+    var chgClass = chg != null && chg >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    var sector = profile.sector || '—';
+    var industry = profile.industry || '—';
+    var mktCap = profile.mktCap != null ? profile.mktCap : (profile.marketCap != null ? profile.marketCap : profile.marketCapitalization);
+    var mktCapStr = '—';
+    if (mktCap != null && mktCap !== '') {
+      var mc = Number(mktCap);
+      if (!isNaN(mc)) mktCapStr = mc >= 1e12 ? (mc / 1e12).toFixed(2) + 'T' : mc >= 1e9 ? (mc / 1e9).toFixed(2) + 'B' : mc >= 1e6 ? (mc / 1e6).toFixed(2) + 'M' : mc >= 1e3 ? (mc / 1e3).toFixed(2) + 'K' : mc.toString();
+    }
+    var exchange = profile.exchangeShortName || profile.exchange || profile.Exchange || '—';
+    var currency = profile.currency || profile.Currency || 'USD';
+    var ipoDate = profile.ipoDate || profile.IPOdate || '—';
+    var beta = profile.beta != null ? Number(profile.beta).toFixed(2) : '—';
+    var volAvg = profile.volAvg != null ? (Number(profile.volAvg) >= 1e6 ? (Number(profile.volAvg) / 1e6).toFixed(2) + 'M' : Number(profile.volAvg).toLocaleString()) : '—';
+    var range = profile.range || profile.Range || '—';
+    var lastDiv = profile.lastDiv != null ? Number(profile.lastDiv).toFixed(2) : (profile.lastDividend != null ? Number(profile.lastDividend).toFixed(2) : '—');
+    var fullTimeEmployees = profile.fullTimeEmployees != null ? profile.fullTimeEmployees.toLocaleString() : (profile.employees != null ? profile.employees.toLocaleString() : '—');
+    var isEtf = profile.isEtf === true || profile.isETF === true;
+    var isAdr = profile.isAdr === true || profile.isADR === true;
+    var desc = (profile.description || '').slice(0, 400);
+    if (desc && desc.length === 400) desc += '…';
+
+    function statCell(label, value, isNumeric) {
+      var valueClass = isNumeric ? 'font-mono tabular-nums text-slate-100 font-medium' : 'text-slate-100 font-medium';
+      return '<div class="bg-slate-800/40 rounded-lg px-4 py-3 border border-slate-700/50">' +
+        '<div class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">' + esc(label) + '</div>' +
+        '<div class="' + valueClass + ' text-sm">' + esc(String(value)) + '</div></div>';
+    }
+
+    var pricePrefix = currency === 'USD' && price !== '—' ? '$' : '';
+    var headerHtml =
+      '<div class="flex flex-wrap items-center gap-4 sm:gap-6">' +
+      (image ? '<img src="' + esc(image) + '" alt="" class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-contain bg-slate-800/80 border border-slate-700/60 shrink-0" onerror="this.style.display=\'none\'">' : '') +
+      '<div class="min-w-0 flex-1">' +
+      '<div class="flex flex-wrap items-center gap-2 gap-y-1">' +
+      '<h1 class="text-xl sm:text-2xl font-semibold text-white tracking-tight">' + esc(companyName) + '</h1>' +
+      '<span class="inline-flex items-center gap-1.5">' +
+      '<span class="px-2 py-0.5 rounded-md text-xs font-medium bg-slate-700/80 text-slate-300 border border-slate-600/60">' + esc(symbol) + '</span>' +
+      '<span class="text-xs text-slate-500">' + esc(exchange) + '</span>' +
+      '</span></div>' +
+      '<div class="mt-2 flex flex-wrap items-baseline gap-3 gap-y-1">' +
+      '<span class="font-mono text-2xl sm:text-3xl font-semibold tabular-nums text-white">' + pricePrefix + (price !== '—' ? price : '—') + '</span>' +
+      (chgStr !== '—' ? '<span class="' + chgClass + ' font-mono text-sm font-medium tabular-nums">' + chgStr + '</span>' : '') +
+      '</div></div></div>';
+
+    var gridGroup1 = statCell('MKT CAP', mktCapStr, true) + statCell('BETA', beta, true) + statCell('LAST DIVIDEND', lastDiv !== '—' ? pricePrefix + lastDiv : lastDiv, true) + statCell('52W RANGE', range, false);
+    var gridGroup2 = statCell('SECTOR', sector, false) + statCell('INDUSTRY', industry, false) + statCell('EMPLOYEES', fullTimeEmployees, true) + statCell('IPO DATE', ipoDate, false);
+    var gridGroup3 = statCell('CEO', ceo, false) + statCell('AVG VOLUME', volAvg, true) + statCell('CURRENCY', currency, false) + statCell('COMMON STOCK', isEtf ? 'ETF' : (isAdr ? 'ADR' : 'Equity'), false);
+
+    content.innerHTML =
+      '<div class="rounded-xl border border-slate-700/60 bg-slate-900/50 overflow-hidden">' +
+      '<div class="p-5 sm:p-6 border-b border-slate-700/60">' + headerHtml + '</div>' +
+      '<div class="p-5 sm:p-6">' +
+      '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">' + gridGroup1 + gridGroup2 + gridGroup3 + '</div>' +
+      '</div>' +
+      (desc ? '<div class="px-5 sm:px-6 py-4 border-t border-slate-700/50 bg-slate-800/20">' +
+        '<div class="text-[11px] uppercase tracking-wider text-slate-500 font-medium mb-2">Description</div>' +
+        '<p class="text-slate-400 text-sm leading-relaxed" style="line-height: 1.65;">' + esc(desc) + '</p></div>' : '') +
+      '</div>';
   }
 
   var financialChartType = 'line';
@@ -3407,7 +3584,6 @@
     if (!mainCtx || !volCtx || typeof Chart === 'undefined') return;
 
     var contentEl = content;
-    var crosshairPlugin = typeof Chart !== 'undefined' && Chart.registry && Chart.registry.getPlugin('crosshair');
     var commonScaleOptions = {
       grid: { color: GRID_COLOR },
       ticks: { color: FONT_COLOR, font: { family: 'system-ui, sans-serif', size: 11 }, maxTicksLimit: 10 },
@@ -3458,7 +3634,6 @@
           y: { ...commonScaleOptions, position: 'right', ticks: { ...commonScaleOptions.ticks, callback: function (v) { return typeof v === 'number' ? v.toLocaleString() : v; } } },
         },
       };
-      if (crosshairPlugin) optsMain.plugins.crosshair = { line: { color: FONT_COLOR, width: 1 }, sync: { enabled: true } };
 
       if (financialChartType === 'candlestick' && hasOHLC) {
         var wickData = historical.map(function (d) { return [d.low, d.high]; });
@@ -4792,7 +4967,7 @@
   function getTabEndpoint(tab) {
     var t = (currentTicker || '').trim().toUpperCase();
     if (!t) return null;
-    if (tab === 'overview') return '/api/tools/profile/' + t;
+    if (tab === 'overview' || tab === 'chart') return '/api/tools/profile/' + t;
     if (tab === 'income') return '/api/tools/income-statement/' + t;
     if (tab === 'balance') return '/api/tools/balance-sheet/' + t;
     if (tab === 'cashflow') return '/api/tools/cash-flow/' + t;
@@ -4805,6 +4980,7 @@
     if (!t) return Promise.resolve(null);
     if (!financialCache[t]) financialCache[t] = {};
     if (financialCache[t][tab]) return Promise.resolve(financialCache[t][tab]);
+    if (tab === 'chart' && financialCache[t].overview) return Promise.resolve(financialCache[t].overview);
     var url = getTabEndpoint(tab);
     if (!url) return Promise.resolve(null);
     showToolLoader();
@@ -4812,7 +4988,7 @@
       .then(function (res) { return res.json(); })
       .then(function (json) {
         hideToolLoader();
-        if (tab === 'overview') {
+        if (tab === 'overview' || tab === 'chart') {
           financialCache[t].overview = { profile: json.profile || {}, historical: json.historical || [] };
           return financialCache[t].overview;
         }
@@ -4827,12 +5003,13 @@
   }
 
   var currentFinancialTab = '';
-  var EXCEL_TABS = ['overview', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates'];
+  var EXCEL_TABS = ['overview', 'chart', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates'];
   var lastOwnershipData = null;
   var lastEstimatesData = null;
 
   function loadAndRenderTab(tab) {
     currentFinancialTab = tab || '';
+    if (tab && FINANCIAL_USAGE_ACTIONS.indexOf(tab) !== -1) recordFinancialToolUsage(tab);
     var excelBar = document.getElementById('tool-excel-bar');
     if (excelBar) excelBar.classList.toggle('hidden', EXCEL_TABS.indexOf(tab) === -1);
 
@@ -4869,15 +5046,25 @@
     }
     if (tab === 'overview') {
       ensureCached('overview').then(function (cached) {
-        if (cached) {
-          renderOverview(cached.profile, cached.historical);
+        if (cached && cached.profile) {
+          renderOverviewPanel(cached.profile);
+        } else {
+          content.innerHTML = '<p class="text-slate-500 text-sm">Failed to load data.</p>';
+        }
+      });
+      return;
+    }
+    if (tab === 'chart') {
+      ensureCached('chart').then(function (cached) {
+        if (cached && cached.historical && cached.historical.length) {
+          renderOverview(cached.profile || {}, cached.historical);
           var contentEl = document.getElementById('tool-content');
           if (contentEl && contentEl._financialChartResize) {
             setTimeout(function () { contentEl._financialChartResize(); }, 100);
             setTimeout(function () { contentEl._financialChartResize(); }, 500);
           }
         } else {
-          content.innerHTML = '<p class="text-slate-500 text-sm">Failed to load data.</p>';
+          content.innerHTML = '<p class="text-slate-500 text-sm">No historical price data. Enter a ticker and Search first.</p>';
         }
       });
       return;
@@ -4900,6 +5087,26 @@
     if (typeof onTickerSearch === 'function') onTickerSearch();
   }
 
+  function showSearchLimitModal(message) {
+    var modal = document.getElementById('financial-search-limit-modal');
+    var msgEl = document.getElementById('financial-search-limit-modal-message');
+    if (msgEl && message) msgEl.textContent = message;
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function hideSearchLimitModal() {
+    var modal = document.getElementById('financial-search-limit-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+  window.showSearchLimitModal = showSearchLimitModal;
+  window.hideSearchLimitModal = hideSearchLimitModal;
+
   function onTickerSearch() {
     var input = document.getElementById('ticker-input');
     var ticker = (input && input.value) ? input.value.trim().toUpperCase() : '';
@@ -4909,25 +5116,57 @@
     }
     currentTicker = ticker;
     if (!financialCache[currentTicker]) financialCache[currentTicker] = {};
-    showToolLoader();
-    currentFinancialTab = 'overview';
-    var excelBar = document.getElementById('tool-excel-bar');
-    if (excelBar) excelBar.classList.remove('hidden');
-    setActiveFinancialTab('overview');
-    fetch('/api/tools/profile/' + ticker)
+    fetch('/api/terminal/usage/can-search', { credentials: 'same-origin' })
       .then(function (res) { return res.json(); })
-      .then(function (json) {
-        hideToolLoader();
-        var profile = json.profile || {};
-        var historical = json.historical || [];
-        financialCache[currentTicker].overview = { profile: profile, historical: historical };
-        renderSummary(profile);
-        renderOverview(profile, historical);
+      .then(function (data) {
+        if (data && data.allowed === false) {
+          showSearchLimitModal(data.message || 'Maximum 5 searches per day. For additional data, please visit FACCTing.com');
+          return;
+        }
+        showToolLoader();
+        currentFinancialTab = 'overview';
+        var excelBar = document.getElementById('tool-excel-bar');
+        if (excelBar) excelBar.classList.remove('hidden');
+        setActiveFinancialTab('overview');
+        fetch('/api/tools/profile/' + ticker)
+          .then(function (res) { return res.json(); })
+          .then(function (json) {
+            hideToolLoader();
+            var profile = json.profile || {};
+            var historical = json.historical || [];
+            financialCache[currentTicker].overview = { profile: profile, historical: historical };
+            renderSummary(profile);
+            renderOverviewPanel(profile);
+            recordFinancialToolUsage('search');
+          })
+          .catch(function () {
+            hideToolLoader();
+            renderSummary(null);
+            document.getElementById('tool-content').innerHTML = '<p class="text-slate-500 text-sm">Failed to load. Check ticker or API.</p>';
+          });
       })
       .catch(function () {
-        hideToolLoader();
-        renderSummary(null);
-        document.getElementById('tool-content').innerHTML = '<p class="text-slate-500 text-sm">Failed to load. Check ticker or API.</p>';
+        showToolLoader();
+        currentFinancialTab = 'overview';
+        var excelBar = document.getElementById('tool-excel-bar');
+        if (excelBar) excelBar.classList.remove('hidden');
+        setActiveFinancialTab('overview');
+        fetch('/api/tools/profile/' + ticker)
+          .then(function (res) { return res.json(); })
+          .then(function (json) {
+            hideToolLoader();
+            var profile = json.profile || {};
+            var historical = json.historical || [];
+            financialCache[currentTicker].overview = { profile: profile, historical: historical };
+            renderSummary(profile);
+            renderOverviewPanel(profile);
+            recordFinancialToolUsage('search');
+          })
+          .catch(function () {
+            hideToolLoader();
+            renderSummary(null);
+            document.getElementById('tool-content').innerHTML = '<p class="text-slate-500 text-sm">Failed to load. Check ticker or API.</p>';
+          });
       });
   }
 
@@ -4946,7 +5185,7 @@
       return n;
     }
 
-    if (tab === 'overview' && financialChartHistorical && financialChartHistorical.length) {
+    if (tab === 'chart' && financialChartHistorical && financialChartHistorical.length) {
       aoa = [['Date', 'Open', 'High', 'Low', 'Close', 'Volume']];
       financialChartHistorical.forEach(function (d) {
         aoa.push([
@@ -4957,6 +5196,12 @@
           d.close != null ? numFmt(d.close) : '',
           d.volume != null ? numFmt(d.volume) : '',
         ]);
+      });
+    } else if (tab === 'overview' && t && financialCache[t] && financialCache[t].overview && financialCache[t].overview.profile) {
+      var p = financialCache[t].overview.profile;
+      aoa = [['Field', 'Value']];
+      [['Company', p.companyName || p.company_name], ['Symbol', p.symbol], ['CEO', p.ceo || p.CEO], ['Price', p.price], ['Sector', p.sector], ['Industry', p.industry], ['Market Cap', p.mktCap || p.marketCap], ['Exchange', p.exchangeShortName || p.exchange], ['IPO Date', p.ipoDate], ['Beta', p.beta], ['Avg Volume', p.volAvg], ['52W Range', p.range], ['Employees', p.fullTimeEmployees]].forEach(function (pair) {
+        aoa.push([pair[0], pair[1] != null && pair[1] !== '' ? pair[1] : '—']);
       });
     } else if ((tab === 'income' || tab === 'balance' || tab === 'cashflow') && t && financialCache[t] && financialCache[t][tab]) {
       var statements = financialCache[t][tab];
@@ -5066,7 +5311,414 @@
     });
     var excelBtn = document.getElementById('tool-download-excel-btn');
     if (excelBtn) excelBtn.addEventListener('click', exportFinancialToExcel);
+    var searchLimitClose = document.getElementById('financial-search-limit-modal-close');
+    var searchLimitBackdrop = document.getElementById('financial-search-limit-modal-backdrop');
+    if (searchLimitClose) searchLimitClose.addEventListener('click', hideSearchLimitModal);
+    if (searchLimitBackdrop) searchLimitBackdrop.addEventListener('click', hideSearchLimitModal);
   }
+
+  // -------------------------------------------------------------------------
+  // DART 공시 (한국 공시/재무)
+  // -------------------------------------------------------------------------
+  var dartState = {
+    corpCode: null,
+    corpName: null,
+    stockCode: null,
+    fsDiv: 'CFS',
+    activeTab: 'overview',
+    financialsData: null,
+    financialsSubTab: 'balance_sheet'
+  };
+
+  var dartSearchDebounceTimer = null;
+  var dartSearchAbortController = null;
+  var dartSearchInFlight = false;
+  function initDartView() {
+    var searchBtn = document.getElementById('dart-search-btn');
+    var queryInput = document.getElementById('dart-query-input');
+    var searchWrap = document.getElementById('dart-search-wrap');
+    var dropdown = document.getElementById('dart-search-dropdown');
+    if (searchBtn) searchBtn.addEventListener('click', dartSearch);
+    if (queryInput) {
+      queryInput.addEventListener('input', function () {
+        if (dartSearchDebounceTimer) clearTimeout(dartSearchDebounceTimer);
+        dartSearchDebounceTimer = setTimeout(dartSearch, 350);
+      });
+      queryInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); dartSearch(); }
+        if (e.key === 'Escape') { dartCloseDropdown(); queryInput.blur(); }
+      });
+      queryInput.addEventListener('focus', function () {
+        if (queryInput.value.trim()) dartSearch();
+      });
+    }
+    document.addEventListener('click', function (e) {
+      if (!searchWrap || !dropdown) return;
+      if (e.target && e.target.id === 'dart-search-btn') return;
+      if (!searchWrap.contains(e.target)) dartCloseDropdown();
+    });
+    document.querySelectorAll('.dart-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tab = btn.getAttribute('data-dart-tab');
+        if (!tab) return;
+        dartState.activeTab = tab;
+        document.querySelectorAll('.dart-tab').forEach(function (b) {
+          b.classList.remove('bg-slate-700/80', 'text-white');
+          b.classList.add('text-slate-400');
+        });
+        btn.classList.add('bg-slate-700/80', 'text-white');
+        btn.classList.remove('text-slate-400');
+        dartLoadTab(tab);
+      });
+    });
+    var consolidatedBtn = document.getElementById('dart-fs-consolidated');
+    var separateBtn = document.getElementById('dart-fs-separate');
+    if (consolidatedBtn) {
+      consolidatedBtn.addEventListener('click', function () {
+        dartState.fsDiv = 'CFS';
+        consolidatedBtn.classList.add('bg-cyan-600', 'text-white');
+        consolidatedBtn.classList.remove('bg-slate-700/60', 'text-slate-400');
+        if (separateBtn) { separateBtn.classList.remove('bg-cyan-600', 'text-white'); separateBtn.classList.add('bg-slate-700/60', 'text-slate-400'); }
+        if (dartState.activeTab === 'financials') dartLoadTab('financials');
+      });
+    }
+    if (separateBtn) {
+      separateBtn.addEventListener('click', function () {
+        dartState.fsDiv = 'OFS';
+        separateBtn.classList.add('bg-cyan-600', 'text-white');
+        separateBtn.classList.remove('bg-slate-700/60', 'text-slate-400');
+        if (consolidatedBtn) { consolidatedBtn.classList.remove('bg-cyan-600', 'text-white'); consolidatedBtn.classList.add('bg-slate-700/60', 'text-slate-400'); }
+        if (dartState.activeTab === 'financials') dartLoadTab('financials');
+      });
+    }
+    var firstTab = document.querySelector('.dart-tab[data-dart-tab="overview"]');
+    if (firstTab) {
+      firstTab.classList.add('bg-slate-700/80', 'text-white');
+      firstTab.classList.remove('text-slate-400');
+    }
+    var dartContent = document.getElementById('dart-content');
+    if (dartContent) {
+      dartContent.addEventListener('click', function (ev) {
+        var btn = ev.target && ev.target.closest && ev.target.closest('.dart-fs-subtab-btn');
+        if (!btn || btn.disabled) return;
+        var t = btn.getAttribute('data-dart-fs-subtab');
+        if (t && dartState.financialsData) {
+          dartState.financialsSubTab = t;
+          document.querySelectorAll('.dart-fs-subtab-btn').forEach(function (b) {
+            b.classList.remove('active');
+          });
+          btn.classList.add('active');
+          renderDartFinancialsTable(dartContent, dartState.financialsData, t);
+        }
+      });
+    }
+  }
+
+  function dartCloseDropdown() {
+    var dd = document.getElementById('dart-search-dropdown');
+    var input = document.getElementById('dart-query-input');
+    if (dd) { dd.classList.add('hidden'); dd.innerHTML = ''; dd.setAttribute('aria-expanded', 'false'); }
+    if (input) input.setAttribute('aria-expanded', 'false');
+  }
+
+  function dartSelectCompany(item) {
+    if (!item || !item.corp_code) return;
+    dartState.corpCode = item.corp_code;
+    dartState.corpName = item.corp_name || '';
+    dartState.stockCode = item.stock_code || '';
+    var input = document.getElementById('dart-query-input');
+    if (input) input.value = item.corp_name || item.stock_code || '';
+    dartCloseDropdown();
+    var summaryEl = document.getElementById('dart-company-summary');
+    summaryEl.innerHTML = '<span class="text-cyan-400 font-medium">' + (dartState.corpName || '') + '</span>' +
+      (dartState.stockCode ? ' <span class="text-slate-500">(' + dartState.stockCode + ')</span>' : '') +
+      ' <a href="/api/dart/export_excel?corp_code=' + encodeURIComponent(dartState.corpCode) + '&corp_name=' + encodeURIComponent(dartState.corpName) + '&fs_div=' + dartState.fsDiv + '" class="ml-2 text-xs text-slate-400 hover:text-cyan-400" download>Excel 다운로드</a>';
+    document.getElementById('dart-fs-toggle-wrap').style.display = 'flex';
+    dartLoadTab(dartState.activeTab);
+  }
+
+  var dartSearchLastId = 0;
+  function dartSearch() {
+    var input = document.getElementById('dart-query-input');
+    var dropdown = document.getElementById('dart-search-dropdown');
+    var q = (input && input.value) ? input.value.trim() : '';
+    if (!q) {
+      dartCloseDropdown();
+      document.getElementById('dart-company-summary').innerHTML = '';
+      return;
+    }
+    if (!dropdown) return;
+    if (dartSearchAbortController) dartSearchAbortController.abort();
+    dartSearchAbortController = new AbortController();
+    var signal = dartSearchAbortController.signal;
+    var myId = ++dartSearchLastId;
+    dartSearchInFlight = true;
+    dropdown.classList.remove('hidden');
+    dropdown.innerHTML = '<div class="px-3 py-4 text-center text-slate-500 text-sm">검색 중…</div>';
+    if (input) input.setAttribute('aria-expanded', 'true');
+    var timeoutId = setTimeout(function () {
+      if (dartSearchAbortController === null) return;
+      dartSearchAbortController.abort();
+    }, 12000);
+    fetch('/api/dart/search?q=' + encodeURIComponent(q) + '&limit=20', { credentials: 'same-origin', signal: signal })
+      .then(function (res) {
+        clearTimeout(timeoutId);
+        if (!res.ok) return res.json().then(function (data) { throw new Error(data.error || data.message || '검색 실패'); });
+        return res.json();
+      })
+      .then(function (data) {
+        dartSearchInFlight = false;
+        if (myId !== dartSearchLastId || !dropdown) return;
+        if (data.error) {
+          dropdown.innerHTML = '<div class="px-3 py-4 text-amber-500 text-sm">' + (data.error || '검색 실패') + '</div>';
+          return;
+        }
+        var results = data.results || [];
+        if (results.length === 0) {
+          dropdown.innerHTML = '<div class="px-3 py-4 text-slate-500 text-sm">검색 결과가 없습니다.</div>';
+          return;
+        }
+        dropdown.innerHTML = '';
+        results.forEach(function (item) {
+          var li = document.createElement('div');
+          li.setAttribute('role', 'option');
+          li.className = 'px-3 py-2.5 text-sm text-slate-200 hover:bg-slate-700/80 cursor-pointer border-b border-slate-700/50 last:border-b-0 flex justify-between items-center gap-2';
+          li.innerHTML = '<span class="font-medium">' + (item.corp_name || '—') + '</span>' + (item.stock_code ? '<span class="text-slate-500 text-xs">' + item.stock_code + '</span>' : '');
+          li.addEventListener('click', function () { dartSelectCompany(item); });
+          dropdown.appendChild(li);
+        });
+      })
+      .catch(function (err) {
+        clearTimeout(timeoutId);
+        dartSearchInFlight = false;
+        dartSearchAbortController = null;
+        if (myId !== dartSearchLastId || !dropdown) return;
+        if (err && err.name === 'AbortError') {
+          dropdown.innerHTML = '<div class="px-3 py-4 text-slate-500 text-sm">검색이 취소되었거나 시간이 초과되었습니다.</div>';
+          return;
+        }
+        dropdown.innerHTML = '<div class="px-3 py-4 text-amber-500 text-sm">' + (err && err.message ? err.message : '검색 요청 실패') + '</div>';
+      });
+  }
+
+  function escapeHtml(s) {
+    if (s == null || s === '') return '';
+    var t = String(s);
+    return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatFinancialNum(val) {
+    if (val === null || val === undefined || val === '' || (typeof val === 'number' && isNaN(val))) return '—';
+    var n = typeof val === 'number' ? val : parseFloat(String(val).replace(/,/g, ''), 10);
+    if (isNaN(n) || n === 0) return '—';
+    return Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(n);
+  }
+
+  function buildSheetRows(rows) {
+    if (!rows || !rows.length) return { rows: [], currentLabel: '당기', prevLabel: '전기' };
+    var filtered = rows.filter(function (r) {
+      var nm = (r.account_nm != null && r.account_nm !== '') ? String(r.account_nm).trim() : '';
+      return nm.length > 0;
+    });
+    filtered.sort(function (a, b) {
+      var oa = a.ord != null ? (typeof a.ord === 'number' ? a.ord : parseInt(a.ord, 10)) : 0;
+      var ob = b.ord != null ? (typeof b.ord === 'number' ? b.ord : parseInt(b.ord, 10)) : 0;
+      return (oa || 0) - (ob || 0);
+    });
+    var first = filtered[0] || {};
+    var currentLabel = first.thstrm_dt || first.frmtrm_dt || '당기';
+    var prevLabel = first.frmtrm_dt || first.bfefrmtrm_dt || '전기';
+    var out = filtered.map(function (r) {
+      var current = r.thstrm_amount != null && r.thstrm_amount !== '' ? r.thstrm_amount : r.frmtrm_amount;
+      var previous = r.frmtrm_amount != null && r.frmtrm_amount !== '' ? r.frmtrm_amount : r.bfefrmtrm_amount;
+      return { account_nm: (r.account_nm || '').trim(), current: current, previous: previous };
+    });
+    return { rows: out, currentLabel: currentLabel, prevLabel: prevLabel };
+  }
+
+  function renderDartFinancialsTable(container, data, subTabKey) {
+    if (!container || !data) return;
+    var labels = {
+      balance_sheet: { ko: '재무상태표', en: 'Balance Sheet' },
+      income_statement: { ko: '손익계산서', en: 'Income Statement' },
+      cash_flow: { ko: '현금흐름표', en: 'Cash Flow' }
+    };
+    var key = subTabKey || 'balance_sheet';
+    var rows = data[key] || [];
+    var built = buildSheetRows(rows);
+    var currentLabel = built.currentLabel;
+    var prevLabel = built.prevLabel;
+    var subNavHtml = '<div class="dart-financials"><div class="dart-fs-subnav flex gap-1 mb-4">';
+    ['balance_sheet', 'income_statement', 'cash_flow'].forEach(function (k) {
+      var L = labels[k];
+      var active = k === key ? ' active' : '';
+      subNavHtml += '<button type="button" class="dart-fs-subtab-btn px-4 py-2 text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors' + active + '" data-dart-fs-subtab="' + k + '">' + L.ko + ' (' + L.en + ')</button>';
+    });
+    subNavHtml += '</div>';
+    if (built.rows.length === 0) {
+      var hint = key === 'cash_flow' ? '<p class="text-slate-500 text-xs mt-2">DART 단일회사 주요계정 API에서 현금흐름표가 제공되지 않을 수 있습니다.</p>' : '';
+      subNavHtml += '<p class="text-slate-500 text-sm">데이터 없음</p>' + hint + '</div>';
+      container.innerHTML = subNavHtml;
+      return;
+    }
+    subNavHtml += '<div class="overflow-x-auto"><table class="dart-fs-table"><thead><tr><th class="account">계정과목 (Account)</th><th class="num current">제 ' + escapeHtml(currentLabel) + ' 기</th><th class="num prev">제 ' + escapeHtml(prevLabel) + ' 기</th></tr></thead><tbody>';
+    built.rows.forEach(function (r) {
+      subNavHtml += '<tr><td class="account">' + escapeHtml(r.account_nm || '—') + '</td><td class="num current">' + formatFinancialNum(r.current) + '</td><td class="num prev">' + formatFinancialNum(r.previous) + '</td></tr>';
+    });
+    subNavHtml += '</tbody></table></div></div>';
+    container.innerHTML = subNavHtml;
+  }
+
+  function dartLoadTab(tab) {
+    var content = document.getElementById('dart-content');
+    if (!content) return;
+    if (!dartState.corpCode) {
+      content.innerHTML = '<p class="text-slate-500 text-sm">회사명 또는 종목코드로 검색한 뒤 탭에서 재무제표·공시를 확인하세요.</p>';
+      return;
+    }
+    if (tab === 'overview') {
+      content.innerHTML = '<p class="text-slate-500 text-sm">로딩 중…</p>';
+      fetch('/api/dart/overview?corp_code=' + encodeURIComponent(dartState.corpCode), { credentials: 'same-origin' })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.error) {
+            content.innerHTML = '<p class="text-slate-500 text-sm">' + (data.error || '개요 조회 실패') + '</p>';
+            return;
+          }
+          var co = data.company || {};
+          var emp = data.employees || {};
+          var sh = data.shareholders || [];
+          var ceo = co.ceo || co.ceo_nm || '—';
+          var estDt = co.est_dt || '—';
+          var addr = co.address || co.adres || '—';
+          var web = co.website || co.hm_url || '';
+          var totEmp = emp.total_employees;
+          var avgSal = emp.avg_salary;
+          var avgTen = emp.avg_tenure;
+          var empYear = emp.year != null ? emp.year : '';
+          function fmtNum(n) {
+            if (n == null || n === '' || n === undefined) return '—';
+            var x = typeof n === 'number' ? n : parseFloat(String(n).replace(/,/g, ''), 10);
+            return isNaN(x) ? '—' : Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 }).format(x);
+          }
+          function fmtSalary(won) {
+            if (won == null || won === '' || won === undefined) return '—';
+            var x = typeof won === 'number' ? won : parseFloat(String(won).replace(/,/g, ''), 10);
+            if (isNaN(x)) return '—';
+            if (x >= 100000000) return (x / 100000000).toFixed(1).replace(/\.0$/, '') + '억';
+            if (x >= 10000) return (x / 10000).toFixed(0) + '만';
+            return fmtNum(x);
+          }
+          var html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+          html += '<div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4"><h3 class="text-sm font-semibold text-slate-400 mb-3">Corporate Profile</h3>';
+          html += '<p class="text-slate-200 text-sm"><span class="text-slate-500">대표</span> ' + escapeHtml(ceo) + '</p>';
+          html += '<p class="text-slate-200 text-sm mt-1"><span class="text-slate-500">설립일</span> ' + escapeHtml(estDt) + '</p>';
+          if (addr && String(addr).trim()) html += '<p class="text-slate-200 text-sm mt-1"><span class="text-slate-500">주소</span> ' + escapeHtml(String(addr).slice(0, 80)) + (String(addr).length > 80 ? '…' : '') + '</p>';
+          if (web) html += '<a href="' + escapeHtml(web) + '" target="_blank" rel="noopener" class="text-cyan-400 hover:underline text-sm mt-2 inline-block">Homepage</a>';
+          html += '</div>';
+          html += '<div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4"><h3 class="text-sm font-semibold text-slate-400 mb-3">Human Capital' + (empYear ? ' (' + empYear + ')' : '') + '</h3>';
+          html += '<div class="grid grid-cols-1 gap-3"><div><p class="text-slate-500 text-xs">Avg Salary (평균연봉)</p><p class="text-xl font-bold text-slate-100">' + fmtSalary(avgSal) + '</p></div>';
+          html += '<div><p class="text-slate-500 text-xs">Avg Tenure (근속연수)</p><p class="text-xl font-bold text-slate-100">' + fmtNum(avgTen) + '</p></div>';
+          html += '<div><p class="text-slate-500 text-xs">Total Staff (임직원수)</p><p class="text-xl font-bold text-slate-100">' + fmtNum(totEmp) + '</p></div></div></div>';
+          html += '<div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4 md:col-span-2 lg:col-span-1"><h3 class="text-sm font-semibold text-slate-400 mb-3">Governance (Shareholders)</h3>';
+          if (sh.length === 0) {
+            html += '<p class="text-slate-500 text-sm">데이터 없음</p>';
+          } else {
+            html += '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-slate-600 text-left"><th class="py-1.5 pr-2 text-slate-500 font-medium">Name</th><th class="py-1.5 pr-2 text-slate-500 font-medium">Relation</th><th class="py-1.5 text-slate-500 font-medium text-right">Stake (%)</th></tr></thead><tbody>';
+            sh.forEach(function (r) {
+              var name = r.nm || r.major_holders_nm || r.주주명 || '—';
+              var rel = r.relate || r.relation || r.관계 || '—';
+              var pct = r.stock_qota_rt || r.hold_stock_qty_ratio || r.지분;
+              html += '<tr class="border-b border-slate-700/50"><td class="py-1.5 pr-2 text-slate-200">' + escapeHtml(String(name)) + '</td><td class="py-1.5 pr-2 text-slate-400">' + escapeHtml(String(rel)) + '</td><td class="py-1.5 text-slate-300 text-right font-mono">' + fmtNum(pct) + '%</td></tr>';
+            });
+            html += '</tbody></table></div>';
+          }
+          html += '</div></div>';
+          content.innerHTML = html;
+        })
+        .catch(function () {
+          content.innerHTML = '<p class="text-slate-500 text-sm">개요 조회 실패</p>';
+        });
+      return;
+    }
+    if (tab === 'financials') {
+      content.innerHTML = '<p class="text-slate-500 text-sm">로딩 중…</p>';
+      fetch('/api/dart/financials?corp_code=' + encodeURIComponent(dartState.corpCode) + '&fs_div=' + dartState.fsDiv, { credentials: 'same-origin' })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.error) {
+            content.innerHTML = '<p class="text-slate-500 text-sm">' + (data.error || '재무제표 조회 실패') + '</p>';
+            return;
+          }
+          var hasAny = !!(data.balance_sheet && data.balance_sheet.length) || !!(data.income_statement && data.income_statement.length) || !!(data.cash_flow && data.cash_flow.length);
+          if (!hasAny) {
+            var hint = data.dart_message ? '<p class="text-amber-500/90 text-sm mt-2">DART: ' + (data.dart_message || '') + '</p>' : '';
+            content.innerHTML = '<p class="text-slate-500 text-sm">데이터 없음</p>' + hint;
+            return;
+          }
+          dartState.financialsData = {
+            balance_sheet: data.balance_sheet || [],
+            income_statement: data.income_statement || [],
+            cash_flow: data.cash_flow || []
+          };
+          if (!dartState.financialsSubTab || !dartState.financialsData[dartState.financialsSubTab]) {
+            dartState.financialsSubTab = dartState.financialsData.balance_sheet.length ? 'balance_sheet' : (dartState.financialsData.income_statement.length ? 'income_statement' : 'cash_flow');
+          }
+          renderDartFinancialsTable(content, dartState.financialsData, dartState.financialsSubTab);
+        })
+        .catch(function () {
+          content.innerHTML = '<p class="text-slate-500 text-sm">재무제표 조회 실패</p>';
+        });
+      return;
+    }
+    if (tab === 'disclosures') {
+      content.innerHTML = '<p class="text-slate-500 text-sm">로딩 중…</p>';
+      fetch('/api/dart/disclosures?corp_code=' + encodeURIComponent(dartState.corpCode), { credentials: 'same-origin' })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          var list = data.list || [];
+          if (list.length === 0) {
+            content.innerHTML = '<p class="text-slate-500 text-sm">공시 목록이 없습니다.</p>';
+            return;
+          }
+          function badge(reportName) {
+            var t = (reportName || '').toString();
+            if (/부도|횡령|소송/.test(t)) return '<span class="inline-block px-1.5 py-0.5 text-xs font-medium rounded bg-red-500/20 text-red-400">Risk</span>';
+            if (/배당|증자|계약/.test(t)) return '<span class="inline-block px-1.5 py-0.5 text-xs font-medium rounded bg-emerald-500/20 text-emerald-400">Signal</span>';
+            if (/보고서/.test(t)) return '<span class="inline-block px-1.5 py-0.5 text-xs font-medium rounded bg-slate-500/20 text-slate-400">Report</span>';
+            return '';
+          }
+          var html = '<div class="overflow-x-auto"><table class="w-full border-collapse text-sm dart-disclosures-table"><thead><tr class="border-b border-slate-700 bg-slate-800/60"><th class="text-left py-2 px-3 text-slate-400 font-medium">날짜</th><th class="text-left py-2 px-3 text-slate-400 font-medium">시간</th><th class="text-left py-2 px-3 text-slate-400 font-medium">보고서명</th><th class="text-left py-2 px-3 text-slate-400 font-medium">제출인</th></tr></thead><tbody>';
+          list.forEach(function (item, i) {
+            var rceptNo = item.rcept_no || item.rcpNo || item.receipt_no || '';
+            var date = item.rcept_dt || item.date || '';
+            var time = item.report_time || item.time || '';
+            var report = item.report_nm || item.report_name || item.corp_cls || '';
+            var flier = item.flr_nm || item.flier || item.submitter || '';
+            var href = rceptNo ? ('http://dart.fss.or.kr/dsaf001/main.do?rcpNo=' + encodeURIComponent(rceptNo)) : '';
+            var click = href ? ' role="button" tabindex="0" data-dart-rcpt="' + escapeHtml(rceptNo) + '"' : '';
+            html += '<tr class="border-b border-slate-700/50 hover:bg-slate-700/40 cursor-pointer transition-colors' + (i % 2 ? ' bg-slate-800/20' : '') + '"' + click + '><td class="py-2 px-3 text-slate-400">' + escapeHtml(date) + '</td><td class="py-2 px-3 text-slate-500">' + escapeHtml(time) + '</td><td class="py-2 px-3 text-slate-200">' + escapeHtml(report || '—') + ' ' + badge(report) + '</td><td class="py-2 px-3 text-slate-300">' + escapeHtml(flier || '—') + '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+          content.innerHTML = html;
+          content.querySelectorAll('[data-dart-rcpt]').forEach(function (tr) {
+            var no = tr.getAttribute('data-dart-rcpt');
+            if (no) {
+              tr.addEventListener('click', function () { window.open('http://dart.fss.or.kr/dsaf001/main.do?rcpNo=' + encodeURIComponent(no), '_blank', 'noopener'); });
+            }
+          });
+        })
+        .catch(function () {
+          content.innerHTML = '<p class="text-slate-500 text-sm">공시 목록 조회 실패</p>';
+        });
+      return;
+    }
+    if (tab === 'analysis') {
+      content.innerHTML = '<p class="text-slate-500 text-sm">분석 탭은 추후 제공될 예정입니다.</p>';
+    }
+  }
+
+  window.initDartView = initDartView;
 
   // -------------------------------------------------------------------------
   // 초기화
@@ -5084,6 +5736,9 @@
     }
   }
 
+  /** 새로고침 시에는 로그아웃하지 않음. beforeunload/pagehide는 새로고침에서도 발생해 리프레시 시 세션이 풀리던 문제가 있어 제거함. 로그아웃은 상단 Logout 링크로만. */
+  function initAutoLogoutOnLeave() {}
+
   function init() {
     initTabRouting();
     initMobileNav();
@@ -5096,6 +5751,7 @@
     initAdminTableControls();
     initDashboardModals();
     initFinancialTools();
+    initAutoLogoutOnLeave();
     if (typeof window.initMeetingIntelForm === 'function') window.initMeetingIntelForm();
     // 모바일: 메인 스크롤 영역을 맨 위로 맞춰서 위쪽 빈 공간이 안 보이게
     if (window.innerWidth <= 768) {

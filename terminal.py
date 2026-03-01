@@ -13,7 +13,9 @@ DB 스키마는 Flask-Migrate(Alembic)로 관리합니다.
 """
 import json
 import os
+import time
 import uuid
+from datetime import date, timedelta
 from functools import wraps
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, send_from_directory, current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -86,6 +88,24 @@ class User(db.Model):
             "division_id": getattr(self, "division_id", None),
             "team_id": getattr(self, "team_id", None),
         }
+
+
+# Financial Tools usage: 주식 검색 + 탭 클릭 횟수 (일별 집계, 최대 30일 보관)
+FINANCIAL_USAGE_ACTIONS = ("search", "overview", "chart", "income", "balance", "cashflow", "ratios", "trend", "comps", "ownership", "estimates", "news")
+
+
+class FinancialToolUsage(db.Model):
+    __tablename__ = "terminal_financial_tool_usage"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("terminal_users.id"), nullable=False)
+    usage_date = db.Column(db.Date, nullable=False)  # 일 단위
+    action_type = db.Column(db.String(32), nullable=False)  # search, overview, income, ...
+    count = db.Column(db.Integer, default=0, nullable=False)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "usage_date", "action_type", name="uq_financial_usage_user_date_action"),)
+
+    user = db.relationship("User", backref=db.backref("financial_usage", lazy="dynamic"))
 
 
 class Task(db.Model):
@@ -402,6 +422,50 @@ def require_super_admin():
 
 
 # ---------------------------------------------------------------------------
+# Login rate limiting (brute-force 방지)
+# ---------------------------------------------------------------------------
+_LOGIN_ATTEMPTS = {}  # key -> (count, first_ts)
+_LOGIN_RATE_LIMIT_WINDOW = 900   # 15분
+_LOGIN_RATE_LIMIT_MAX = 5
+
+
+def _login_rate_limit_key():
+    return (request.remote_addr or "unknown").strip()
+
+
+def _login_rate_limit_check():
+    """Returns (allowed: bool, retry_after_sec: int or None)."""
+    key = _login_rate_limit_key()
+    now = time.time()
+    if key not in _LOGIN_ATTEMPTS:
+        return True, None
+    count, first = _LOGIN_ATTEMPTS[key]
+    if now - first > _LOGIN_RATE_LIMIT_WINDOW:
+        _LOGIN_ATTEMPTS.pop(key, None)
+        return True, None
+    if count >= _LOGIN_RATE_LIMIT_MAX:
+        return False, int(_LOGIN_RATE_LIMIT_WINDOW - (now - first))
+    return True, None
+
+
+def _login_rate_limit_record_failure():
+    key = _login_rate_limit_key()
+    now = time.time()
+    if key not in _LOGIN_ATTEMPTS:
+        _LOGIN_ATTEMPTS[key] = [1, now]
+    else:
+        count, first = _LOGIN_ATTEMPTS[key]
+        if now - first > _LOGIN_RATE_LIMIT_WINDOW:
+            _LOGIN_ATTEMPTS[key] = [1, now]
+        else:
+            _LOGIN_ATTEMPTS[key][0] = count + 1
+
+
+def _login_rate_limit_clear():
+    _LOGIN_ATTEMPTS.pop(_login_rate_limit_key(), None)
+
+
+# ---------------------------------------------------------------------------
 # Auth routes
 # ---------------------------------------------------------------------------
 @terminal_bp.route("/api/login", methods=["POST"])
@@ -410,6 +474,13 @@ def api_login():
     analyst_id(이메일 또는 ID), password 수신.
     유저 조회 후 비밀번호 검증, 성공 시 세션에 user_id/role 저장 후 JSON 성공 반환.
     """
+    allowed, retry_after = _login_rate_limit_check()
+    if not allowed:
+        return jsonify({
+            "success": False,
+            "message": "Too many failed attempts. Try again later.",
+        }), 429
+
     data = request.get_json(force=True, silent=True) or {}
     analyst_id = (data.get("analyst_id") or "").strip()
     password = data.get("password") or ""
@@ -420,10 +491,12 @@ def api_login():
     # 이메일로 조회 (analyst_id를 이메일로 사용)
     user = User.query.filter_by(email=analyst_id).first()
     if not user or not user.check_password(password):
+        _login_rate_limit_record_failure()
         return jsonify({"success": False, "message": "Invalid ID or Password"}), 401
     if not getattr(user, "is_active", True):
         return jsonify({"success": False, "message": "Account is paused"}), 403
 
+    _login_rate_limit_clear()
     session[SESSION_USER_ID] = user.id
     session[SESSION_USER_ROLE] = user.role
     session.permanent = True
@@ -832,18 +905,26 @@ def _faccting_base():
     return (os.environ.get("FACCTING_API_BASE") or "https://www.faccting.com").rstrip("/")
 
 
+def _faccting_ssl_context():
+    """SSL context for FACCTing requests. Set FACCTING_VERIFY_SSL=1 in production to verify certificates."""
+    import ssl
+    if os.environ.get("FACCTING_VERIFY_SSL", "").strip().lower() in ("1", "true", "yes"):
+        return ssl.create_default_context()
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
 def _faccting_get(path, token):
     """Proxy GET to FACCTing. Returns (body_string, None) on success or (None, error_dict) on auth/API error."""
     if not token:
         return None, None
     base = _faccting_base()
     try:
-        import ssl
         import urllib.request
         import urllib.error
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        ctx = _faccting_ssl_context()
         req = urllib.request.Request(
             base + path,
             headers={"Authorization": "Bearer " + token, "User-Agent": "Mozilla/5.0"},
@@ -868,13 +949,10 @@ def _faccting_post(path, token, data):
         return None, None
     base = _faccting_base()
     try:
-        import ssl
         import urllib.request
         import urllib.error
         import json
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        ctx = _faccting_ssl_context()
         body = json.dumps(data).encode("utf-8")
         req = urllib.request.Request(
             base + path,
@@ -2213,6 +2291,101 @@ def api_users():
             return jsonify({"error": "Conflict", "message": "Email already exists"}), 409
 
     return jsonify({"error": "Method not allowed"}), 405
+
+
+ANALYST_SEARCH_LIMIT_PER_DAY = 5
+
+
+def _analyst_search_count_today(user_id):
+    """오늘 해당 유저의 search 액션 합계."""
+    today = date.today()
+    rows = FinancialToolUsage.query.filter_by(
+        user_id=user_id, usage_date=today, action_type="search"
+    ).all()
+    return sum(r.count for r in rows)
+
+
+@terminal_bp.route("/api/terminal/usage/can-search", methods=["GET"])
+@login_required_api
+def api_terminal_usage_can_search():
+    """analyst만: 오늘 검색 5회 미만이면 allowed True, 아니면 False + 메시지."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    role = (user.get("role") or "").strip().lower()
+    if role != "analyst":
+        return jsonify({"allowed": True})
+    count = _analyst_search_count_today(user["id"])
+    if count >= ANALYST_SEARCH_LIMIT_PER_DAY:
+        return jsonify({
+            "allowed": False,
+            "message": "Maximum 5 searches per day. For additional data, please visit FACCTing.com",
+        })
+    return jsonify({"allowed": True})
+
+
+@terminal_bp.route("/api/terminal/usage", methods=["POST"])
+@login_required_api
+def api_terminal_usage():
+    """기록: Financial Tools 주식 검색 횟수, 탭(Overview/Income/...) 클릭 횟수. 일별 집계, 최대 30일 보관. analyst는 search 5회/일 제한."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    action = (data.get("action") or "").strip().lower()
+    if action not in FINANCIAL_USAGE_ACTIONS:
+        return jsonify({"error": "Bad request", "message": "Invalid action"}), 400
+    today = date.today()
+    # analyst: search 액션은 5회/일 제한
+    if action == "search":
+        role = (user.get("role") or "").strip().lower()
+        if role == "analyst":
+            count = _analyst_search_count_today(user["id"])
+            if count >= ANALYST_SEARCH_LIMIT_PER_DAY:
+                return jsonify({
+                    "error": "limit",
+                    "message": "Maximum 5 searches per day. For additional data, please visit FACCTing.com",
+                }), 429
+    row = FinancialToolUsage.query.filter_by(
+        user_id=user["id"], usage_date=today, action_type=action
+    ).first()
+    if row:
+        row.count += 1
+    else:
+        db.session.add(FinancialToolUsage(
+            user_id=user["id"], usage_date=today, action_type=action, count=1
+        ))
+    # 30일 초과 데이터 삭제
+    cutoff = today - timedelta(days=30)
+    FinancialToolUsage.query.filter(FinancialToolUsage.usage_date < cutoff).delete()
+    db.session.commit()
+    return jsonify({"ok": True}), 200
+
+
+@terminal_bp.route("/api/admin/usage-stats", methods=["GET"])
+@login_required_api
+def api_admin_usage_stats():
+    """Admin: 최근 30일 Financial Tools 사용 집계 (유저별·액션별). super_admin만."""
+    forbidden = require_super_admin()
+    if forbidden is not None:
+        return forbidden
+    cutoff = date.today() - timedelta(days=30)
+    rows = FinancialToolUsage.query.filter(FinancialToolUsage.usage_date >= cutoff).all()
+    by_user = {}  # user_id -> { name, email, search, overview, ... }
+    by_action = {a: 0 for a in FINANCIAL_USAGE_ACTIONS}
+    for r in rows:
+        u = r.user
+        if u and u.id not in by_user:
+            by_user[u.id] = {"user_id": u.id, "name": u.name, "email": u.email or ""}
+            for a in FINANCIAL_USAGE_ACTIONS:
+                by_user[u.id][a] = 0
+        if u and u.id in by_user:
+            by_user[u.id][r.action_type] = by_user[u.id].get(r.action_type, 0) + r.count
+        by_action[r.action_type] = by_action.get(r.action_type, 0) + r.count
+    return jsonify({
+        "by_user": list(by_user.values()),
+        "by_action": by_action,
+    })
 
 
 @terminal_bp.route("/api/users/<int:user_id>", methods=["PATCH", "DELETE"])

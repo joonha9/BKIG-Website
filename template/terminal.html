@@ -9,11 +9,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='terminal.css') }}">
   <script type="application/json" id="terminal-user-json">{{ current_user | tojson }}</script>
   <script>
     window.TERMINAL_CURRENT_USER = JSON.parse(document.getElementById('terminal-user-json').textContent);
+    window.TERMINAL_LOGOUT_URL = "{{ url_for('terminal.api_logout') }}";
   </script>
 </head>
 <body class="bkig-terminal bg-[#0a0e17] text-slate-200 min-h-screen flex">
@@ -48,6 +49,12 @@
         <li>
           <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200" data-view="view-financial-tools">
             Financial Tools
+          </button>
+        </li>
+        <li>
+          <button type="button" class="bkig-nav-item w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/40 hover:text-white transition-all duration-200 flex items-center gap-2" data-view="view-dart" data-requires-super-admin="true">
+            <svg class="w-4 h-4 text-amber-500/90 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            <span>DART 공시</span>
           </button>
         </li>
         <li>
@@ -339,7 +346,8 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-[700px] mt-6">
           <!-- Left Sidebar -->
           <nav class="col-span-12 md:col-span-2 flex flex-col gap-1 bg-slate-800/50 border border-slate-700 rounded-lg p-3 h-fit md:h-full">
-            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors data-active:bg-slate-700/80 data-active:text-white" data-tab="overview">Overview &amp; Chart</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors data-active:bg-slate-700/80 data-active:text-white" data-tab="overview">Overview</button>
+            <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="chart">Chart</button>
             <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="income">Income Statement</button>
             <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="balance">Balance Sheet</button>
             <button type="button" class="financial-tool-nav w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors" data-tab="cashflow">Cash Flow Statement</button>
@@ -373,6 +381,51 @@
               <p class="text-slate-500 text-sm">Enter a ticker and click Search to load data.</p>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- view-dart: DART 공시 (한국 공시/재무) -->
+    <section id="view-dart" class="flex-1 overflow-y-auto bkig-scroll p-6 pr-24 bg-slate-900 text-slate-200 hidden">
+      <div class="max-w-full">
+        <h2 class="text-xl font-semibold text-slate-200 mb-1">DART 공시</h2>
+        <p class="text-slate-500 text-sm mb-4">한국 상장사 공시·재무제표 조회 (회사명 또는 종목코드 검색)</p>
+
+        <!-- DART 검색 바 + 드롭다운 -->
+        <div class="flex flex-wrap items-center gap-3 mb-4">
+          <div class="relative flex-1 min-w-[220px] max-w-lg" id="dart-search-wrap">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" aria-hidden="true">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </span>
+            <input type="text" id="dart-query-input" placeholder="회사명 또는 종목코드 (예: 삼성전자, 005930)" class="w-full pl-9 pr-3 py-2.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-controls="dart-search-dropdown">
+            <div id="dart-search-dropdown" class="absolute left-0 right-0 top-full mt-1 rounded-md border border-slate-700 bg-slate-800 shadow-xl z-[200] max-h-72 overflow-y-auto hidden min-w-[280px]" role="listbox" aria-label="검색 결과">
+              <!-- 검색 결과 목록 (JS로 채움) -->
+            </div>
+          </div>
+          <button type="button" id="dart-search-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white rounded-md px-4 py-2.5 text-sm font-medium transition-colors shrink-0">검색</button>
+        </div>
+        <div id="dart-company-summary" class="mb-3 min-h-[2rem] text-sm text-slate-400">
+          <!-- 선택된 회사 표시 -->
+        </div>
+
+        <!-- 연결/별도 토글 + 탭 -->
+        <div class="flex flex-wrap items-center gap-4 mb-3">
+          <div class="flex items-center gap-2" id="dart-fs-toggle-wrap" style="display: none;">
+            <span class="text-xs text-slate-500 uppercase tracking-wider">재무제표</span>
+            <button type="button" id="dart-fs-consolidated" class="dart-fs-toggle px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-cyan-600 text-white">연결</button>
+            <button type="button" id="dart-fs-separate" class="dart-fs-toggle px-3 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:bg-slate-700/60 transition-colors">별도</button>
+          </div>
+          <div class="flex gap-1 border-b border-slate-700/80">
+            <button type="button" class="dart-tab px-3 py-2 text-sm font-medium rounded-t-md transition-colors data-active:bg-slate-700/80 data-active:text-white text-slate-400 hover:text-slate-200" data-dart-tab="overview">개요</button>
+            <button type="button" class="dart-tab px-3 py-2 text-sm font-medium rounded-t-md transition-colors text-slate-400 hover:text-slate-200" data-dart-tab="financials">재무제표</button>
+            <button type="button" class="dart-tab px-3 py-2 text-sm font-medium rounded-t-md transition-colors text-slate-400 hover:text-slate-200" data-dart-tab="disclosures">공시</button>
+            <button type="button" class="dart-tab px-3 py-2 text-sm font-medium rounded-t-md transition-colors text-slate-400 hover:text-slate-200" data-dart-tab="analysis">분석</button>
+          </div>
+        </div>
+
+        <!-- DART 콘텐츠 영역 -->
+        <div id="dart-content" class="bg-slate-950 border border-slate-800 rounded-lg min-h-[400px] p-4">
+          <p class="text-slate-500 text-sm">회사명 또는 종목코드로 검색한 뒤 탭에서 재무제표·공시를 확인하세요.</p>
         </div>
       </div>
     </section>
@@ -455,6 +508,21 @@
               </div>
             </div>
             <div id="ranking-portfolio-modal-error" class="ranking-portfolio-modal-error hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial Tools: analyst 일 5회 검색 제한 안내 모달 -->
+    <div id="financial-search-limit-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" id="financial-search-limit-modal-backdrop"></div>
+      <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-w-md w-full p-6 pointer-events-auto">
+          <h3 class="text-lg font-semibold text-slate-200 mb-3">Daily Search Limit</h3>
+          <p id="financial-search-limit-modal-message" class="text-slate-300 text-sm mb-4">Maximum 5 searches per day. For additional data, please visit FACCTing.com</p>
+          <div class="flex justify-end gap-2">
+            <a href="https://faccting.com" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors">Go to FACCTing.com</a>
+            <button type="button" id="financial-search-limit-modal-close" class="px-4 py-2 rounded-md bg-slate-600 hover:bg-slate-500 text-slate-200 text-sm font-medium transition-colors">Close</button>
           </div>
         </div>
       </div>
@@ -693,6 +761,21 @@
               <div class="w-[240px] h-44 sm:h-48 md:h-52 shrink-0" style="min-height: 176px;">
                 <canvas id="admin-division-chart" aria-label="Division distribution" style="display: block; width: 100%; height: 100%;"></canvas>
               </div>
+            </div>
+          </div>
+        </div>
+        <!-- Financial Tools 사용량 (최근 30일) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">주식 검색 횟수 (최근 30일)</h3>
+            <div class="w-full" style="min-height: 200px;">
+              <canvas id="admin-usage-search-chart" aria-label="Stock search count by user"></canvas>
+            </div>
+          </div>
+          <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">탭별 클릭 횟수 (최근 30일)</h3>
+            <div class="w-full flex justify-center" style="min-height: 200px;">
+              <canvas id="admin-usage-sections-chart" aria-label="Section clicks by type"></canvas>
             </div>
           </div>
         </div>
@@ -1149,7 +1232,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@1.2.0/dist/chartjs-plugin-crosshair.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
