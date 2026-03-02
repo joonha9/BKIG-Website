@@ -686,6 +686,15 @@
   color: #64748b;
 }
 
+.footer-credit {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 1.25rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+  text-align: right;
+}
+
 .footer-legal {
   display: flex;
   align-items: center;
@@ -752,5 +761,9 @@
 
   .footer-legal {
     justify-content: center;
+  }
+
+  .footer-credit {
+    padding: 0 1.25rem 1rem;
   }
 }
