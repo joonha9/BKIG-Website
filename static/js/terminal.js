@@ -3401,10 +3401,12 @@
       ? inquiries
           .map(function (i) {
             const dateStr = i.created_at ? i.created_at.slice(0, 10) : '—';
+            const company = (i.company_name || '').trim() || '—';
             const msgShort = (i.message || '').length > 80 ? (i.message || '').slice(0, 80) + '…' : (i.message || '');
             return (
               '<tr class="hover:bg-slate-700/20">' +
               '<td class="px-4 py-3 text-slate-400 text-xs">' + escapeHtml(dateStr) + '</td>' +
+              '<td class="px-4 py-3 text-slate-300">' + escapeHtml(company) + '</td>' +
               '<td class="px-4 py-3 text-slate-300">' + escapeHtml(i.name) + '</td>' +
               '<td class="px-4 py-3 text-slate-300">' + escapeHtml(i.email) + '</td>' +
               '<td class="px-4 py-3 text-slate-300">' + escapeHtml(i.subject) + '</td>' +
@@ -3413,17 +3415,18 @@
             );
           })
           .join('')
-      : '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No inquiries yet.</td></tr>';
+      : '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No inquiries yet.</td></tr>';
   }
 
   function applyAdminInquiriesView() {
     var searchEl = document.getElementById('admin-inquiries-search');
     var query = (searchEl && searchEl.value) || '';
     var filtered = filterListBySearch(adminInquiriesList, query, function (i) {
-      return [i.name, i.email, i.subject, i.message, i.created_at].join(' ');
+      return [i.company_name || '', i.name, i.email, i.subject, i.message, i.created_at].join(' ');
     });
     function getInqValue(i, key) {
       if (key === 'date') return i.created_at || '';
+      if (key === 'company') return (i.company_name || '').trim();
       if (key === 'name') return i.name;
       if (key === 'email') return i.email;
       if (key === 'subject') return i.subject;
@@ -3451,16 +3454,17 @@
     } catch (e) {
       adminInquiriesList = [];
       tbody.innerHTML =
-        '<tr><td colspan="5" class="px-4 py-8 text-center text-red-400">Failed to load inquiries.</td></tr>';
+        '<tr><td colspan="6" class="px-4 py-8 text-center text-red-400">Failed to load inquiries.</td></tr>';
     }
   }
 
   function exportInquiriesExcel() {
-    var headers = ['Date', 'Name', 'Email', 'Subject', 'Message'];
+    var headers = ['Date', 'Company', 'Name', 'Email', 'Subject', 'Message'];
     var rows = adminInquiriesList.map(function (i) {
       var dateStr = i.created_at ? i.created_at.slice(0, 10) : '';
       return [
         dateStr,
+        (i.company_name || '').trim(),
         i.name || '',
         i.email || '',
         i.subject || '',

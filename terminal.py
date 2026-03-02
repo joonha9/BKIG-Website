@@ -423,14 +423,15 @@ class BkigDonation(db.Model):
 
 
 class BkigInquiry(db.Model):
-    """Contact 페이지 Send Message 폼에서 제출된 문의."""
+    """Contact 페이지 Send Message 폼 및 Partnership Contact Executive Team 모달에서 제출된 문의."""
     __tablename__ = "terminal_bkig_inquiries"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(120), nullable=False)  # 담당자(contact person) or general name
     email = db.Column(db.String(255), nullable=False)
-    subject = db.Column(db.String(120), nullable=False)  # recruiting, partnership, donation, other
+    subject = db.Column(db.String(120), nullable=False)  # recruiting, partnership, donation, other; or collaboration, investment, education, internship, recruitment, connection
     message = db.Column(db.Text, nullable=False)
+    company_name = db.Column(db.String(200), nullable=True)  # 기업이름 (partnership form)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
     def to_dict(self):
@@ -440,6 +441,7 @@ class BkigInquiry(db.Model):
             "email": self.email,
             "subject": self.subject or "",
             "message": self.message or "",
+            "company_name": getattr(self, "company_name", None) or "",
             "created_at": self.created_at.isoformat() if self.created_at else "",
         }
 
@@ -2659,20 +2661,21 @@ def api_donation_complete(donation_id):
 @terminal_bp.route("/api/inquiries", methods=["POST"])
 def api_inquiries_submit():
     """
-    Contact 페이지 Send Message 폼에서 제출. 로그인 불필요.
-    JSON 또는 form: name, email, subject, message
+    Contact 페이지 Send Message 폼 또는 Partnership Contact Executive Team 모달에서 제출. 로그인 불필요.
+    JSON 또는 form: name, email, subject, message [, company_name ]
     """
     data = request.get_json(silent=True) or request.form or {}
     name = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip()
     subject = (data.get("subject") or "").strip()
     message = (data.get("message") or "").strip()
+    company_name = (data.get("company_name") or "").strip() or None
 
     if not name or not email or not subject or not message:
         return jsonify({"error": "Bad request", "message": "Name, email, subject, and message are required"}), 400
 
     try:
-        inquiry = BkigInquiry(name=name, email=email, subject=subject, message=message)
+        inquiry = BkigInquiry(name=name, email=email, subject=subject, message=message, company_name=company_name)
         db.session.add(inquiry)
         db.session.commit()
         return jsonify({"success": True, "message": "Inquiry sent.", "id": inquiry.id}), 201
