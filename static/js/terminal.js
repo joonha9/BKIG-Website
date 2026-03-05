@@ -567,6 +567,7 @@
       modal.setAttribute('aria-hidden', 'false');
     }
   }
+  window.showFacctingRequiredModal = showFacctingRequiredModal;
 
   function hideFacctingRequiredModal() {
     var modal = document.getElementById('faccting-required-modal');
@@ -3006,22 +3007,29 @@
   }
 
   var USAGE_SECTION_LABELS = { search: 'Search', overview: 'Overview', chart: 'Chart', income: 'Income Statement', balance: 'Balance Sheet', cashflow: 'Cash Flow', ratios: 'Key Ratios', trend: 'Trend', comps: 'COMPS', ownership: 'OWNERSHIP', estimates: 'ESTIMATES', news: 'NEWS' };
+  var USAGE_DEEP_LABELS = { deep_forensic: 'Forensic', deep_smart_money: 'Smart Money', deep_wall_st_consensus: 'Wall St Consensus', deep_valuation_lab: 'Valuation Lab', deep_quality_profit: 'Quality of Profit', deep_capital_allocation: 'Capital Allocation' };
+  var adminUsageStatsCache = null;
+  var adminUsageSearchTab = 'general';
+  var adminUsageSectionsTab = 'general';
 
-  function renderAdminUsageCharts(usageStats) {
+  function renderAdminUsageCharts(usageStats, searchTab, sectionsTab) {
     if (typeof Chart === 'undefined' || !usageStats) return;
+    searchTab = searchTab || adminUsageSearchTab;
+    sectionsTab = sectionsTab || adminUsageSectionsTab;
     var byUser = usageStats.by_user || [];
     var byAction = usageStats.by_action || {};
     var searchCanvas = document.getElementById('admin-usage-search-chart');
     if (searchCanvas) {
       if (adminUsageSearchChart) { adminUsageSearchChart.destroy(); adminUsageSearchChart = null; }
-      var sorted = byUser.slice().sort(function (a, b) { return (b.search || 0) - (a.search || 0); });
+      var searchKey = searchTab === 'advanced' ? 'deep_analysis_search' : 'search';
+      var sorted = byUser.slice().sort(function (a, b) { return (b[searchKey] || 0) - (a[searchKey] || 0); });
       var names = sorted.map(function (u) { return u.name || u.email || 'User #' + u.user_id; });
-      var counts = sorted.map(function (u) { return u.search || 0; });
+      var counts = sorted.map(function (u) { return u[searchKey] || 0; });
       adminUsageSearchChart = new Chart(searchCanvas, {
         type: 'bar',
         data: {
           labels: names.length ? names : ['No data'],
-          datasets: [{ label: 'Search count', data: counts.length ? counts : [0], backgroundColor: '#475569', borderRadius: 4 }]
+          datasets: [{ label: searchTab === 'advanced' ? 'Deep Analysis search' : 'Search count', data: counts.length ? counts : [0], backgroundColor: searchTab === 'advanced' ? '#0ea5e9' : '#475569', borderRadius: 4 }]
         },
         options: {
           indexAxis: 'y',
@@ -3039,14 +3047,23 @@
     var sectionsCanvas = document.getElementById('admin-usage-sections-chart');
     if (sectionsCanvas) {
       if (adminUsageSectionsChart) { adminUsageSectionsChart.destroy(); adminUsageSectionsChart = null; }
-      var order = ['overview', 'chart', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates', 'news'];
-      var sectionLabels = order.map(function (k) { return USAGE_SECTION_LABELS[k] || k; });
-      var sectionData = order.map(function (k) { return byAction[k] || 0; });
+      var order;
+      var sectionLabels;
+      var sectionData;
+      if (sectionsTab === 'advanced') {
+        order = ['deep_forensic', 'deep_smart_money', 'deep_wall_st_consensus', 'deep_valuation_lab', 'deep_quality_profit', 'deep_capital_allocation'];
+        sectionLabels = order.map(function (k) { return USAGE_DEEP_LABELS[k] || k; });
+        sectionData = order.map(function (k) { return byAction[k] || 0; });
+      } else {
+        order = ['overview', 'chart', 'income', 'balance', 'cashflow', 'ratios', 'trend', 'comps', 'ownership', 'estimates', 'news'];
+        sectionLabels = order.map(function (k) { return USAGE_SECTION_LABELS[k] || k; });
+        sectionData = order.map(function (k) { return byAction[k] || 0; });
+      }
       adminUsageSectionsChart = new Chart(sectionsCanvas, {
         type: 'bar',
         data: {
           labels: sectionLabels,
-          datasets: [{ label: 'Clicks', data: sectionData, backgroundColor: ['#334155', '#475569', '#64748b', '#94a3b8', '#0ea5e9', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#14b8a6'], borderRadius: 4 }]
+          datasets: [{ label: 'Clicks', data: sectionData, backgroundColor: sectionsTab === 'advanced' ? ['#334155', '#475569', '#64748b', '#0ea5e9', '#10b981', '#8b5cf6'] : ['#334155', '#475569', '#64748b', '#94a3b8', '#0ea5e9', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#14b8a6'], borderRadius: 4 }]
         },
         options: {
           responsive: true,
@@ -3064,6 +3081,28 @@
       if (adminUsageSearchChart) adminUsageSearchChart.resize();
       if (adminUsageSectionsChart) adminUsageSectionsChart.resize();
     });
+  }
+
+  function setAdminUsageSearchTab(tab) {
+    adminUsageSearchTab = tab;
+    document.querySelectorAll('.admin-usage-tab-search').forEach(function (btn) {
+      var isActive = (btn.getAttribute('data-tab') || '') === tab;
+      btn.classList.toggle('bg-slate-700', isActive);
+      btn.classList.toggle('text-white', isActive);
+      btn.classList.toggle('text-slate-400', !isActive);
+    });
+    if (adminUsageStatsCache) renderAdminUsageCharts(adminUsageStatsCache, adminUsageSearchTab, adminUsageSectionsTab);
+  }
+
+  function setAdminUsageSectionsTab(tab) {
+    adminUsageSectionsTab = tab;
+    document.querySelectorAll('.admin-usage-tab-sections').forEach(function (btn) {
+      var isActive = (btn.getAttribute('data-tab') || '') === tab;
+      btn.classList.toggle('bg-slate-700', isActive);
+      btn.classList.toggle('text-white', isActive);
+      btn.classList.toggle('text-slate-400', !isActive);
+    });
+    if (adminUsageStatsCache) renderAdminUsageCharts(adminUsageStatsCache, adminUsageSearchTab, adminUsageSectionsTab);
   }
 
   async function loadAdminUsers() {
@@ -3084,7 +3123,8 @@
         var usageRes = await fetch('/api/admin/usage-stats', { credentials: 'same-origin' });
         if (usageRes.ok) {
           var usageData = await usageRes.json();
-          renderAdminUsageCharts(usageData);
+          adminUsageStatsCache = usageData;
+          renderAdminUsageCharts(usageData, adminUsageSearchTab, adminUsageSectionsTab);
         }
       } catch (err) {}
     } catch (e) {
@@ -3548,6 +3588,13 @@
     if (inqPrev) inqPrev.addEventListener('click', function () { adminInquiriesPage--; applyAdminInquiriesView(); });
     if (inqNext) inqNext.addEventListener('click', function () { adminInquiriesPage++; applyAdminInquiriesView(); });
     if (inqExcel) inqExcel.addEventListener('click', exportInquiriesExcel);
+
+    document.querySelectorAll('.admin-usage-tab-search').forEach(function (btn) {
+      btn.addEventListener('click', function () { setAdminUsageSearchTab((btn.getAttribute('data-tab') || 'general')); });
+    });
+    document.querySelectorAll('.admin-usage-tab-sections').forEach(function (btn) {
+      btn.addEventListener('click', function () { setAdminUsageSectionsTab((btn.getAttribute('data-tab') || 'general')); });
+    });
   }
 
   // -------------------------------------------------------------------------

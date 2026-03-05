@@ -94,6 +94,9 @@ class User(db.Model):
 
 # Financial Tools usage: 주식 검색 + 탭 클릭 횟수 (일별 집계, 최대 30일 보관)
 FINANCIAL_USAGE_ACTIONS = ("search", "overview", "chart", "income", "balance", "cashflow", "ratios", "trend", "comps", "ownership", "estimates", "news")
+# Deep Analysis (고급): 검색 + 탭별 클릭
+DEEP_ANALYSIS_ACTIONS = ("deep_analysis_search", "deep_forensic", "deep_smart_money", "deep_wall_st_consensus", "deep_valuation_lab", "deep_quality_profit", "deep_capital_allocation")
+ALL_USAGE_ACTIONS = FINANCIAL_USAGE_ACTIONS + DEEP_ANALYSIS_ACTIONS
 
 
 class FinancialToolUsage(db.Model):
@@ -1026,6 +1029,41 @@ def api_tools_news(ticker):
         return jsonify({"news": news})
     except Exception:
         return jsonify({"news": []})
+
+
+@terminal_bp.route("/api/tools/deep-analysis/<ticker>")
+@login_required_api
+def api_tools_deep_analysis(ticker):
+    """Deep Analysis: scores, insider, estimates, revenue chart data (FMP). FACCTing 연동 필수."""
+    user_obj = User.query.get(session.get(SESSION_USER_ID))
+    if not user_obj:
+        return jsonify({"error": "Unauthorized"}), 401
+    faccting_token = getattr(user_obj, "faccting_token", None) or ""
+    if not (faccting_token and faccting_token.strip()):
+        return jsonify({
+            "error": "FACCTing required",
+            "message": "FACCTing API를 연동한 후 Deep Analysis를 이용할 수 있습니다.",
+        }), 403
+    try:
+        from deep_analysis import get_deep_analysis_data
+        data = get_deep_analysis_data(ticker)
+        # Record usage (고급 검색)
+        today = date.today()
+        row = FinancialToolUsage.query.filter_by(
+            user_id=user_obj.id, usage_date=today, action_type="deep_analysis_search"
+        ).first()
+        if row:
+            row.count += 1
+        else:
+            db.session.add(FinancialToolUsage(
+                user_id=user_obj.id, usage_date=today, action_type="deep_analysis_search", count=1
+            ))
+        cutoff = today - timedelta(days=30)
+        FinancialToolUsage.query.filter(FinancialToolUsage.usage_date < cutoff).delete()
+        db.session.commit()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e), "ticker": (ticker or "").strip().upper()}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -2796,7 +2834,7 @@ def api_terminal_usage():
         return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json(force=True, silent=True) or {}
     action = (data.get("action") or "").strip().lower()
-    if action not in FINANCIAL_USAGE_ACTIONS:
+    if action not in ALL_USAGE_ACTIONS:
         return jsonify({"error": "Bad request", "message": "Invalid action"}), 400
     today = date.today()
     # analyst: search 액션은 5회/일 제한
@@ -2834,13 +2872,13 @@ def api_admin_usage_stats():
         return forbidden
     cutoff = date.today() - timedelta(days=30)
     rows = FinancialToolUsage.query.filter(FinancialToolUsage.usage_date >= cutoff).all()
-    by_user = {}  # user_id -> { name, email, search, overview, ... }
-    by_action = {a: 0 for a in FINANCIAL_USAGE_ACTIONS}
+    by_user = {}  # user_id -> { name, email, search, overview, ..., deep_analysis_search, ... }
+    by_action = {a: 0 for a in ALL_USAGE_ACTIONS}
     for r in rows:
         u = r.user
         if u and u.id not in by_user:
             by_user[u.id] = {"user_id": u.id, "name": u.name, "email": u.email or ""}
-            for a in FINANCIAL_USAGE_ACTIONS:
+            for a in ALL_USAGE_ACTIONS:
                 by_user[u.id][a] = 0
         if u and u.id in by_user:
             by_user[u.id][r.action_type] = by_user[u.id].get(r.action_type, 0) + r.count
