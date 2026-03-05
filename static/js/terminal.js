@@ -577,6 +577,22 @@
     }
   }
 
+  function openSystemInfoModal() {
+    var modal = document.getElementById('system-info-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function closeSystemInfoModal() {
+    var modal = document.getElementById('system-info-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   function closeWatchlistModal() {
     var modal = document.getElementById('watchlist-modal');
     if (modal) {
@@ -2142,6 +2158,27 @@
     var facctingRequiredBackdrop = document.getElementById('faccting-required-modal-backdrop');
     if (facctingRequiredClose) facctingRequiredClose.addEventListener('click', hideFacctingRequiredModal);
     if (facctingRequiredBackdrop) facctingRequiredBackdrop.addEventListener('click', hideFacctingRequiredModal);
+
+    var systemInfoFooter = document.getElementById('sidebar-system-info-footer');
+    var systemInfoModalClose = document.getElementById('system-info-modal-close');
+    var systemInfoModalBackdrop = document.getElementById('system-info-modal-backdrop');
+    if (systemInfoFooter) {
+      systemInfoFooter.addEventListener('click', openSystemInfoModal);
+      systemInfoFooter.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openSystemInfoModal();
+        }
+      });
+    }
+    if (systemInfoModalClose) systemInfoModalClose.addEventListener('click', closeSystemInfoModal);
+    if (systemInfoModalBackdrop) systemInfoModalBackdrop.addEventListener('click', closeSystemInfoModal);
+    document.addEventListener('keydown', function systemInfoEsc(e) {
+      if (e.key === 'Escape') {
+        var m = document.getElementById('system-info-modal');
+        if (m && !m.classList.contains('hidden')) closeSystemInfoModal();
+      }
+    });
 
     // -------------------------------------------------------------------------
     // Internal Research: Upload Document — 슬라이드 오버 열기/닫기, 카테고리, 티커 pill, 드롭존

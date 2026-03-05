@@ -106,13 +106,22 @@
         {% endif %}
       </ul>
     </nav>
-    <div class="p-3 border-t border-slate-700/60">
+    <div class="p-3 border-t border-slate-700/60 shrink-0">
       <div class="flex items-center gap-2 flex-wrap">
         <p id="sidebar-user-p" class="text-xs text-slate-500 truncate flex-1 min-w-0" title="{{ current_user.email }}"><span id="sidebar-user-name">{{ current_user.name }}</span><span id="sidebar-faccting-nickname" class="text-slate-400"></span></p>
         <button type="button" id="sidebar-profile-btn" class="text-xs text-slate-400 hover:text-cyan-400 transition-colors shrink-0" title="Profile">Profile</button>
       </div>
       <p class="text-xs text-slate-600">{{ current_user.role }}</p>
       <a href="{{ url_for('terminal.api_logout') }}" class="mt-2 inline-block text-xs text-slate-500 hover:text-red-400 transition-colors">Logout</a>
+    </div>
+    <!-- System Info / Branding footer (clickable → opens System Info Modal) -->
+    <div id="sidebar-system-info-footer" class="mt-auto shrink-0 p-3 border-t border-slate-700/60 cursor-pointer rounded-b-md transition-colors hover:bg-slate-800/50" role="button" tabindex="0" aria-label="System info — open system status" title="System info">
+      <p class="text-[10px] text-slate-500 uppercase tracking-wider">Powered by</p>
+      <p class="text-sm font-bold text-slate-300 mt-0.5">FACCTing Engine</p>
+      <div class="flex items-center gap-1.5 mt-1.5">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" aria-hidden="true"></span>
+        <span class="text-[10px] text-slate-500">System Operational</span>
+      </div>
     </div>
   </aside>
 
@@ -1680,6 +1689,54 @@
           <button type="button" id="faccting-required-modal-close" class="px-4 py-2 rounded-md bg-slate-600 hover:bg-slate-500 text-slate-200 text-sm font-medium transition-colors">닫기</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- System Info Modal (BIOS-style system status / branding) -->
+  <div id="system-info-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" aria-labelledby="system-info-modal-title" aria-hidden="true" role="dialog">
+    <div id="system-info-modal-backdrop" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md" aria-hidden="true"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+      <div class="w-full max-w-lg bg-[#0a0e17] border border-slate-600/80 rounded-lg shadow-2xl overflow-hidden pointer-events-auto">
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-slate-700/80 flex items-start justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-500/90 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          <h2 id="system-info-modal-title" class="text-sm font-semibold tracking-wide text-slate-200 uppercase">BKIG Terminal System Status</h2>
+        </div>
+        <button type="button" id="system-info-modal-close" class="p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-700/50 rounded transition-colors" aria-label="Close">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Info grid (monospace, BIOS-style) -->
+      <div class="px-5 py-4 font-mono text-sm">
+        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-slate-400">
+          <dt class="text-slate-500">Client</dt>
+          <dd class="text-slate-300">Boston Korea Investment Group (BKIG)</dd>
+          <dt class="text-slate-500">System Lead</dt>
+          <dd class="text-slate-300">Joonha Kwon (권준하)</dd>
+          <dt class="text-slate-500">Engine Version</dt>
+          <dd class="text-slate-300">v2.4.0 (Build: Stable)</dd>
+          <dt class="text-slate-500">Core Provider</dt>
+          <dd class="text-slate-300">FACCTing Financial Solutions</dd>
+          <dt class="text-slate-500 flex items-center gap-1.5">Server Status</dt>
+          <dd class="flex items-center gap-1.5 text-emerald-400">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true"></span>
+            Connected (Low Latency)
+          </dd>
+        </dl>
+      </div>
+      <!-- Promotional section -->
+      <div class="px-5 pb-5">
+        <div class="rounded-lg border border-slate-600/60 bg-slate-800/40 p-4">
+          <p class="text-slate-300 text-sm leading-relaxed">This terminal is built with FACCTing's financial analysis engine.</p>
+          <a href="https://faccting.com" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center justify-center px-4 py-2.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors">
+            Visit FACCTing.com
+            <svg class="w-4 h-4 ml-1.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+          <p class="mt-4 text-[11px] text-slate-500">© 2026 FACCTing. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
 
