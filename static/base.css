@@ -441,40 +441,6 @@
   }
 }
 
-/* ========== Terminal Login Modal (Modern Financial Terminal) ========== */
-.terminal-modal-grid-pattern {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-  background-size: 22px 22px;
-  pointer-events: none;
-}
-
-.terminal-input {
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-}
-
-.terminal-connect-btn {
-  font-family: var(--font-sans);
-}
-
-/* Terminal Connecting — 금융 터미널 스타일 스피너 (Bloomberg/Reuters 느낌) */
-.terminal-connecting-spinner {
-  width: 44px;
-  height: 44px;
-  border: 2px solid rgba(59, 130, 246, 0.2);
-  border-top-color: rgba(59, 130, 246, 0.9);
-  border-radius: 50%;
-  animation: terminal-spin 0.9s linear infinite;
-}
-@keyframes terminal-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* ========== Footer (Dark) ========== */
 .visually-hidden {
   position: absolute;

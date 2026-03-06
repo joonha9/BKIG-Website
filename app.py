@@ -25,20 +25,6 @@ if os.environ.get("FLASK_ENV") == "production" or os.environ.get("SESSION_SECURE
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-# BKIG Terminal (SPA 인트라넷)
-from terminal import terminal_bp, init_terminal_db, login_required_api, require_super_admin
-init_terminal_db(app)
-app.register_blueprint(terminal_bp)
-
-# DART Analysis (Korean market — separate module, super_admin only)
-from dart import create_dart_blueprint, preload_dart_corp_cache
-dart_bp = create_dart_blueprint(login_required_api, require_super_admin)
-app.register_blueprint(dart_bp)
-# Preload DART corp DataFrame in background so first /api/dart/search is sub-100ms
-import threading
-_thread = threading.Thread(target=preload_dart_corp_cache, daemon=True)
-_thread.start()
-
 # Research PDF: URL 파일명 → 실제 파일명 (파일은 static/pdf/ 에 있음)
 RESEARCH_PDF_MAP = {
     "zscaler_research_en.pdf": "BKIG Research Zscaler (EN).pdf",
