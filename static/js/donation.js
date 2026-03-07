@@ -82,10 +82,10 @@
         submitBtn.disabled = true;
         submitBtn.textContent = '제출 중…';
       }
-      fetch('/api/donations', {
+      fetch('https://faccting.com/bkig/api/donations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, email: email, amount: amount }),
+        body: JSON.stringify({ organization_slug: 'bkig', name: name, email: email, amount: amount }),
         credentials: 'same-origin',
       })
         .then(function (res) {

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BKIG | Boston Korea Investment Group</title>
+  <title>Our People | BKIG</title>
   <link rel="icon" href="/static/images/boston_korea_ig_logo.jpeg" type="image/jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/base.css">
-  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/people.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- Mobile nav full-screen overlay (fintech style) -->
@@ -125,180 +129,119 @@
     </button>
   </header>
 
-  <main class="hero" id="home">
-    <div class="hero-background" role="img" aria-label="배경"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-chart" aria-hidden="true">
-      <svg class="living-graph-svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="chart-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
-            <stop offset="40%" stop-color="rgba(210,225,255,0.9)"/>
-            <stop offset="70%" stop-color="rgba(255,245,220,0.9)"/>
-            <stop offset="100%" stop-color="rgba(255,250,235,0.85)"/>
-          </linearGradient>
-          <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- Glow layer -->
-        <path class="chart-line chart-line-glow" fill="none" stroke="url(#chart-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#chart-glow)" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Main line -->
-        <path class="chart-line chart-line-main" fill="none" stroke="url(#chart-line-gradient)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Nodes at peaks -->
-        <circle class="chart-node" cx="150" cy="260" r="1.25"/>
-        <circle class="chart-node" cx="400" cy="220" r="1.25"/>
-        <circle class="chart-node" cx="620" cy="200" r="1.25"/>
-        <circle class="chart-node" cx="750" cy="120" r="1.25"/>
-        <circle class="chart-node" cx="1000" cy="40" r="1.25"/>
-      </svg>
-    </div>
-    <div class="hero-content">
-      <h1 class="hero-title">BKIG Discovers Value</h1>
-      <p class="hero-subtitle">서울과 보스턴을 잇는 금융의 가교, BKIG가 새로운 가치를 발견합니다.</p>
-      <a href="about.html" class="hero-cta">About us</a>
-    </div>
-  </main>
-
-  <section class="core-divisions" id="divisions" aria-labelledby="core-divisions-title">
-    <div class="core-divisions-inner">
-      <h2 id="core-divisions-title" class="core-divisions-title">Core Divisions <span class="core-divisions-sub">핵심 활동</span></h2>
-      <div class="core-divisions-grid">
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-              <path d="M8 11h6M11 8v6"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Equity Research Team</h3>
-          <p class="core-divisions-card-desc">Conducting in-depth fundamental analysis and publishing industry reports.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"></path>
-              <path d="m7 14 4-4 4 4 5-5"></path>
-              <path d="M11 10v4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Investment Team</h3>
-          <p class="core-divisions-card-desc">Managing active portfolios with disciplined investment strategies.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 14c-1.5 0-2.5-.5-3-1.5S2.5 9 4 8"></path>
-              <path d="M18 14c1.5 0 2.5-.5 3-1.5s.5-3.5-1-4.5"></path>
-              <path d="M4 12h16"></path>
-              <path d="M10 12c0 2.2 1.8 4 4 4s4-1.8 4-4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Case Competition Team</h3>
-          <p class="core-divisions-card-desc">Analyzing complex M&A scenarios and valuation modeling.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <path d="m22 6-10 7L2 6"></path>
-              <path d="M12 13l10-7"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">PD/PR Team</h3>
-          <p class="core-divisions-card-desc">Program development and public relations for BKIG's brand and outreach.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-      </div>
+  <main class="people-page">
+  <!-- Hero -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="/static/images/people.png"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Our People
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Meet the minds behind our network.
+      </p>
     </div>
   </section>
 
-  <section class="participating-universities" id="universities" aria-labelledby="universities-title">
-    <h2 id="universities-title" class="participating-universities-title">Participating Universities</h2>
-    <p class="alumni-placement-sub">Bringing together top talent from Boston's premier institutions.</p>
-    <div class="participating-universities-mask">
-      <div class="participating-universities-track" aria-hidden="true">
-        <div class="participating-universities-set">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+  <!-- Section 1: The Heritage (Founder) - 2열 스플릿 -->
+  <section id="people-content" class="bg-white py-20 sm:py-24" aria-labelledby="heritage-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <h2 id="heritage-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-14 md:mb-16 font-serif" style="font-family: 'Playfair Display', serif;">
+        Our Heritage &amp; Founder
+      </h2>
+      <div class="flex flex-col md:flex-row gap-12 lg:gap-16 items-stretch md:items-center">
+        <!-- 좌측: Founder 사진 -->
+        <div class="w-full md:w-[36%] md:max-w-[320px] shrink-0">
+          <img
+            src="/static/images/yoonsung.png"
+            alt="Yoonsung Choi, Founder &amp; Former President"
+            class="aspect-[3/4] max-h-[380px] md:max-h-[400px] w-full rounded-2xl object-cover shadow-lg"
+          >
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
-        </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <!-- 우측: 설명 영역 (수직 중앙 정렬) -->
+        <div class="flex flex-col justify-center md:py-4">
+          <h3 class="text-3xl sm:text-4xl md:text-[2.5rem] font-bold text-slate-900 leading-tight">
+            Yoon Sung Choi
+          </h3>
+          <p class="mt-2 text-blue-700 text-lg font-medium">
+            Founder &amp; Former President
+          </p>
+          <p class="mt-6 text-slate-600 leading-relaxed max-w-xl">
+            Established BKIG in 2023 with a vision to bridge the gap between academic finance and real-world investment. His leadership laid the foundation for our global network connecting Boston and Seoul.
+          </p>
+          <a href="https://www.linkedin.com/in/yoonsungchoi1999/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-8 text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors" aria-label="LinkedIn">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            <span>LinkedIn</span>
+          </a>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="alumni-placement" id="alumni" aria-labelledby="alumni-placement-title">
-    <div class="alumni-placement-inner">
-      <h2 id="alumni-placement-title" class="alumni-placement-title">Global Career Impact</h2>
-      <p class="alumni-placement-sub">BKIG alumni are shaping the future of finance at world-leading firms.</p>
-      <div class="alumni-placement-grid">
-        <div class="alumni-placement-item"><img src="/static/images/mckinsey.png" alt="McKinsey & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bcg.png" alt="BCG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bain.png" alt="Bain & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/samsung.png" alt="Samsung Securities" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/korea.png" alt="한국투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kiwoom.png" alt="키움증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/nh.png" alt="NH투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/pwc.png" alt="PWC" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kpmg.png" alt="KPMG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/ey.png" alt="EY" width="120" height="40"></div>
+  <!-- Section 2 & 3: Filter Bar + Org Chart -->
+  <section class="bg-slate-50 py-16 sm:py-20 md:py-24" aria-labelledby="org-chart-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <h2 id="org-chart-title" class="text-xl sm:text-2xl font-bold text-slate-900 text-center mb-12">Organizational Chart</h2>
+
+      <!-- Filter & Control Bar -->
+      <div class="flex flex-wrap justify-between items-center gap-4 mb-8">
+        <div class="flex justify-center sm:justify-start flex-1 min-w-0">
+          <div class="inline-flex rounded-full bg-slate-100 p-1 gap-0.5" role="tablist" aria-label="연도 선택">
+            <button type="button" id="org-tab-2026" class="people-year-tab rounded-full px-6 py-2.5 text-sm font-medium bg-slate-900 text-white transition-colors duration-300" data-year="2025-2026" role="tab" aria-selected="true">
+              FY 2025 (Current)
+            </button>
+            <button type="button" id="org-tab-2025" class="people-year-tab rounded-full px-6 py-2.5 text-sm font-medium text-slate-600 transition-colors duration-300 hover:text-slate-900" data-year="2024-2025" role="tab" aria-selected="false">
+              FY 2024
+            </button>
+            <button type="button" id="org-tab-2024" class="people-year-tab rounded-full px-6 py-2.5 text-sm font-medium text-slate-600 transition-colors duration-300 hover:text-slate-900" data-year="2023-2024" role="tab" aria-selected="false">
+              FY 2023
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4" role="tablist" aria-label="부서별 필터">
+          <button type="button" class="people-division-tab text-sm font-medium px-2 py-1.5 border-b-2 border-transparent text-slate-900 border-slate-900 transition-colors duration-300" data-division="All" role="tab" aria-selected="true">All</button>
+          <button type="button" class="people-division-tab text-sm font-medium px-2 py-1.5 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors duration-300" data-division="Equity Research" role="tab" aria-selected="false">Equity Research</button>
+          <button type="button" class="people-division-tab text-sm font-medium px-2 py-1.5 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors duration-300" data-division="Investment" role="tab" aria-selected="false">Investment</button>
+          <button type="button" class="people-division-tab text-sm font-medium px-2 py-1.5 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors duration-300" data-division="Case Study" role="tab" aria-selected="false">Case Study</button>
+          <button type="button" class="people-division-tab text-sm font-medium px-2 py-1.5 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-colors duration-300" data-division="PD/PR" role="tab" aria-selected="false">PD/PR</button>
+        </div>
+      </div>
+
+      <!-- Division Description Panel (shown when a division is selected) -->
+      <div id="division-description-panel" class="division-description-panel overflow-hidden transition-all duration-500 hidden opacity-0 max-h-0 mb-0" aria-hidden="true">
+        <div class="bg-slate-50 border-l-4 border-slate-900 p-6 rounded-r-lg mb-8 shadow-sm">
+          <h3 id="division-description-title" class="text-xl font-bold text-slate-900 mb-2"></h3>
+          <p id="division-description-text" class="text-slate-600 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- Tier 1: Executive Board -->
+      <div class="mb-14">
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider text-center mb-8">Executive Board</h3>
+        <div id="org-tier1" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
+      </div>
+
+      <!-- Tier 2: Division Leads -->
+      <div class="mb-14">
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider text-center mb-8">Division Leads</h3>
+        <div id="org-tier2" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
+      </div>
+
+      <!-- Tier 3: Analysts -->
+      <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider text-center mb-8">Analysts</h3>
+        <div id="org-tier3" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"></div>
       </div>
     </div>
   </section>
-
-  <section class="join-contact" id="join" aria-labelledby="join-contact-title">
-    <h2 id="join-contact-title" class="join-contact-title">Ready to Shape the Future?</h2>
-    <div class="join-contact-grid">
-      <a href="join_us.html" class="join-contact-card" aria-labelledby="join-card-student-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Students</span>
-          <h3 id="join-card-student-title" class="join-contact-card-title">Become an Analyst</h3>
-          <p class="join-contact-card-desc">Join our rigorous training program and investment teams. We recruit every semester.</p>
-          <span class="join-contact-card-cta">View Recruitment Info <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-      <a href="partnership.html" class="join-contact-card" aria-labelledby="join-card-partner-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Partners</span>
-          <h3 id="join-card-partner-title" class="join-contact-card-title">Partner with Us</h3>
-          <p class="join-contact-card-desc">Connect with top talent in Boston and Seoul. We welcome corporate collaborations.</p>
-          <span class="join-contact-card-cta">Contact Executive Team <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-      <a href="donation.html" class="join-contact-card" aria-labelledby="join-card-donor-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Donors</span>
-          <h3 id="join-card-donor-title" class="join-contact-card-title">Support Our Mission</h3>
-          <p class="join-contact-card-desc">Empower the next generation of financial leaders through your generous support.</p>
-          <span class="join-contact-card-cta">Make a Donation <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-    </div>
-  </section>
+</main>
+<script src="/static/js/people.js"></script>
 
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">

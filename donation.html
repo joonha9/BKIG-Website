@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BKIG | Boston Korea Investment Group</title>
+  <title>Donation | BKIG</title>
   <link rel="icon" href="/static/images/boston_korea_ig_logo.jpeg" type="image/jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/base.css">
-  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/donation.css">
 </head>
 <body>
   <!-- Mobile nav full-screen overlay (fintech style) -->
@@ -125,180 +129,175 @@
     </button>
   </header>
 
-  <main class="hero" id="home">
-    <div class="hero-background" role="img" aria-label="배경"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-chart" aria-hidden="true">
-      <svg class="living-graph-svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="chart-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
-            <stop offset="40%" stop-color="rgba(210,225,255,0.9)"/>
-            <stop offset="70%" stop-color="rgba(255,245,220,0.9)"/>
-            <stop offset="100%" stop-color="rgba(255,250,235,0.85)"/>
-          </linearGradient>
-          <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- Glow layer -->
-        <path class="chart-line chart-line-glow" fill="none" stroke="url(#chart-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#chart-glow)" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Main line -->
-        <path class="chart-line chart-line-main" fill="none" stroke="url(#chart-line-gradient)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Nodes at peaks -->
-        <circle class="chart-node" cx="150" cy="260" r="1.25"/>
-        <circle class="chart-node" cx="400" cy="220" r="1.25"/>
-        <circle class="chart-node" cx="620" cy="200" r="1.25"/>
-        <circle class="chart-node" cx="750" cy="120" r="1.25"/>
-        <circle class="chart-node" cx="1000" cy="40" r="1.25"/>
-      </svg>
-    </div>
-    <div class="hero-content">
-      <h1 class="hero-title">BKIG Discovers Value</h1>
-      <p class="hero-subtitle">서울과 보스턴을 잇는 금융의 가교, BKIG가 새로운 가치를 발견합니다.</p>
-      <a href="about.html" class="hero-cta">About us</a>
-    </div>
-  </main>
-
-  <section class="core-divisions" id="divisions" aria-labelledby="core-divisions-title">
-    <div class="core-divisions-inner">
-      <h2 id="core-divisions-title" class="core-divisions-title">Core Divisions <span class="core-divisions-sub">핵심 활동</span></h2>
-      <div class="core-divisions-grid">
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-              <path d="M8 11h6M11 8v6"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Equity Research Team</h3>
-          <p class="core-divisions-card-desc">Conducting in-depth fundamental analysis and publishing industry reports.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"></path>
-              <path d="m7 14 4-4 4 4 5-5"></path>
-              <path d="M11 10v4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Investment Team</h3>
-          <p class="core-divisions-card-desc">Managing active portfolios with disciplined investment strategies.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 14c-1.5 0-2.5-.5-3-1.5S2.5 9 4 8"></path>
-              <path d="M18 14c1.5 0 2.5-.5 3-1.5s.5-3.5-1-4.5"></path>
-              <path d="M4 12h16"></path>
-              <path d="M10 12c0 2.2 1.8 4 4 4s4-1.8 4-4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Case Competition Team</h3>
-          <p class="core-divisions-card-desc">Analyzing complex M&A scenarios and valuation modeling.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <path d="m22 6-10 7L2 6"></path>
-              <path d="M12 13l10-7"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">PD/PR Team</h3>
-          <p class="core-divisions-card-desc">Program development and public relations for BKIG's brand and outreach.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-      </div>
+  <main class="donation-page">
+  <!-- Hero -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="/static/images/donation.png"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Support Our Mission
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Empower the next generation of financial leaders.
+      </p>
     </div>
   </section>
 
-  <section class="participating-universities" id="universities" aria-labelledby="universities-title">
-    <h2 id="universities-title" class="participating-universities-title">Participating Universities</h2>
-    <p class="alumni-placement-sub">Bringing together top talent from Boston's premier institutions.</p>
-    <div class="participating-universities-mask">
-      <div class="participating-universities-track" aria-hidden="true">
-        <div class="participating-universities-set">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+  <!-- Section 1: Impact Metrics -->
+  <section id="donation-content" class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="impact-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-12 sm:gap-8">
+        <div class="text-center">
+          <p class="donation-metric font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight">$150,000+</p>
+          <p class="mt-2 text-slate-600 text-sm font-medium uppercase tracking-widest">Total Raised</p>
+          <span class="block mt-3 mx-auto w-16 border-b border-yellow-500/30"></span>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <div class="text-center">
+          <p class="donation-metric font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight">120+</p>
+          <p class="mt-2 text-slate-600 text-sm font-medium uppercase tracking-widest">Total Donors</p>
+          <span class="block mt-3 mx-auto w-16 border-b border-yellow-500/30"></span>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <div class="text-center">
+          <p class="donation-metric font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight">45+</p>
+          <p class="mt-2 text-slate-600 text-sm font-medium uppercase tracking-widest">Scholarships Given</p>
+          <span class="block mt-3 mx-auto w-16 border-b border-yellow-500/30"></span>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="alumni-placement" id="alumni" aria-labelledby="alumni-placement-title">
-    <div class="alumni-placement-inner">
-      <h2 id="alumni-placement-title" class="alumni-placement-title">Global Career Impact</h2>
-      <p class="alumni-placement-sub">BKIG alumni are shaping the future of finance at world-leading firms.</p>
-      <div class="alumni-placement-grid">
-        <div class="alumni-placement-item"><img src="/static/images/mckinsey.png" alt="McKinsey & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bcg.png" alt="BCG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bain.png" alt="Bain & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/samsung.png" alt="Samsung Securities" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/korea.png" alt="한국투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kiwoom.png" alt="키움증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/nh.png" alt="NH투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/pwc.png" alt="PWC" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kpmg.png" alt="KPMG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/ey.png" alt="EY" width="120" height="40"></div>
+  <!-- Section 2: Hall of Fame -->
+  <section class="bg-slate-50 py-16 sm:py-20 md:py-24" aria-labelledby="hall-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <h2 id="hall-title" class="text-2xl sm:text-3xl md:text-4xl font-serif font-semibold text-slate-900 text-center mb-14 md:mb-20">
+        The Wall of Honor
+      </h2>
+
+      <div class="space-y-14 md:space-y-20">
+        <div>
+          <h3 class="text-sm font-medium text-yellow-600 uppercase tracking-widest text-center mb-8">Tier 1 — Diamond Club ($1,000+)</h3>
+          <div class="flex flex-wrap justify-center gap-x-12 gap-y-4">
+            <span class="font-serif text-xl sm:text-2xl text-slate-900">Patron A</span>
+            <span class="font-serif text-xl sm:text-2xl text-slate-900">Patron B</span>
+            <span class="font-serif text-xl sm:text-2xl text-slate-900">Patron C</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-yellow-600 uppercase tracking-widest text-center mb-8">Tier 2 — Platinum Contributors ($500+)</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <span class="font-serif text-lg text-slate-800">Contributor One</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Two</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Three</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Four</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Five</span>
+            <span class="font-serif text-lg text-slate-800">Contributor Six</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-yellow-600 uppercase tracking-widest text-center mb-8">Tier 3 — Gold Supporters</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-4 text-center">
+            <span class="font-serif text-slate-700">Supporter 1</span>
+            <span class="font-serif text-slate-700">Supporter 2</span>
+            <span class="font-serif text-slate-700">Supporter 3</span>
+            <span class="font-serif text-slate-700">Supporter 4</span>
+            <span class="font-serif text-slate-700">Supporter 5</span>
+            <span class="font-serif text-slate-700">Supporter 6</span>
+            <span class="font-serif text-slate-700">Supporter 7</span>
+            <span class="font-serif text-slate-700">Supporter 8</span>
+            <span class="font-serif text-slate-700">Supporter 9</span>
+            <span class="font-serif text-slate-700">Supporter 10</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="join-contact" id="join" aria-labelledby="join-contact-title">
-    <h2 id="join-contact-title" class="join-contact-title">Ready to Shape the Future?</h2>
-    <div class="join-contact-grid">
-      <a href="join_us.html" class="join-contact-card" aria-labelledby="join-card-student-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Students</span>
-          <h3 id="join-card-student-title" class="join-contact-card-title">Become an Analyst</h3>
-          <p class="join-contact-card-desc">Join our rigorous training program and investment teams. We recruit every semester.</p>
-          <span class="join-contact-card-cta">View Recruitment Info <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+  <!-- Section 3: Action Area -->
+  <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="action-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div>
+          <h2 id="action-title" class="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900 mb-6">
+            Leave Your Legacy.
+          </h2>
+          <p class="text-slate-600 text-lg leading-relaxed">
+            Your contribution directly empowers the next generation of analysts to compete on the global stage.
+          </p>
         </div>
-      </a>
-      <a href="partnership.html" class="join-contact-card" aria-labelledby="join-card-partner-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Partners</span>
-          <h3 id="join-card-partner-title" class="join-contact-card-title">Partner with Us</h3>
-          <p class="join-contact-card-desc">Connect with top talent in Boston and Seoul. We welcome corporate collaborations.</p>
-          <span class="join-contact-card-cta">Contact Executive Team <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+        <div class="bg-slate-900 rounded-xl p-8 sm:p-10 shadow-xl">
+          <div class="text-center">
+            <p class="text-white/90 text-sm uppercase tracking-widest mb-6">Support BKIG</p>
+            <button type="button" id="donate-open-btn" class="inline-block w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-slate-900 bg-white border-2 border-yellow-500 hover:bg-yellow-50 transition-colors text-center cursor-pointer">
+              Become a Patron (기부하기)
+            </button>
+            <p class="mt-6">
+              <a href="#corporate" class="text-yellow-500/90 text-sm hover:text-yellow-400 underline underline-offset-2 transition-colors">
+                Corporate Sponsorship Inquiry
+              </a>
+            </p>
+          </div>
         </div>
-      </a>
-      <a href="donation.html" class="join-contact-card" aria-labelledby="join-card-donor-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Donors</span>
-          <h3 id="join-card-donor-title" class="join-contact-card-title">Support Our Mission</h3>
-          <p class="join-contact-card-desc">Empower the next generation of financial leaders through your generous support.</p>
-          <span class="join-contact-card-cta">Make a Donation <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
+      </div>
     </div>
   </section>
+
+  <!-- Donation Modal -->
+  <div id="donate-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" aria-labelledby="donate-modal-title" role="dialog">
+    <div id="donate-modal-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" id="donate-modal-box">
+      <div class="sticky top-0 bg-white border-b border-slate-200 px-5 py-3 rounded-t-2xl flex items-start justify-between gap-4">
+        <div>
+          <h2 id="donate-modal-title" class="text-lg font-bold text-slate-900">기부하기</h2>
+          <p class="text-slate-500 text-xs mt-0.5">BKIG를 후원해 주셔서 감사합니다.</p>
+        </div>
+        <button type="button" id="donate-modal-close" class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" aria-label="모달 닫기">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="donate-form" class="px-5 pb-5 pt-4 space-y-4" action="#" method="post">
+        <input type="hidden" name="organization_slug" value="bkig">
+        <div>
+          <label for="donate-name" class="block text-sm font-medium text-slate-700 mb-1">기부자 이름</label>
+          <input type="text" id="donate-name" name="name" required placeholder="이름을 입력하세요" class="w-full px-3 py-2 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-shadow">
+        </div>
+        <div>
+          <label for="donate-email" class="block text-sm font-medium text-slate-700 mb-1">이메일</label>
+          <input type="email" id="donate-email" name="email" required placeholder="example@email.com" class="w-full px-3 py-2 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-shadow">
+        </div>
+        <div>
+          <label for="donate-amount" class="block text-sm font-medium text-slate-700 mb-1">희망금액</label>
+          <input type="text" id="donate-amount" name="amount" required placeholder="예: 50,000원" class="w-full px-3 py-2 text-sm text-slate-900 rounded-lg border border-slate-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-shadow">
+        </div>
+        <div class="pt-2">
+          <button type="submit" class="w-full py-2.5 text-sm rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700 focus:ring-offset-2">
+            기부 신청하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Thank-you Modal (기부 신청 완료 후) -->
+  <div id="donate-thankyou-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal="true" role="dialog">
+    <div id="donate-thankyou-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full px-6 py-6 text-center" id="donate-thankyou-box">
+      <p class="text-slate-800 font-medium mb-1">감사합니다.</p>
+      <p class="text-slate-700 text-sm mb-5">기부 신청이 완료되었습니다.<br>곧 BKIG에서 연락드리겠습니다.</p>
+      <button type="button" id="donate-thankyou-ok" class="w-full py-2.5 text-sm rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">
+        확인
+      </button>
+    </div>
+  </div>
+</main>
+<script src="/static/js/donation.js"></script>
 
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">

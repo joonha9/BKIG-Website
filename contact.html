@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BKIG | Boston Korea Investment Group</title>
+  <title>Contact Us | BKIG</title>
   <link rel="icon" href="/static/images/boston_korea_ig_logo.jpeg" type="image/jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/base.css">
-  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/contact.css">
 </head>
 <body>
   <!-- Mobile nav full-screen overlay (fintech style) -->
@@ -125,180 +126,148 @@
     </button>
   </header>
 
-  <main class="hero" id="home">
-    <div class="hero-background" role="img" aria-label="배경"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-chart" aria-hidden="true">
-      <svg class="living-graph-svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="chart-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
-            <stop offset="40%" stop-color="rgba(210,225,255,0.9)"/>
-            <stop offset="70%" stop-color="rgba(255,245,220,0.9)"/>
-            <stop offset="100%" stop-color="rgba(255,250,235,0.85)"/>
-          </linearGradient>
-          <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- Glow layer -->
-        <path class="chart-line chart-line-glow" fill="none" stroke="url(#chart-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#chart-glow)" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Main line -->
-        <path class="chart-line chart-line-main" fill="none" stroke="url(#chart-line-gradient)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Nodes at peaks -->
-        <circle class="chart-node" cx="150" cy="260" r="1.25"/>
-        <circle class="chart-node" cx="400" cy="220" r="1.25"/>
-        <circle class="chart-node" cx="620" cy="200" r="1.25"/>
-        <circle class="chart-node" cx="750" cy="120" r="1.25"/>
-        <circle class="chart-node" cx="1000" cy="40" r="1.25"/>
-      </svg>
-    </div>
-    <div class="hero-content">
-      <h1 class="hero-title">BKIG Discovers Value</h1>
-      <p class="hero-subtitle">서울과 보스턴을 잇는 금융의 가교, BKIG가 새로운 가치를 발견합니다.</p>
-      <a href="about.html" class="hero-cta">About us</a>
-    </div>
-  </main>
-
-  <section class="core-divisions" id="divisions" aria-labelledby="core-divisions-title">
-    <div class="core-divisions-inner">
-      <h2 id="core-divisions-title" class="core-divisions-title">Core Divisions <span class="core-divisions-sub">핵심 활동</span></h2>
-      <div class="core-divisions-grid">
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-              <path d="M8 11h6M11 8v6"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Equity Research Team</h3>
-          <p class="core-divisions-card-desc">Conducting in-depth fundamental analysis and publishing industry reports.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"></path>
-              <path d="m7 14 4-4 4 4 5-5"></path>
-              <path d="M11 10v4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Investment Team</h3>
-          <p class="core-divisions-card-desc">Managing active portfolios with disciplined investment strategies.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 14c-1.5 0-2.5-.5-3-1.5S2.5 9 4 8"></path>
-              <path d="M18 14c1.5 0 2.5-.5 3-1.5s.5-3.5-1-4.5"></path>
-              <path d="M4 12h16"></path>
-              <path d="M10 12c0 2.2 1.8 4 4 4s4-1.8 4-4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Case Competition Team</h3>
-          <p class="core-divisions-card-desc">Analyzing complex M&A scenarios and valuation modeling.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <path d="m22 6-10 7L2 6"></path>
-              <path d="M12 13l10-7"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">PD/PR Team</h3>
-          <p class="core-divisions-card-desc">Program development and public relations for BKIG's brand and outreach.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-      </div>
+  <main class="contact-page">
+  <!-- Hero (header only, donation-style) -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Contact Hero">
+    <img
+      src="/static/images/contact.png"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Get in Touch
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        We’d love to hear from you.
+      </p>
     </div>
   </section>
 
-  <section class="participating-universities" id="universities" aria-labelledby="universities-title">
-    <h2 id="universities-title" class="participating-universities-title">Participating Universities</h2>
-    <p class="alumni-placement-sub">Bringing together top talent from Boston's premier institutions.</p>
-    <div class="participating-universities-mask">
-      <div class="participating-universities-track" aria-hidden="true">
-        <div class="participating-universities-set">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+  <!-- Section 1: Contact Channels -->
+  <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="contact-channels-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <h2 id="contact-channels-title" class="sr-only">Contact Channels</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <!-- Recruiting Inquiries -->
+        <div class="contact-channel-card group bg-white border border-slate-100 rounded-xl p-6 sm:p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-colors mb-5">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998-0A4.5 4.5 0 0 0 18 16.5h-1.5a3 3 0 0 1-2.965-2.544 6 6 0 0 0-11.068 0A3 3 0 0 1 7.5 16.5H6a4.5 4.5 0 0 0-1.499 3.618Z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">Recruiting Inquiries</h3>
+          <p class="text-slate-600 text-sm sm:text-base mb-4">For questions about application process.</p>
+          <a href="mailto:recruiting@bkig.org" class="text-slate-900 font-medium text-sm sm:text-base hover:underline focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 rounded">recruiting@bkig.org</a>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <!-- Partnerships & Media -->
+        <div class="contact-channel-card group bg-white border border-slate-100 rounded-xl p-6 sm:p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-colors mb-5">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 18.72a9.09 9.09 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">Partnerships & Media</h3>
+          <p class="text-slate-600 text-sm sm:text-base mb-4">For corporate collaboration and press.</p>
+          <a href="mailto:partners@bkig.org" class="text-slate-900 font-medium text-sm sm:text-base hover:underline focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 rounded">partners@bkig.org</a>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <!-- General Inquiries -->
+        <div class="contact-channel-card group bg-white border border-slate-100 rounded-xl p-6 sm:p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+          <div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-colors mb-5">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">General Inquiries</h3>
+          <p class="text-slate-600 text-sm sm:text-base mb-4">For all other questions.</p>
+          <a href="mailto:info@bkig.org" class="text-slate-900 font-medium text-sm sm:text-base hover:underline focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 rounded">info@bkig.org</a>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="alumni-placement" id="alumni" aria-labelledby="alumni-placement-title">
-    <div class="alumni-placement-inner">
-      <h2 id="alumni-placement-title" class="alumni-placement-title">Global Career Impact</h2>
-      <p class="alumni-placement-sub">BKIG alumni are shaping the future of finance at world-leading firms.</p>
-      <div class="alumni-placement-grid">
-        <div class="alumni-placement-item"><img src="/static/images/mckinsey.png" alt="McKinsey & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bcg.png" alt="BCG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bain.png" alt="Bain & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/samsung.png" alt="Samsung Securities" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/korea.png" alt="한국투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kiwoom.png" alt="키움증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/nh.png" alt="NH투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/pwc.png" alt="PWC" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kpmg.png" alt="KPMG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/ey.png" alt="EY" width="120" height="40"></div>
+  <!-- Section 2: Send a Message -->
+  <section class="bg-slate-50 py-16 sm:py-20 md:py-24" aria-labelledby="send-message-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+        <!-- Left: Context -->
+        <div class="lg:col-span-5">
+          <h2 id="send-message-title" class="text-2xl sm:text-3xl font-semibold text-slate-900 mb-4">How can we help?</h2>
+          <p class="text-slate-600 text-base sm:text-lg leading-relaxed mb-8">
+            We typically respond within 2-3 business days. Please be as specific as possible so we can route your inquiry to the right team.
+          </p>
+          <div class="flex items-center gap-4" role="navigation" aria-label="소셜 미디어">
+            <a href="#" class="flex items-center justify-center w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-colors shadow-sm" aria-label="LinkedIn">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="#" class="flex items-center justify-center w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-colors shadow-sm" aria-label="Instagram">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+        <!-- Right: Form -->
+        <div class="lg:col-span-7">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 sm:p-10 md:p-12">
+            <form action="#" method="post" class="contact-form" id="contact-form">
+              <input type="hidden" name="organization_slug" value="bkig">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+                <div>
+                  <label for="contact-name" class="block text-sm font-medium text-slate-700 mb-2">Name</label>
+                  <input type="text" id="contact-name" name="name" required placeholder="Your name" class="w-full px-4 py-3.5 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors" aria-required="true">
+                </div>
+                <div>
+                  <label for="contact-email" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                  <input type="email" id="contact-email" name="email" required placeholder="your@email.com" class="w-full px-4 py-3.5 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors" aria-required="true">
+                </div>
+              </div>
+              <div class="mb-6 sm:mb-8">
+                <label for="contact-subject" class="block text-sm font-medium text-slate-700 mb-2">Subject</label>
+                <select id="contact-subject" name="subject" required class="w-full px-4 py-3.5 rounded-lg border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors bg-white" aria-required="true">
+                  <option value="" disabled selected>Select a topic</option>
+                  <option value="recruiting">Recruiting</option>
+                  <option value="partnership">Partnership</option>
+                  <option value="donation">Donation</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="mb-8 sm:mb-10">
+                <label for="contact-message" class="block text-sm font-medium text-slate-700 mb-2">Message</label>
+                <textarea id="contact-message" name="message" rows="6" required placeholder="Your message..." class="w-full px-4 py-3.5 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-colors resize-y min-h-[160px]" aria-required="true"></textarea>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-slate-900 text-white font-medium text-base hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors">
+                  Send Message
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"/></svg>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="join-contact" id="join" aria-labelledby="join-contact-title">
-    <h2 id="join-contact-title" class="join-contact-title">Ready to Shape the Future?</h2>
-    <div class="join-contact-grid">
-      <a href="join_us.html" class="join-contact-card" aria-labelledby="join-card-student-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Students</span>
-          <h3 id="join-card-student-title" class="join-contact-card-title">Become an Analyst</h3>
-          <p class="join-contact-card-desc">Join our rigorous training program and investment teams. We recruit every semester.</p>
-          <span class="join-contact-card-cta">View Recruitment Info <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-      <a href="partnership.html" class="join-contact-card" aria-labelledby="join-card-partner-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Partners</span>
-          <h3 id="join-card-partner-title" class="join-contact-card-title">Partner with Us</h3>
-          <p class="join-contact-card-desc">Connect with top talent in Boston and Seoul. We welcome corporate collaborations.</p>
-          <span class="join-contact-card-cta">Contact Executive Team <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-      <a href="donation.html" class="join-contact-card" aria-labelledby="join-card-donor-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Donors</span>
-          <h3 id="join-card-donor-title" class="join-contact-card-title">Support Our Mission</h3>
-          <p class="join-contact-card-desc">Empower the next generation of financial leaders through your generous support.</p>
-          <span class="join-contact-card-cta">Make a Donation <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
+  <!-- Success modal: Inquiry sent -->
+  <div id="contact-success-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" aria-modal="true" aria-labelledby="contact-success-title" role="dialog">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" aria-hidden="true" data-contact-modal-close></div>
+    <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 text-center">
+      <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4" aria-hidden="true">
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h2 id="contact-success-title" class="text-xl font-semibold text-slate-900 mb-2">Inquiry sent!</h2>
+      <p class="text-slate-600 text-sm mb-6">Thank you for reaching out. We'll get back to you within 2–3 business days.</p>
+      <button type="button" class="w-full px-4 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors" data-contact-modal-close>OK</button>
+    </div>
+  </div>
+
+  <!-- Section 3: Location -->
+  <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="location-title">
+    <div class="max-w-3xl mx-auto px-6 sm:px-8 text-center">
+      <h2 id="location-title" class="text-xl sm:text-2xl font-semibold text-slate-900 mb-3">Based in <strong class="font-bold">Boston, MA</strong>.</h2>
+      <p class="text-slate-600 text-base sm:text-lg">Operating across Boston College, Boston University, Northeastern, and more.</p>
     </div>
   </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/contact.js"></script>
 
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">
@@ -359,7 +328,7 @@
   </footer>
 
   <script src="/static/js/main.js"></script>
-  
+  <script src="/static/js/contact.js"></script>
   <script>
   (function() {
     'use strict';

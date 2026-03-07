@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BKIG | Boston Korea Investment Group</title>
+  <title>Partnership | BKIG</title>
   <link rel="icon" href="/static/images/boston_korea_ig_logo.jpeg" type="image/jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/base.css">
-  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/partnership.css">
 </head>
 <body>
   <!-- Mobile nav full-screen overlay (fintech style) -->
@@ -125,180 +126,181 @@
     </button>
   </header>
 
-  <main class="hero" id="home">
-    <div class="hero-background" role="img" aria-label="배경"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-chart" aria-hidden="true">
-      <svg class="living-graph-svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="chart-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
-            <stop offset="40%" stop-color="rgba(210,225,255,0.9)"/>
-            <stop offset="70%" stop-color="rgba(255,245,220,0.9)"/>
-            <stop offset="100%" stop-color="rgba(255,250,235,0.85)"/>
-          </linearGradient>
-          <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- Glow layer -->
-        <path class="chart-line chart-line-glow" fill="none" stroke="url(#chart-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#chart-glow)" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Main line -->
-        <path class="chart-line chart-line-main" fill="none" stroke="url(#chart-line-gradient)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Nodes at peaks -->
-        <circle class="chart-node" cx="150" cy="260" r="1.25"/>
-        <circle class="chart-node" cx="400" cy="220" r="1.25"/>
-        <circle class="chart-node" cx="620" cy="200" r="1.25"/>
-        <circle class="chart-node" cx="750" cy="120" r="1.25"/>
-        <circle class="chart-node" cx="1000" cy="40" r="1.25"/>
-      </svg>
-    </div>
-    <div class="hero-content">
-      <h1 class="hero-title">BKIG Discovers Value</h1>
-      <p class="hero-subtitle">서울과 보스턴을 잇는 금융의 가교, BKIG가 새로운 가치를 발견합니다.</p>
-      <a href="about.html" class="hero-cta">About us</a>
-    </div>
-  </main>
-
-  <section class="core-divisions" id="divisions" aria-labelledby="core-divisions-title">
-    <div class="core-divisions-inner">
-      <h2 id="core-divisions-title" class="core-divisions-title">Core Divisions <span class="core-divisions-sub">핵심 활동</span></h2>
-      <div class="core-divisions-grid">
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-              <path d="M8 11h6M11 8v6"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Equity Research Team</h3>
-          <p class="core-divisions-card-desc">Conducting in-depth fundamental analysis and publishing industry reports.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"></path>
-              <path d="m7 14 4-4 4 4 5-5"></path>
-              <path d="M11 10v4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Investment Team</h3>
-          <p class="core-divisions-card-desc">Managing active portfolios with disciplined investment strategies.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 14c-1.5 0-2.5-.5-3-1.5S2.5 9 4 8"></path>
-              <path d="M18 14c1.5 0 2.5-.5 3-1.5s.5-3.5-1-4.5"></path>
-              <path d="M4 12h16"></path>
-              <path d="M10 12c0 2.2 1.8 4 4 4s4-1.8 4-4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Case Competition Team</h3>
-          <p class="core-divisions-card-desc">Analyzing complex M&A scenarios and valuation modeling.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <path d="m22 6-10 7L2 6"></path>
-              <path d="M12 13l10-7"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">PD/PR Team</h3>
-          <p class="core-divisions-card-desc">Program development and public relations for BKIG's brand and outreach.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-      </div>
+  <main class="partnership-page">
+  <!-- Hero: partnership.png 배경 + 네이비 오버레이 -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="/static/images/partnership.png"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        Partner with Us
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Connect with top talent in Boston and Seoul.
+      </p>
     </div>
   </section>
 
-  <section class="participating-universities" id="universities" aria-labelledby="universities-title">
-    <h2 id="universities-title" class="participating-universities-title">Participating Universities</h2>
-    <p class="alumni-placement-sub">Bringing together top talent from Boston's premier institutions.</p>
-    <div class="participating-universities-mask">
-      <div class="participating-universities-track" aria-hidden="true">
-        <div class="participating-universities-set">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+  <!-- Section 1: Why Partner with BKIG? -->
+  <section id="partnership-content" class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="why-partner-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <h2 id="why-partner-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-12 md:mb-16">Why Partner with BKIG?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.242-4.243 9.094 9.094 0 00-.479 3.741M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">Access to Top Talent</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Boston–Seoul bilingual talent pool with strong financial acumen.</p>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">In-Depth Research</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Custom industry and company analysis reports tailored to your needs.</p>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0h.5a2.5 2.5 0 002.5-2.5V3.935M12 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">Global Network</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Strong alumni network connecting practitioners and students.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="alumni-placement" id="alumni" aria-labelledby="alumni-placement-title">
-    <div class="alumni-placement-inner">
-      <h2 id="alumni-placement-title" class="alumni-placement-title">Global Career Impact</h2>
-      <p class="alumni-placement-sub">BKIG alumni are shaping the future of finance at world-leading firms.</p>
-      <div class="alumni-placement-grid">
-        <div class="alumni-placement-item"><img src="/static/images/mckinsey.png" alt="McKinsey & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bcg.png" alt="BCG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bain.png" alt="Bain & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/samsung.png" alt="Samsung Securities" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/korea.png" alt="한국투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kiwoom.png" alt="키움증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/nh.png" alt="NH투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/pwc.png" alt="PWC" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kpmg.png" alt="KPMG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/ey.png" alt="EY" width="120" height="40"></div>
+  <!-- Section 2: Strategic Tech Partner - FACCTing -->
+  <section class="bg-gradient-to-b from-slate-50 to-white py-16 sm:py-20 md:py-24" aria-labelledby="faccting-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div>
+          <p class="text-blue-600 text-sm font-semibold uppercase tracking-wider mb-3">Powered by Technology</p>
+          <h2 id="faccting-title" class="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-6">Strategic Alliance with <span class="text-blue-600">FACCTing</span></h2>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            BKIG utilizes FACCTing's advanced financial modeling and valuation tools to produce professional-grade equity research. We bridge academic theory with practical data analytics.
+          </p>
+          <div class="inline-flex items-center gap-2 px-4 py-2 mt-4 rounded-lg bg-blue-50 border border-blue-100/50 mb-8" role="status" aria-label="Technology partner">
+            <svg class="w-4 h-4 shrink-0 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+            <span class="text-blue-800 text-sm font-semibold tracking-wide">Website &amp; Terminal Powered by FACCTing</span>
+          </div>
+          <a href="https://faccting.com" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">
+            Learn about FACCTing
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+        <div class="flex justify-center">
+          <div class="w-full max-w-md rounded-xl bg-slate-200 border border-slate-300 shadow-2xl overflow-hidden p-4 sm:p-5">
+            <img
+              src="/static/images/faccting.png"
+              alt="FACCTing platform"
+              class="w-full aspect-video object-cover rounded-lg border-2 border-slate-400"
+            >
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="join-contact" id="join" aria-labelledby="join-contact-title">
-    <h2 id="join-contact-title" class="join-contact-title">Ready to Shape the Future?</h2>
-    <div class="join-contact-grid">
-      <a href="join_us.html" class="join-contact-card" aria-labelledby="join-card-student-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Students</span>
-          <h3 id="join-card-student-title" class="join-contact-card-title">Become an Analyst</h3>
-          <p class="join-contact-card-desc">Join our rigorous training program and investment teams. We recruit every semester.</p>
-          <span class="join-contact-card-cta">View Recruitment Info <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+  <!-- Section 3: Collaboration Models -->
+  <section class="bg-white py-16 sm:py-20 md:py-24" aria-labelledby="collab-title">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <h2 id="collab-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-12 md:mb-16">How We Collaborate</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div class="border border-slate-200 rounded-xl p-6 md:p-8 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+          <h3 class="text-lg font-semibold text-slate-900 mb-3">Talent Pipeline</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Internship and full-time recruitment programs tailored to your firm.</p>
         </div>
-      </a>
-      <a href="partnership.html" class="join-contact-card" aria-labelledby="join-card-partner-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Partners</span>
-          <h3 id="join-card-partner-title" class="join-contact-card-title">Partner with Us</h3>
-          <p class="join-contact-card-desc">Connect with top talent in Boston and Seoul. We welcome corporate collaborations.</p>
-          <span class="join-contact-card-cta">Contact Executive Team <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+        <div class="border border-slate-200 rounded-xl p-6 md:p-8 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+          <h3 class="text-lg font-semibold text-slate-900 mb-3">Sponsored Research</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Sector or stock-specific research projects commissioned by your company.</p>
         </div>
-      </a>
-      <a href="donation.html" class="join-contact-card" aria-labelledby="join-card-donor-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Donors</span>
-          <h3 id="join-card-donor-title" class="join-contact-card-title">Support Our Mission</h3>
-          <p class="join-contact-card-desc">Empower the next generation of financial leaders through your generous support.</p>
-          <span class="join-contact-card-cta">Make a Donation <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
+        <div class="border border-slate-200 rounded-xl p-6 md:p-8 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+          <h3 class="text-lg font-semibold text-slate-900 mb-3">Event Partnership</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">Networking nights, case competition sponsorship, and judging opportunities.</p>
         </div>
-      </a>
+      </div>
     </div>
   </section>
+
+  <!-- Section 4: Let's Connect -->
+  <section class="bg-slate-900 py-16 sm:py-20 md:py-24" aria-labelledby="connect-title">
+    <div class="max-w-2xl mx-auto px-6 sm:px-8 text-center">
+      <h2 id="connect-title" class="text-2xl sm:text-3xl font-bold text-white mb-6">Ready to collaborate?</h2>
+      <button type="button" id="partnership-contact-btn" class="inline-block px-8 py-4 rounded-lg bg-white text-slate-900 font-semibold hover:bg-slate-100 transition-colors cursor-pointer border-0">
+        Contact Executive Team
+      </button>
+      <p class="mt-8 text-slate-400 text-sm">
+        <a href="mailto:partners@bkig.org" class="text-slate-300 hover:text-white underline underline-offset-2">partners@bkig.org</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<!-- Contact Executive Team Modal -->
+<div id="partnership-contact-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm" aria-modal="true" aria-labelledby="partnership-modal-title" role="dialog">
+  <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="partnership-modal-title" class="text-xl font-bold text-slate-900">Contact Executive Team</h3>
+        <button type="button" id="partnership-modal-close" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors" aria-label="닫기">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="partnership-contact-form" class="space-y-5">
+        <input type="hidden" name="organization_slug" value="bkig">
+        <div>
+          <label for="partnership-company" class="block text-sm font-medium text-slate-700 mb-1.5">기업이름 <span class="text-red-500">*</span></label>
+          <input type="text" id="partnership-company" name="company_name" required placeholder="회사명" class="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
+        </div>
+        <div>
+          <label for="partnership-name" class="block text-sm font-medium text-slate-700 mb-1.5">담당자 <span class="text-red-500">*</span></label>
+          <input type="text" id="partnership-name" name="name" required placeholder="담당자 성함" class="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
+        </div>
+        <div>
+          <label for="partnership-email" class="block text-sm font-medium text-slate-700 mb-1.5">이메일 <span class="text-red-500">*</span></label>
+          <input type="email" id="partnership-email" name="email" required placeholder="email@company.com" class="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900">
+        </div>
+        <div>
+          <label for="partnership-subject" class="block text-sm font-medium text-slate-700 mb-1.5">구분 <span class="text-red-500">*</span></label>
+          <select id="partnership-subject" name="subject" required class="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 bg-white">
+            <option value="" disabled selected>선택하세요</option>
+            <option value="collaboration">협업</option>
+            <option value="investment">투자</option>
+            <option value="education">교육</option>
+            <option value="internship">인턴쉽</option>
+            <option value="recruitment">채용</option>
+            <option value="connection">연계</option>
+          </select>
+        </div>
+        <div>
+          <label for="partnership-message" class="block text-sm font-medium text-slate-700 mb-1.5">세부내용 <span class="text-red-500">*</span></label>
+          <textarea id="partnership-message" name="message" rows="5" required placeholder="문의 내용을 입력해 주세요." class="w-full px-4 py-3 rounded-lg border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 resize-y min-h-[120px]"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="partnership-modal-cancel" class="px-5 py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition-colors">취소</button>
+          <button type="submit" class="px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Success message toast (optional, or use alert) -->
+<div id="partnership-success-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[101] px-6 py-3 rounded-lg bg-emerald-600 text-white font-medium shadow-lg hidden">
+  문의가 접수되었습니다. 감사합니다.
+</div>
+
+<script src="/static/js/partnership.js"></script>
 
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">

@@ -62,6 +62,7 @@
       if (!nameEl || !emailEl || !subjectEl || !messageEl) return;
 
       var payload = {
+        organization_slug: 'bkig',
         name: (nameEl.value || '').trim(),
         email: (emailEl.value || '').trim(),
         subject: (subjectEl.value || '').trim(),
@@ -77,7 +78,7 @@
         submitBtn.textContent = 'Sending…';
       }
 
-      fetch('/api/inquiries', {
+      fetch('https://faccting.com/bkig/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

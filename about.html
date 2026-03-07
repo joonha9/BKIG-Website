@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BKIG | Boston Korea Investment Group</title>
+  <title>About Us | BKIG</title>
   <link rel="icon" href="/static/images/boston_korea_ig_logo.jpeg" type="image/jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/base.css">
-  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/about.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- Mobile nav full-screen overlay (fintech style) -->
@@ -125,180 +129,223 @@
     </button>
   </header>
 
-  <main class="hero" id="home">
-    <div class="hero-background" role="img" aria-label="배경"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-chart" aria-hidden="true">
-      <svg class="living-graph-svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="chart-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
-            <stop offset="40%" stop-color="rgba(210,225,255,0.9)"/>
-            <stop offset="70%" stop-color="rgba(255,245,220,0.9)"/>
-            <stop offset="100%" stop-color="rgba(255,250,235,0.85)"/>
-          </linearGradient>
-          <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- Glow layer -->
-        <path class="chart-line chart-line-glow" fill="none" stroke="url(#chart-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#chart-glow)" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Main line -->
-        <path class="chart-line chart-line-main" fill="none" stroke="url(#chart-line-gradient)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" d="M 0,300 C 150,260 280,300 400,220 C 520,140 620,200 750,120 C 850,60 920,90 1000,40"/>
-        <!-- Nodes at peaks -->
-        <circle class="chart-node" cx="150" cy="260" r="1.25"/>
-        <circle class="chart-node" cx="400" cy="220" r="1.25"/>
-        <circle class="chart-node" cx="620" cy="200" r="1.25"/>
-        <circle class="chart-node" cx="750" cy="120" r="1.25"/>
-        <circle class="chart-node" cx="1000" cy="40" r="1.25"/>
-      </svg>
-    </div>
-    <div class="hero-content">
-      <h1 class="hero-title">BKIG Discovers Value</h1>
-      <p class="hero-subtitle">서울과 보스턴을 잇는 금융의 가교, BKIG가 새로운 가치를 발견합니다.</p>
-      <a href="about.html" class="hero-cta">About us</a>
-    </div>
-  </main>
-
-  <section class="core-divisions" id="divisions" aria-labelledby="core-divisions-title">
-    <div class="core-divisions-inner">
-      <h2 id="core-divisions-title" class="core-divisions-title">Core Divisions <span class="core-divisions-sub">핵심 활동</span></h2>
-      <div class="core-divisions-grid">
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-              <path d="M8 11h6M11 8v6"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Equity Research Team</h3>
-          <p class="core-divisions-card-desc">Conducting in-depth fundamental analysis and publishing industry reports.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"></path>
-              <path d="m7 14 4-4 4 4 5-5"></path>
-              <path d="M11 10v4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Investment Team</h3>
-          <p class="core-divisions-card-desc">Managing active portfolios with disciplined investment strategies.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 14c-1.5 0-2.5-.5-3-1.5S2.5 9 4 8"></path>
-              <path d="M18 14c1.5 0 2.5-.5 3-1.5s.5-3.5-1-4.5"></path>
-              <path d="M4 12h16"></path>
-              <path d="M10 12c0 2.2 1.8 4 4 4s4-1.8 4-4"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">Case Competition Team</h3>
-          <p class="core-divisions-card-desc">Analyzing complex M&A scenarios and valuation modeling.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-        <article class="core-divisions-card">
-          <div class="core-divisions-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <path d="m22 6-10 7L2 6"></path>
-              <path d="M12 13l10-7"></path>
-            </svg>
-          </div>
-          <h3 class="core-divisions-card-title">PD/PR Team</h3>
-          <p class="core-divisions-card-desc">Program development and public relations for BKIG's brand and outreach.</p>
-          <a href="people.html" class="core-divisions-link">Learn more <span aria-hidden="true">→</span></a>
-        </article>
-      </div>
+  <main class="about-page">
+  <!-- Hero: school.png 배경 + 네이비 오버레이 -->
+  <section class="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-slate-900" aria-label="Hero">
+    <img
+      src="/static/images/school.png"
+      alt=""
+      class="absolute inset-0 w-full h-full object-cover"
+      aria-hidden="true"
+    >
+    <div class="absolute inset-0 bg-slate-900/80" aria-hidden="true"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4">
+        About Us
+      </h1>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-light">
+        Boston Korea Investment Group — connecting Seoul & Boston.
+      </p>
     </div>
   </section>
 
-  <section class="participating-universities" id="universities" aria-labelledby="universities-title">
-    <h2 id="universities-title" class="participating-universities-title">Participating Universities</h2>
-    <p class="alumni-placement-sub">Bringing together top talent from Boston's premier institutions.</p>
-    <div class="participating-universities-mask">
-      <div class="participating-universities-track" aria-hidden="true">
-        <div class="participating-universities-set">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+  <!-- Section 1: Our Mission & Story + Key Metrics -->
+  <section id="about-content" class="bg-slate-50 py-20 sm:py-24 md:py-28" aria-labelledby="mission-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-10 gap-12 lg:gap-16 items-start">
+        <div class="lg:col-span-4">
+          <span class="inline-block text-[11px] font-semibold tracking-[0.25em] text-amber-600/90 uppercase mb-4">Founded in 2023</span>
+          <h2 id="mission-title" class="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 leading-tight tracking-tight" style="font-family: 'Playfair Display', serif;">
+            Connecting Korean Finance Globally
+          </h2>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+        <div class="lg:col-span-6 space-y-4">
+          <p class="text-slate-600 leading-relaxed">
+            Based in Boston, BKIG is a Korean investment group dedicated to fostering a global financial ecosystem that bridges Seoul and Boston. We bring together students and professionals with a shared passion for finance, creating a platform for learning, networking, and real-world investment experience.
+          </p>
+          <p class="text-slate-600 leading-relaxed">
+            Our mission is to connect Korean finance globally—through rigorous equity research, hands-on portfolio management, and a strong alumni network across top firms in both the United States and Korea. BKIG serves as the bridge where tradition meets innovation, and where the next generation of financial leaders is built.
+          </p>
         </div>
-        <div class="participating-universities-set" aria-hidden="true">
-          <div class="participating-universities-logo"><img src="/static/images/bc.png" alt="Boston College" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/bu.png" alt="Boston University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/neu.png" alt="Northeastern University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/tufts.png" alt="Tufts University" width="140" height="72"></div>
-          <div class="participating-universities-logo"><img src="/static/images/cmu.png" alt="Carnegie Mellon University" width="140" height="72"></div>
+      </div>
+      <!-- Key Metrics (핵심 지표) -->
+      <div class="mt-20 sm:mt-24 md:mt-28 pt-16 sm:pt-20 border-t border-slate-200">
+        <h3 class="text-sm font-semibold tracking-widest text-slate-500 uppercase mb-10 text-center">Key Metrics</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-12 sm:gap-8">
+          <div class="text-center">
+            <p class="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">2023</p>
+            <p class="mt-2 text-slate-600 text-sm sm:text-base">Founded</p>
+          </div>
+          <div class="text-center">
+            <p class="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">50+</p>
+            <p class="mt-2 text-slate-600 text-sm sm:text-base">Active Members</p>
+          </div>
+          <div class="text-center">
+            <p class="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">4</p>
+            <p class="mt-2 text-slate-600 text-sm sm:text-base">Specialized Teams</p>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="alumni-placement" id="alumni" aria-labelledby="alumni-placement-title">
-    <div class="alumni-placement-inner">
-      <h2 id="alumni-placement-title" class="alumni-placement-title">Global Career Impact</h2>
-      <p class="alumni-placement-sub">BKIG alumni are shaping the future of finance at world-leading firms.</p>
-      <div class="alumni-placement-grid">
-        <div class="alumni-placement-item"><img src="/static/images/mckinsey.png" alt="McKinsey & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bcg.png" alt="BCG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/bain.png" alt="Bain & Company" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/samsung.png" alt="Samsung Securities" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/korea.png" alt="한국투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kiwoom.png" alt="키움증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/nh.png" alt="NH투자증권" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/pwc.png" alt="PWC" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/kpmg.png" alt="KPMG" width="120" height="40"></div>
-        <div class="alumni-placement-item"><img src="/static/images/ey.png" alt="EY" width="120" height="40"></div>
+  <!-- Section 2: Our Structure (3D Hover Flip Cards) -->
+  <section id="structure-section" class="bg-white py-20 sm:py-24 md:py-28" aria-labelledby="structure-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <h2 id="structure-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-14 md:mb-16">Our Structure</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <!-- Flip Card 1: Investment Team -->
+        <div class="flip-card group h-[280px] sm:h-[300px]">
+          <div class="flip-card-inner relative w-full h-full">
+            <div class="flip-card-front absolute inset-0 rounded-2xl border border-slate-200 bg-white shadow-md flex flex-col items-center justify-center text-center p-6 ">
+              <div class="w-14 h-14 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/><path d="M11 10v4"/></svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-900 mb-1">Investment Team</h3>
+              <p class="text-slate-600 text-sm">실전 투자 및 포트폴리오 관리</p>
+            </div>
+            <div class="flip-card-back absolute inset-0 rounded-2xl bg-slate-900 flex flex-col items-center justify-center text-center p-6">
+              <h3 class="text-lg font-semibold text-white mb-3">Investment Team</h3>
+              <p class="text-white/90 text-sm leading-relaxed">포트폴리오 전략 수립 및 실전 트레이딩. 거시·섹터 분석과 주간 피칭으로 실무 역량을 키웁니다.</p>
+            </div>
+          </div>
+        </div>
+        <!-- Flip Card 2: Research Team -->
+        <div class="flip-card group h-[280px] sm:h-[300px]">
+          <div class="flip-card-inner relative w-full h-full">
+            <div class="flip-card-front absolute inset-0 rounded-2xl border border-slate-200 bg-white shadow-md flex flex-col items-center justify-center text-center p-6 ">
+              <div class="w-14 h-14 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6M11 8v6"/></svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-900 mb-1">Research Team</h3>
+              <p class="text-slate-600 text-sm">산업 및 기업 심층 분석</p>
+            </div>
+            <div class="flip-card-back absolute inset-0 rounded-2xl bg-slate-900 flex flex-col items-center justify-center text-center p-6">
+              <h3 class="text-lg font-semibold text-white mb-3">Research Team</h3>
+              <p class="text-white/90 text-sm leading-relaxed">재무제표·밸류에이션 모델링과 실적 리뷰. DCF, Comps 등으로 기업 가치를 분석합니다.</p>
+            </div>
+          </div>
+        </div>
+        <!-- Flip Card 3: Case Study Team -->
+        <div class="flip-card group h-[280px] sm:h-[300px]">
+          <div class="flip-card-inner relative w-full h-full">
+            <div class="flip-card-front absolute inset-0 rounded-2xl border border-slate-200 bg-white shadow-md flex flex-col items-center justify-center text-center p-6 ">
+              <div class="w-14 h-14 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-900 mb-1">Case Study Team</h3>
+              <p class="text-slate-600 text-sm">케이스 스터디 및 사례 분석</p>
+            </div>
+            <div class="flip-card-back absolute inset-0 rounded-2xl bg-slate-900 flex flex-col items-center justify-center text-center p-6">
+              <h3 class="text-lg font-semibold text-white mb-3">Case Study Team</h3>
+              <p class="text-white/90 text-sm leading-relaxed">LBO·M&A 딜 구조 분석과 케이스 컴피티션 준비. 피치북 작성 등 실무 케이스를 다룹니다.</p>
+            </div>
+          </div>
+        </div>
+        <!-- Flip Card 4: PD/PR Team -->
+        <div class="flip-card group h-[280px] sm:h-[300px]">
+          <div class="flip-card-inner relative w-full h-full">
+            <div class="flip-card-front absolute inset-0 rounded-2xl border border-slate-200 bg-white shadow-md flex flex-col items-center justify-center text-center p-6 ">
+              <div class="w-14 h-14 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3z"/></svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-900 mb-1">PD/PR Team</h3>
+              <p class="text-slate-600 text-sm">기획 및 대외 홍보</p>
+            </div>
+            <div class="flip-card-back absolute inset-0 rounded-2xl bg-slate-900 flex flex-col items-center justify-center text-center p-6">
+              <h3 class="text-lg font-semibold text-white mb-3">PD/PR Team</h3>
+              <p class="text-white/90 text-sm leading-relaxed">브랜딩·콘텐츠 제작과 네트워킹 행사 기획. 대학·기업과의 전략적 제휴를 이끕니다.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="join-contact" id="join" aria-labelledby="join-contact-title">
-    <h2 id="join-contact-title" class="join-contact-title">Ready to Shape the Future?</h2>
-    <div class="join-contact-grid">
-      <a href="join_us.html" class="join-contact-card" aria-labelledby="join-card-student-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Students</span>
-          <h3 id="join-card-student-title" class="join-contact-card-title">Become an Analyst</h3>
-          <p class="join-contact-card-desc">Join our rigorous training program and investment teams. We recruit every semester.</p>
-          <span class="join-contact-card-cta">View Recruitment Info <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-      <a href="partnership.html" class="join-contact-card" aria-labelledby="join-card-partner-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Partners</span>
-          <h3 id="join-card-partner-title" class="join-contact-card-title">Partner with Us</h3>
-          <p class="join-contact-card-desc">Connect with top talent in Boston and Seoul. We welcome corporate collaborations.</p>
-          <span class="join-contact-card-cta">Contact Executive Team <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
-      <a href="donation.html" class="join-contact-card" aria-labelledby="join-card-donor-title">
-        <div class="join-contact-card-inner">
-          <span class="join-contact-card-label">For Donors</span>
-          <h3 id="join-card-donor-title" class="join-contact-card-title">Support Our Mission</h3>
-          <p class="join-contact-card-desc">Empower the next generation of financial leaders through your generous support.</p>
-          <span class="join-contact-card-cta">Make a Donation <span class="join-contact-card-arrow" aria-hidden="true">→</span></span>
-        </div>
-      </a>
+  <!-- Section 3: What We Do (다크 섹션) -->
+  <section class="bg-slate-950 py-20 sm:py-24 md:py-28" aria-labelledby="what-we-do-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <h2 id="what-we-do-title" class="text-2xl sm:text-3xl font-bold text-white text-center mb-14 md:mb-16">What We Do</h2>
+      <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10 sm:gap-y-12">
+        <article class="what-we-do-item group flex gap-5 items-start relative">
+          <span class="what-we-do-num text-6xl sm:text-7xl md:text-8xl font-bold text-white/10 select-none leading-none shrink-0 transition-all duration-300 group-hover:text-white/20 group-hover:-translate-y-2" aria-hidden="true">01</span>
+          <div class="min-w-0">
+            <h3 class="text-lg font-semibold text-white mb-2">Professional Networking</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">현업 실무자와의 정기적인 네트워킹 및 멘토링</p>
+          </div>
+        </article>
+        <article class="what-we-do-item group flex gap-5 items-start relative">
+          <span class="what-we-do-num text-6xl sm:text-7xl md:text-8xl font-bold text-white/10 select-none leading-none shrink-0 transition-all duration-300 group-hover:text-white/20 group-hover:-translate-y-2" aria-hidden="true">02</span>
+          <div class="min-w-0">
+            <h3 class="text-lg font-semibold text-white mb-2">Financial Education</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">전문적인 금융 강의 및 세미나 개최</p>
+          </div>
+        </article>
+        <article class="what-we-do-item group flex gap-5 items-start relative">
+          <span class="what-we-do-num text-6xl sm:text-7xl md:text-8xl font-bold text-white/10 select-none leading-none shrink-0 transition-all duration-300 group-hover:text-white/20 group-hover:-translate-y-2" aria-hidden="true">03</span>
+          <div class="min-w-0">
+            <h3 class="text-lg font-semibold text-white mb-2">Weekly Pitch</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">매주 진행되는 주식 피칭 및 산업 분석 발표</p>
+          </div>
+        </article>
+        <article class="what-we-do-item group flex gap-5 items-start relative">
+          <span class="what-we-do-num text-6xl sm:text-7xl md:text-8xl font-bold text-white/10 select-none leading-none shrink-0 transition-all duration-300 group-hover:text-white/20 group-hover:-translate-y-2" aria-hidden="true">04</span>
+          <div class="min-w-0">
+            <h3 class="text-lg font-semibold text-white mb-2">Mock Fund</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">실제 시장 데이터를 바탕으로 한 모의 펀드 운용</p>
+          </div>
+        </article>
+      </div>
     </div>
   </section>
+
+  <!-- Our Core Principles & Next Step (밝은 섹션) -->
+  <section class="bg-slate-50 py-24 sm:py-28 md:py-32" aria-labelledby="core-principles-title">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <h2 id="core-principles-title" class="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-14 md:mb-16">Our Core Principles</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
+        <article class="text-center md:text-left">
+          <div class="w-12 h-12 mx-auto md:mx-0 rounded-xl bg-white border border-slate-200 text-slate-900 flex items-center justify-center mb-5 shadow-sm">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/><path d="M11 10v4"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Data-Driven Rigor</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">철저한 리서치와 객관적 데이터에 기반하여 시장의 노이즈를 걸러내고 본질을 분석합니다.</p>
+        </article>
+        <article class="text-center md:text-left">
+          <div class="w-12 h-12 mx-auto md:mx-0 rounded-xl bg-white border border-slate-200 text-slate-900 flex items-center justify-center mb-5 shadow-sm">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2v4m0 12v4M2 12h4m12 0h4m-4.5-6.5-3 3 3 3 3-3m-6 0 3-3 3 3 3 3"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Long-Term Perspective</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">단기적 변동성에 흔들리지 않고, 기업의 펀더멘탈과 장기적인 성장성에 집중합니다.</p>
+        </article>
+        <article class="text-center md:text-left">
+          <div class="w-12 h-12 mx-auto md:mx-0 rounded-xl bg-white border border-slate-200 text-slate-900 flex items-center justify-center mb-5 shadow-sm">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Global Networking</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">보스턴과 서울을 잇는 강력한 알럼나이 및 현직자 네트워크를 통해 실질적인 커리어 시너지를 창출합니다.</p>
+        </article>
+      </div>
+
+      <!-- Call to Action -->
+      <div class="mt-20 text-center">
+        <p class="text-slate-600 text-base sm:text-lg mb-6">Meet the minds behind our network.</p>
+        <a href="index.html#people" class="inline-block px-8 py-3.5 border-2 border-slate-900 bg-transparent text-slate-900 font-semibold text-sm uppercase tracking-wide rounded-lg transition-colors duration-200 hover:bg-slate-900 hover:text-white">
+          View Our People
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/static/js/about.js"></script>
 
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">
