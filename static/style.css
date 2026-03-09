@@ -277,6 +277,11 @@ body {
   margin-bottom: 2.25rem;
 }
 
+.participating-universities .alumni-placement-sub:last-of-type {
+  margin-top: 2.5rem;
+  margin-bottom: 0;
+}
+
 .participating-universities-mask {
   overflow: hidden;
   width: 100%;
@@ -357,6 +362,11 @@ body {
   max-width: 560px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.alumni-placement-inner .alumni-placement-sub:last-of-type {
+  margin-top: 2.5rem;
+  margin-bottom: 0;
 }
 
 .alumni-placement-grid {
